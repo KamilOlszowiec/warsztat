@@ -20,4 +20,8 @@ class Uzytkownik extends Authenticatable implements MustVerifyEmail
     public function isAdmin(): bool { return $this->rola === 'administrator'; }
     public function isPracownik(): bool { return $this->rola === 'pracownik'; }
     public function isKlient(): bool { return $this->rola === 'klient'; }
+    public function getRouteKeyName(): string
+    {
+        return 'id_uzytkownika';
+    }
 }

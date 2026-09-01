@@ -4,6 +4,10 @@ use App\Http\Controllers\AuthController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Admin\UslugaController;
+use App\Http\Controllers\Admin\GodzinyPracyController;
+
 
 Route::get('/', function () {
     return view('welcome');
@@ -42,8 +46,15 @@ Route::middleware('auth')->group(function () {
     })->middleware('throttle:6,1')->name('verification.send');
 });
 
-Route::middleware(['auth', 'verified', 'role:administrator'])->prefix('admin')->group(function () {
-    Route::get('/', fn() => view('admin.dashboard'));
+Route::middleware(['auth', 'verified', 'role:administrator'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', fn() => view('admin.dashboard'))->name('dashboard');
+    Route::resource('users', AdminUserController::class)->except(['show']);
+    Route::resource('services', UslugaController::class)->except(['show'])->parameters(['services' => 'service']);
+
+    Route::get('/schedule', [GodzinyPracyController::class, 'index'])->name('schedule.index');
+    Route::put('/schedule', [GodzinyPracyController::class, 'update'])->name('schedule.update');
+
+    Route::get('/reservations', fn() => view('admin.reservations.index'))->name('reservations.index');
 });
 
 Route::middleware(['auth', 'verified', 'role:pracownik,administrator'])->prefix('pracownik')->group(function () {
