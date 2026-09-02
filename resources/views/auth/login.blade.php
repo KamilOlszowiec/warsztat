@@ -30,6 +30,10 @@
             @error('email')
                 <p class="text-sm text-red-500">{{ $message }}</p>
             @enderror
+            
+            <div class="text-right">
+                <a href="{{ route('password.request') }}" class="text-sm text-zinc-500 hover:text-orange-500">Zapomniałeś hasła?</a>
+            </div>
 
             <button type="submit"
                 class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 transition"

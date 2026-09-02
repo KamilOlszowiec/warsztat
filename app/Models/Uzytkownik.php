@@ -5,10 +5,12 @@ namespace App\Models;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Auth\Passwords\CanResetPassword;
+use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 
-class Uzytkownik extends Authenticatable implements MustVerifyEmail
+class Uzytkownik extends Authenticatable implements MustVerifyEmail, CanResetPasswordContract
 {
-    use Notifiable;
+    use Notifiable, CanResetPassword;
 
     protected $table = 'uzytkownicy';
     protected $primaryKey = 'id_uzytkownika';
@@ -23,5 +25,9 @@ class Uzytkownik extends Authenticatable implements MustVerifyEmail
     public function getRouteKeyName(): string
     {
         return 'id_uzytkownika';
+    }
+    public function pojazdy()
+    {
+        return $this->hasMany(Pojazd::class, 'id_uzytkownika', 'id_uzytkownika');
     }
 }

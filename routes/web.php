@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\UslugaController;
 use App\Http\Controllers\Admin\GodzinyPracyController;
+use App\Http\Controllers\Klient\PojazdController;
+use App\Http\Controllers\Klient\RezerwacjaController;
+use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\ProfileController;
 
 
 Route::get('/', function () {
@@ -18,6 +22,11 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
+
+    Route::get('/forgot-password', [PasswordResetController::class, 'showRequestForm'])->name('password.request');
+    Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink'])->name('password.email');
+    Route::get('/reset-password/{token}', [PasswordResetController::class, 'showResetForm'])->name('password.reset');
+    Route::post('/reset-password', [PasswordResetController::class, 'reset'])->name('password.update');
 });
 
 Route::middleware('auth')->group(function () {
@@ -30,6 +39,9 @@ Route::middleware('auth')->group(function () {
             default => redirect('/klient'),
         };
     })->name('dashboard');
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
 
     Route::get('/email/verify', function () {
         return view('auth.verify-email');
@@ -61,6 +73,12 @@ Route::middleware(['auth', 'verified', 'role:pracownik,administrator'])->prefix(
     Route::get('/', fn() => view('pracownik.dashboard'));
 });
 
-Route::middleware(['auth', 'verified', 'role:klient'])->prefix('klient')->group(function () {
-    Route::get('/', fn() => view('klient.dashboard'));
+Route::middleware(['auth', 'verified', 'role:klient'])->prefix('klient')->name('klient.')->group(function () {
+    Route::get('/', fn() => view('klient.dashboard'))->name('dashboard');
+    Route::resource('vehicles', PojazdController::class)->parameters(['vehicles' => 'vehicle']);
+
+    Route::get('/reservations', [RezerwacjaController::class, 'index'])->name('reservations.index');
+    Route::get('/reservations/create', [RezerwacjaController::class, 'create'])->name('reservations.create');
+    Route::post('/reservations', [RezerwacjaController::class, 'store'])->name('reservations.store');
+    Route::post('/reservations/{reservation}/cancel', [RezerwacjaController::class, 'cancel'])->name('reservations.cancel');
 });
