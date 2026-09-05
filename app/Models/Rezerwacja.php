@@ -12,7 +12,7 @@ class Rezerwacja extends Model
 
     protected $fillable = [
         'id_klienta', 'id_pojazdu', 'id_uslugi', 'id_pracownika',
-        'termin_rozpoczecia', 'termin_zakonczenia', 'status', 'uwagi',
+        'termin_rozpoczecia', 'termin_zakonczenia', 'status', 'uwagi', 'powod_odrzucenia',
     ];
 
     protected $casts = [

@@ -50,8 +50,11 @@
                             ];
                         @endphp
                         <span class="text-xs font-mono px-2 py-1 {{ $kolory[$r->status] }}" style="border-radius: 2px;">
-                            {{ strtoupper($r->status) }}
+                            {{ mb_strtoupper($r->status, 'UTF-8') }}
                         </span>
+                        @if ($r->status === 'odrzucona' && $r->powod_odrzucenia)
+                            <p class="text-xs text-zinc-500 mt-1">{{ $r->powod_odrzucenia }}</p>
+                        @endif
                     </td>
                     <td class="px-4 py-3 text-right">
                         @if (in_array($r->status, ['oczekująca', 'zatwierdzona']) && $r->termin_rozpoczecia->isFuture())
@@ -60,6 +63,8 @@
                                 @csrf
                                 <button type="submit" class="text-red-500 hover:text-red-400">Anuluj</button>
                             </form>
+                        @else
+                            <span class="text-zinc-600">—</span>
                         @endif
                     </td>
                 </tr>

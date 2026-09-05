@@ -12,6 +12,10 @@ use App\Http\Controllers\Klient\RezerwacjaController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\ProfileController;
 
+use App\Http\Controllers\Klient\RezerwacjaController as KlientRezerwacjaController;
+use App\Http\Controllers\Pracownik\RezerwacjaController as PracownikRezerwacjaController;
+use App\Http\Controllers\Pracownik\KlientController as PracownikKlientController;
+use App\Http\Controllers\Admin\RezerwacjaController as AdminRezerwacjaController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -62,15 +66,30 @@ Route::middleware(['auth', 'verified', 'role:administrator'])->prefix('admin')->
     Route::get('/', fn() => view('admin.dashboard'))->name('dashboard');
     Route::resource('users', AdminUserController::class)->except(['show']);
     Route::resource('services', UslugaController::class)->except(['show'])->parameters(['services' => 'service']);
-
     Route::get('/schedule', [GodzinyPracyController::class, 'index'])->name('schedule.index');
     Route::put('/schedule', [GodzinyPracyController::class, 'update'])->name('schedule.update');
 
-    Route::get('/reservations', fn() => view('admin.reservations.index'))->name('reservations.index');
+    Route::get('/reservations', [AdminRezerwacjaController::class, 'index'])->name('reservations.index');
+    Route::delete('/reservations/{reservation}', [AdminRezerwacjaController::class, 'destroy'])->name('reservations.destroy');
 });
 
-Route::middleware(['auth', 'verified', 'role:pracownik,administrator'])->prefix('pracownik')->group(function () {
-    Route::get('/', fn() => view('pracownik.dashboard'));
+Route::middleware(['auth', 'verified', 'role:pracownik,administrator'])->prefix('pracownik')->name('pracownik.')->group(function () {
+
+    Route::get('/', function () {
+        $dzisiaj = \App\Models\Rezerwacja::whereDate('termin_rozpoczecia', today())
+            ->whereNotIn('status', ['odrzucona', 'anulowana'])->count();
+        $oczekujace = \App\Models\Rezerwacja::where('status', 'oczekująca')->count();
+        return view('pracownik.dashboard', compact('dzisiaj', 'oczekujace'));
+    })->name('dashboard');
+
+    Route::get('/reservations', [PracownikRezerwacjaController::class, 'index'])->name('reservations.index');
+    Route::post('/reservations/{reservation}/approve', [PracownikRezerwacjaController::class, 'approve'])->name('reservations.approve');
+    Route::post('/reservations/{reservation}/reject', [PracownikRezerwacjaController::class, 'reject'])->name('reservations.reject');
+    Route::post('/reservations/{reservation}/complete', [PracownikRezerwacjaController::class, 'complete'])->name('reservations.complete');
+    Route::get('/reservations/{reservation}/edit-termin', [PracownikRezerwacjaController::class, 'editTermin'])->name('reservations.edit-termin');
+    Route::put('/reservations/{reservation}/termin', [PracownikRezerwacjaController::class, 'updateTermin'])->name('reservations.update-termin');
+
+    Route::get('/clients', [PracownikKlientController::class, 'index'])->name('clients.index');
 });
 
 Route::middleware(['auth', 'verified', 'role:klient'])->prefix('klient')->name('klient.')->group(function () {

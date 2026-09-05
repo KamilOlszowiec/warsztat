@@ -11,7 +11,7 @@ use App\Models\Usluga;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
-class RezerwacjaController extends Controller
+class RezerwacjaController  extends Controller
 {
     public function index()
     {

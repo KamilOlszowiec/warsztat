@@ -1,29 +1,21 @@
 {{-- resources/views/pracownik/dashboard.blade.php --}}
-@extends('layouts.app')
-@section('title', 'Panel pracownika')
+@extends('layouts.pracownik')
+@section('title', 'Panel główny')
 
 @section('content')
-<div class="min-h-screen px-4 py-8">
-    <div class="max-w-3xl mx-auto">
-        <div class="flex items-center justify-between mb-8">
-            <div>
-                <p class="text-sm font-mono text-orange-500 mb-1">PANEL PRACOWNIKA</p>
-                <h1 class="text-2xl font-bold text-zinc-50">Witaj, {{ auth()->user()->imie }}</h1>
-            </div>
+<p class="text-sm font-mono text-orange-500 mb-1">PANEL GŁÓWNY</p>
+<h1 class="text-2xl font-bold text-zinc-50 mb-6">Witaj, {{ auth()->user()->imie }}</h1>
 
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit"
-                    class="border border-zinc-600 hover:border-red-500 hover:text-red-400 text-zinc-300 text-sm font-medium px-4 py-2 transition"
-                    style="border-radius: 2px;">
-                    Wyloguj się
-                </button>
-            </form>
-        </div>
-
-        <div class="bg-[#1F2128] panel-accent p-6" style="border-radius: 2px;">
-            <p class="text-zinc-400">Tu pojawi się lista wszystkich rezerwacji do obsługi.</p>
-        </div>
-    </div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <a href="{{ route('pracownik.reservations.index', ['status' => 'dzisiaj']) }}"
+       class="bg-[#1F2128] border-l-4 border-orange-600 hover:bg-white/[0.02] p-5 transition" style="border-radius: 2px;">
+        <p class="text-xs font-mono text-zinc-500 mb-1">REZERWACJE DZIŚ</p>
+        <p class="text-3xl font-bold text-zinc-50">{{ $dzisiaj }}</p>
+    </a>
+    <a href="{{ route('pracownik.reservations.index', ['status' => 'oczekująca']) }}"
+       class="bg-[#1F2128] border-l-4 border-yellow-500 hover:bg-white/[0.02] p-5 transition" style="border-radius: 2px;">
+        <p class="text-xs font-mono text-zinc-500 mb-1">OCZEKUJĄCE NA ZATWIERDZENIE</p>
+        <p class="text-3xl font-bold text-zinc-50">{{ $oczekujace }}</p>
+    </a>
 </div>
 @endsection
