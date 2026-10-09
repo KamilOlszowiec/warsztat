@@ -1,4 +1,3 @@
-{{-- resources/views/layouts/pracownik.blade.php --}}
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -24,10 +23,6 @@
         </div>
 
         <nav class="flex-1 px-3 py-4 space-y-1">
-            <a href="{{ route('pracownik.dashboard') }}"
-               class="nav-link flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-zinc-300 {{ request()->routeIs('pracownik.dashboard') ? 'active' : '' }}">
-                Panel główny
-            </a>
             <a href="{{ route('pracownik.reservations.index') }}"
                class="nav-link flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-zinc-300 {{ request()->routeIs('pracownik.reservations.*') ? 'active' : '' }}">
                 Rezerwacje

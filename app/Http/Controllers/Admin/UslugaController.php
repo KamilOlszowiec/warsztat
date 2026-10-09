@@ -1,6 +1,4 @@
 <?php
-
-// app/Http/Controllers/Admin/UslugaController.php
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;

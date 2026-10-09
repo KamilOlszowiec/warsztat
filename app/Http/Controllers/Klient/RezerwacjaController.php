@@ -1,6 +1,4 @@
 <?php
-
-// app/Http/Controllers/Klient/RezerwacjaController.php
 namespace App\Http\Controllers\Klient;
 
 use App\Http\Controllers\Controller;

@@ -1,4 +1,3 @@
-{{-- resources/views/profile/edit.blade.php --}}
 @extends(auth()->user()->rola === 'klient' ? 'layouts.klient' : (auth()->user()->rola === 'administrator' ? 'layouts.admin' : 'layouts.klient'))
 @section('title', 'Mój profil')
 

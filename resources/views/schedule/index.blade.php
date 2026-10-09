@@ -1,4 +1,3 @@
-{{-- resources/views/admin/schedule/index.blade.php --}}
 @extends($layout)
 @section('title', 'Godziny pracy')
 

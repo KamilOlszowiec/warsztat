@@ -1,4 +1,3 @@
-{{-- resources/views/klient/dashboard.blade.php --}}
 @extends('layouts.klient')
 @section('title', 'Panel klienta')
 

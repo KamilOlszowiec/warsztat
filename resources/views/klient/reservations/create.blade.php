@@ -1,4 +1,3 @@
-{{-- resources/views/klient/reservations/create.blade.php --}}
 @extends('layouts.klient')
 @section('title', 'Nowa rezerwacja')
 

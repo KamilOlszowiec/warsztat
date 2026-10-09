@@ -1,4 +1,3 @@
-{{-- resources/views/admin/services/_form.blade.php --}}
 @php $s = $usluga ?? null; @endphp
 
 <div>

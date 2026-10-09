@@ -1,12 +1,12 @@
 <?php
-
-// app/Http/Controllers/Pracownik/RezerwacjaController.php
 namespace App\Http\Controllers\Pracownik;
 
 use App\Http\Controllers\Controller;
 use App\Models\Rezerwacja;
+use App\Notifications\RezerwacjaZatwierdzona;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class RezerwacjaController extends Controller
 {
@@ -40,10 +40,17 @@ class RezerwacjaController extends Controller
             'id_pracownika' => auth()->id(),
         ]);
 
+        $reservation->load(['usluga', 'pojazd']);
+
+        try {
+            $reservation->klient->notify(new RezerwacjaZatwierdzona($reservation));
+        } catch (\Exception $e) {
+            Log::warning('Nie udało się wysłać powiadomienia email o zatwierdzeniu rezerwacji: ' . $e->getMessage());
+        }
+
         return back()->with('status', 'Rezerwacja została zatwierdzona.');
     }
 
-    // app/Http/Controllers/Pracownik/RezerwacjaController.php
     public function reject(Request $request, Rezerwacja $reservation)
     {
         if ($reservation->status !== 'oczekująca') {

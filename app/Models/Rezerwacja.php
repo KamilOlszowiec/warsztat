@@ -1,6 +1,4 @@
 <?php
-
-// app/Models/Rezerwacja.php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;

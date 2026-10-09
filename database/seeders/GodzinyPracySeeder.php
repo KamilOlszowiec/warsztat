@@ -1,5 +1,4 @@
 <?php
-// database/seeders/GodzinyPracySeeder.php
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
@@ -14,7 +13,7 @@ class GodzinyPracySeeder extends Seeder
                 'dzien_tygodnia' => $dzien,
                 'godzina_otwarcia' => '08:00',
                 'godzina_zamkniecia' => '16:00',
-                'czy_czynne' => $dzien <= 5, // pon-pt czynne, sob-nd domyślnie zamknięte
+                'czy_czynne' => $dzien <= 5, 
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

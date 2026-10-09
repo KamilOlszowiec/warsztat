@@ -1,4 +1,3 @@
-{{-- resources/views/pracownik/reservations/edit-termin.blade.php --}}
 @extends('layouts.pracownik')
 @section('title', 'Zmień termin')
 

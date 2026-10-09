@@ -1,4 +1,3 @@
-{{-- resources/views/admin/services/index.blade.php --}}
 @extends('layouts.admin')
 @section('title', 'Usługi')
 

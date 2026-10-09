@@ -1,6 +1,4 @@
 <?php
-
-// app/Http/Controllers/Admin/UserController.php
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -84,6 +82,10 @@ class UserController extends Controller
     {
         if (auth()->id() === $user->id_uzytkownika) {
             return back()->withErrors(['error' => 'Nie możesz usunąć własnego konta.']);
+        }
+
+        if ($user->rola === 'klient' && $user->pojazdy()->whereHas('rezerwacje')->exists()) {
+            return back()->withErrors(['error' => 'Nie można usunąć tego klienta — posiada historię rezerwacji.']);
         }
 
         $user->delete();

@@ -1,5 +1,4 @@
 <?php
-// app/Http/Controllers/Admin/GodzinyPracyController.php
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;

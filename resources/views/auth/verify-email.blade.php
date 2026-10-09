@@ -1,4 +1,3 @@
-{{-- resources/views/auth/verify-email.blade.php --}}
 @extends('layouts.app')
 @section('title', 'Weryfikacja email')
 

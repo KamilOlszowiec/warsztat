@@ -1,6 +1,4 @@
 <?php
-
-// app/Http/Controllers/Pracownik/KlientController.php
 namespace App\Http\Controllers\Pracownik;
 
 use App\Http\Controllers\Controller;

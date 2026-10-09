@@ -1,6 +1,4 @@
 <?php
-
-// app/Http/Middleware/EnsureRole.php
 namespace App\Http\Middleware;
 
 use Closure;

@@ -1,11 +1,10 @@
 <?php
-
-// app/Http/Controllers/Klient/PojazdController.php
 namespace App\Http\Controllers\Klient;
 
 use App\Http\Controllers\Controller;
 use App\Models\Pojazd;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class PojazdController extends Controller
 {
@@ -26,7 +25,7 @@ class PojazdController extends Controller
             'marka' => ['required', 'string', 'max:50'],
             'model' => ['required', 'string', 'max:50'],
             'rok_produkcji' => ['nullable', 'digits:4', 'integer', 'min:1950', 'max:' . (date('Y') + 1)],
-            'numer_rejestracyjny' => ['required', 'string', 'max:15'],
+            'numer_rejestracyjny' => ['required', 'string', 'max:15', 'unique:pojazdy,numer_rejestracyjny'],
             'vin' => ['nullable', 'string', 'size:17'],
         ]);
 
@@ -51,7 +50,7 @@ class PojazdController extends Controller
             'marka' => ['required', 'string', 'max:50'],
             'model' => ['required', 'string', 'max:50'],
             'rok_produkcji' => ['nullable', 'digits:4', 'integer', 'min:1950', 'max:' . (date('Y') + 1)],
-            'numer_rejestracyjny' => ['required', 'string', 'max:15'],
+            'numer_rejestracyjny' => ['required', 'string', 'max:15', Rule::unique('pojazdy', 'numer_rejestracyjny')->ignore($vehicle->id_pojazdu, 'id_pojazdu')],
             'vin' => ['nullable', 'string', 'size:17'],
         ]);
 

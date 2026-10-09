@@ -1,4 +1,3 @@
-{{-- resources/views/layouts/klient.blade.php --}}
 <!DOCTYPE html>
 <html lang="pl">
 <head>

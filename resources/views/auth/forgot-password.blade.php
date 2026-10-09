@@ -1,4 +1,3 @@
-{{-- resources/views/auth/forgot-password.blade.php --}}
 @extends('layouts.app')
 @section('title', 'Odzyskiwanie hasła')
 

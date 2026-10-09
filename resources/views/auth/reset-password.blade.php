@@ -1,4 +1,3 @@
-{{-- resources/views/auth/reset-password.blade.php --}}
 @extends('layouts.app')
 @section('title', 'Reset hasła')
 

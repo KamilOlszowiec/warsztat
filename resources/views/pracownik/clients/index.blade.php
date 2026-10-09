@@ -1,4 +1,3 @@
-{{-- resources/views/pracownik/clients/index.blade.php --}}
 @extends('layouts.pracownik')
 @section('title', 'Klienci')
 
