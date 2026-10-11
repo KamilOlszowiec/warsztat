@@ -3,18 +3,26 @@ namespace Database\Seeders;
 
 use App\Models\Pojazd;
 use App\Models\Rezerwacja;
+use App\Models\Stanowisko;
 use App\Models\Usluga;
 use App\Models\Uzytkownik;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Carbon\Carbon;
 
 class DemoDataSeeder extends Seeder
 {
     public function run(): void
     {
+        // Stanowiska warsztatowe
+        $this->call(StanowiskoSeeder::class);
+
+        $podnosnik1 = Stanowisko::where('nazwa', 'Podnośnik 1')->first();
+        $podnosnik2 = Stanowisko::where('nazwa', 'Podnośnik 2')->first();
+        $kanal      = Stanowisko::where('nazwa', 'Kanał')->first();
+
         // Administrator
-        $admin = Uzytkownik::create([
+        Uzytkownik::create([
             'imie' => 'Anna', 'nazwisko' => 'Kowalska',
             'email' => 'admin@warsztat.pl', 'password' => Hash::make('haslo1234'),
             'rola' => 'administrator', 'email_verified_at' => now(),
@@ -44,18 +52,26 @@ class DemoDataSeeder extends Seeder
             'telefon' => '500300400', 'rola' => 'klient', 'email_verified_at' => now(),
         ]);
 
-        // Usługi
+        // Usługi z wymaganym typem stanowiska
         $wymianaOleju = Usluga::create([
             'nazwa' => 'Wymiana oleju', 'opis' => 'Wymiana oleju silnikowego wraz z filtrem',
-            'cena' => 150.00, 'czas_trwania' => 30, 'maks_jednoczesnie' => 3, 'czy_aktywna' => true,
+            'cena' => 150.00, 'czas_trwania' => 30, 'wymagany_typ_stanowiska' => 'kanal', 'czy_aktywna' => true,
         ]);
         $przeglad = Usluga::create([
             'nazwa' => 'Przegląd okresowy', 'opis' => 'Pełny przegląd techniczny pojazdu',
-            'cena' => 250.00, 'czas_trwania' => 60, 'maks_jednoczesnie' => 2, 'czy_aktywna' => true,
+            'cena' => 250.00, 'czas_trwania' => 60, 'wymagany_typ_stanowiska' => 'podnosnik', 'czy_aktywna' => true,
         ]);
         $diagnostyka = Usluga::create([
             'nazwa' => 'Diagnostyka komputerowa', 'opis' => 'Odczyt i analiza błędów sterownika',
-            'cena' => 120.00, 'czas_trwania' => 30, 'maks_jednoczesnie' => 1, 'czy_aktywna' => true,
+            'cena' => 120.00, 'czas_trwania' => 30, 'wymagany_typ_stanowiska' => 'dowolne', 'czy_aktywna' => true,
+        ]);
+        $hamulce = Usluga::create([
+            'nazwa' => 'Wymiana klocków hamulcowych', 'opis' => 'Wymiana klocków hamulcowych jednej osi',
+            'cena' => 200.00, 'czas_trwania' => 60, 'wymagany_typ_stanowiska' => 'podnosnik', 'czy_aktywna' => true,
+        ]);
+        Usluga::create([
+            'nazwa' => 'Serwis klimatyzacji', 'opis' => 'Odgrzybianie i uzupełnienie czynnika chłodniczego',
+            'cena' => 180.00, 'czas_trwania' => 60, 'wymagany_typ_stanowiska' => 'plaskie', 'czy_aktywna' => true,
         ]);
 
         // Pojazdy
@@ -71,36 +87,74 @@ class DemoDataSeeder extends Seeder
         ]);
 
         // Rezerwacje w różnych stanach
-        Rezerwacja::create([
+        $this->rezerwacja([
             'id_klienta' => $klient1->id_uzytkownika, 'id_pojazdu' => $pojazd1->id_pojazdu,
-            'id_uslugi' => $wymianaOleju->id_uslugi, 'id_pracownika' => $pracownik1->id_uzytkownika,
-            'termin_rozpoczecia' => Carbon::now()->addDays(2)->setTime(10, 0),
-            'termin_zakonczenia' => Carbon::now()->addDays(2)->setTime(10, 30),
+            'id_stanowiska' => $kanal->id_stanowiska, 'id_pracownika' => $pracownik1->id_uzytkownika,
+            'termin_rozpoczecia' => $this->dzienRoboczy(2)->setTime(10, 0),
             'status' => 'zatwierdzona',
-        ]);
+        ], [$wymianaOleju, $diagnostyka]); // wizyta z dwiema usługami
 
-        Rezerwacja::create([
+        $this->rezerwacja([
             'id_klienta' => $klient2->id_uzytkownika, 'id_pojazdu' => $pojazd2->id_pojazdu,
-            'id_uslugi' => $przeglad->id_uslugi,
-            'termin_rozpoczecia' => Carbon::now()->addDays(3)->setTime(11, 0),
-            'termin_zakonczenia' => Carbon::now()->addDays(3)->setTime(12, 0),
+            'id_stanowiska' => $podnosnik1->id_stanowiska,
+            'termin_rozpoczecia' => $this->dzienRoboczy(3)->setTime(11, 0),
             'status' => 'oczekująca',
-        ]);
+        ], [$przeglad]);
 
-        Rezerwacja::create([
+        $this->rezerwacja([
             'id_klienta' => $klient1->id_uzytkownika, 'id_pojazdu' => $pojazd1->id_pojazdu,
-            'id_uslugi' => $diagnostyka->id_uslugi, 'id_pracownika' => $pracownik2->id_uzytkownika,
-            'termin_rozpoczecia' => Carbon::now()->subDays(10)->setTime(9, 0),
-            'termin_zakonczenia' => Carbon::now()->subDays(10)->setTime(9, 30),
-            'status' => 'zakończona',
-        ]);
+            'id_stanowiska' => $podnosnik2->id_stanowiska,
+            'termin_rozpoczecia' => $this->dzienRoboczy(3)->setTime(11, 0),
+            'status' => 'oczekująca',
+        ], [$hamulce]); // ta sama godzina co wyżej, ale inne stanowisko
 
-        Rezerwacja::create([
+        $this->rezerwacja([
+            'id_klienta' => $klient1->id_uzytkownika, 'id_pojazdu' => $pojazd1->id_pojazdu,
+            'id_stanowiska' => $podnosnik1->id_stanowiska, 'id_pracownika' => $pracownik2->id_uzytkownika,
+            'termin_rozpoczecia' => $this->dzienRoboczy(-10)->setTime(9, 0),
+            'status' => 'zakończona',
+        ], [$diagnostyka]);
+
+        $this->rezerwacja([
             'id_klienta' => $klient2->id_uzytkownika, 'id_pojazdu' => $pojazd2->id_pojazdu,
-            'id_uslugi' => $wymianaOleju->id_uslugi, 'id_pracownika' => $pracownik1->id_uzytkownika,
-            'termin_rozpoczecia' => Carbon::now()->subDays(5)->setTime(14, 0),
-            'termin_zakonczenia' => Carbon::now()->subDays(5)->setTime(14, 30),
+            'id_stanowiska' => $kanal->id_stanowiska, 'id_pracownika' => $pracownik1->id_uzytkownika,
+            'termin_rozpoczecia' => $this->dzienRoboczy(-5)->setTime(14, 0),
             'status' => 'odrzucona', 'powod_odrzucenia' => 'Brak dostępnych części na magazynie.',
-        ]);
+        ], [$wymianaOleju]);
+    }
+
+    /**
+     * Tworzy rezerwację z listą usług; koniec wizyty = start + suma czasów usług.
+     */
+    private function rezerwacja(array $dane, array $uslugi): Rezerwacja
+    {
+        $czas = array_sum(array_map(fn ($u) => $u->czas_trwania, $uslugi));
+        $dane['termin_zakonczenia'] = $dane['termin_rozpoczecia']->copy()->addMinutes($czas);
+
+        $rezerwacja = Rezerwacja::create($dane);
+
+        foreach ($uslugi as $u) {
+            $rezerwacja->uslugi()->attach($u->id_uslugi, [
+                'cena' => $u->cena,
+                'czas_trwania' => $u->czas_trwania,
+            ]);
+        }
+
+        return $rezerwacja;
+    }
+
+    /**
+     * Data przesunięta o $dni od dziś (ujemne = przeszłość), z pominięciem weekendu.
+     */
+    private function dzienRoboczy(int $dni): Carbon
+    {
+        $data = Carbon::today()->addDays($dni);
+        $krok = $dni >= 0 ? 1 : -1;
+
+        while ($data->isWeekend()) {
+            $data->addDays($krok);
+        }
+
+        return $data;
     }
 }

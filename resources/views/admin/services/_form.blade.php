@@ -30,11 +30,17 @@
 </div>
 
 <div>
-    <label class="block text-xs font-mono text-zinc-400 mb-1.5">MAKS. JEDNOCZEŚNIE</label>
-    <input type="number" min="1" max="20" name="maks_jednoczesnie" value="{{ old('maks_jednoczesnie', $s->maks_jednoczesnie ?? 1) }}"
+    <label class="block text-xs font-mono text-zinc-400 mb-1.5">WYMAGANE STANOWISKO</label>
+    <select name="wymagany_typ_stanowiska"
         class="w-full bg-[#15161A] border border-zinc-700 text-zinc-100 px-3 py-2.5 focus:outline-none focus:border-orange-600" style="border-radius: 2px;">
-    <p class="text-xs text-zinc-500 mt-1">Ile razy ta usługa może być realizowana w tym samym czasie (np. ograniczenie sprzętowe).</p>
-    @error('maks_jednoczesnie') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
+        @foreach (\App\Models\Usluga::WYMAGANIA as $wartosc => $etykieta)
+            <option value="{{ $wartosc }}" {{ old('wymagany_typ_stanowiska', $s->wymagany_typ_stanowiska ?? 'dowolne') === $wartosc ? 'selected' : '' }}>
+                {{ $etykieta }}
+            </option>
+        @endforeach
+    </select>
+    <p class="text-xs text-zinc-500 mt-1">Na jakim stanowisku można wykonać usługę. Liczba jednoczesnych wizyt wynika z liczby aktywnych stanowisk danego typu.</p>
+    @error('wymagany_typ_stanowiska') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
 </div>
 
 <label class="flex items-center gap-2 text-sm text-zinc-300">

@@ -80,6 +80,7 @@ Route::middleware(['auth', 'verified', 'role:klient'])->prefix('klient')->name('
 
 Route::middleware(['auth', 'verified', 'role:pracownik,administrator'])->prefix('pracownik')->name('pracownik.')->group(function () {
 
+    Route::get('reservations/{reservation}/dostepne-terminy', [\App\Http\Controllers\Pracownik\RezerwacjaController::class, 'dostepneTerminy'])->name('reservations.availability');
     Route::get('/reservations', [PracownikRezerwacjaController::class, 'index'])->name('reservations.index');
     Route::post('/reservations/{reservation}/approve', [PracownikRezerwacjaController::class, 'approve'])->name('reservations.approve');
     Route::post('/reservations/{reservation}/reject', [PracownikRezerwacjaController::class, 'reject'])->name('reservations.reject');

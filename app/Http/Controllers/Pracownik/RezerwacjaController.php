@@ -4,12 +4,17 @@ namespace App\Http\Controllers\Pracownik;
 use App\Http\Controllers\Controller;
 use App\Models\Rezerwacja;
 use App\Notifications\RezerwacjaZatwierdzona;
+use App\Services\DostepnoscRezerwacjiService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class RezerwacjaController extends Controller
 {
+    public function __construct(private DostepnoscRezerwacjiService $dostepnosc)
+    {
+    }
+
     public function index(Request $request)
     {
         $status = $request->get('status', 'oczekująca');
@@ -83,35 +88,54 @@ class RezerwacjaController extends Controller
 
     public function editTermin(Rezerwacja $reservation)
     {
+        $reservation->load(['klient', 'uslugi']);
+
         return view('pracownik.reservations.edit-termin', ['rezerwacja' => $reservation]);
+    }
+
+    /**
+     * Endpoint JSON: wolne godziny dla przesuwanej rezerwacji w danym dniu.
+     */
+    public function dostepneTerminy(Request $request, Rezerwacja $reservation)
+    {
+        $data = $request->validate([
+            'data' => ['required', 'date', 'after_or_equal:today'],
+        ]);
+
+        $reservation->load('uslugi');
+
+        $godziny = $this->dostepnosc->dostepneGodziny(
+            $reservation->uslugi,
+            $data['data'],
+            $reservation->id_rezerwacji,
+            $reservation->laczny_czas
+        );
+
+        return response()->json([
+            'godziny'     => $godziny,
+            'laczny_czas' => $reservation->laczny_czas,
+            'komunikat'   => empty($godziny) ? 'Brak wolnych terminów w wybranym dniu.' : null,
+        ]);
     }
 
     public function updateTermin(Request $request, Rezerwacja $reservation)
     {
+        if (!in_array($reservation->status, ['oczekująca', 'zatwierdzona'])) {
+            return back()->withErrors(['error' => 'Można zmienić termin tylko oczekującej lub zatwierdzonej rezerwacji.']);
+        }
+
         $data = $request->validate([
-            'data' => ['required', 'date'],
+            'data' => ['required', 'date', 'after_or_equal:today'],
             'godzina' => ['required', 'date_format:H:i'],
         ]);
 
-        $usluga = $reservation->usluga;
         $start = Carbon::parse($data['data'] . ' ' . $data['godzina']);
-        $koniec = $start->copy()->addMinutes($usluga->czas_trwania);
 
-        $koliduje = Rezerwacja::where('id_uslugi', $usluga->id_uslugi)
-            ->where('id_rezerwacji', '!=', $reservation->id_rezerwacji)
-            ->whereNotIn('status', ['odrzucona', 'anulowana'])
-            ->where('termin_rozpoczecia', '<', $koniec)
-            ->where('termin_zakonczenia', '>', $start)
-            ->count();
-
-        if ($koliduje >= $usluga->maks_jednoczesnie) {
-            return back()->withErrors(['godzina' => 'Wybrany termin koliduje z inną rezerwacją tej usługi.'])->withInput();
+        if (!$this->dostepnosc->zmienTermin($reservation, $start)) {
+            return back()
+                ->withErrors(['godzina' => 'Wybrany termin jest niedostępny – poza godzinami pracy lub brak wolnego stanowiska.'])
+                ->withInput();
         }
-
-        $reservation->update([
-            'termin_rozpoczecia' => $start,
-            'termin_zakonczenia' => $koniec,
-        ]);
 
         return redirect()->route('pracownik.reservations.index')->with('status', 'Termin rezerwacji został zmieniony.');
     }

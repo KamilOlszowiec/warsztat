@@ -36,10 +36,11 @@ class DostepnoscRezerwacjiService
     /**
      * Lista wolnych godzin rozpoczęcia (np. ['08:00', '08:30']) dla danego dnia.
      * $pomijanaRezerwacjaId – przy zmianie terminu rezerwacja nie koliduje sama ze sobą.
+     * $czas – jawnie podany czas wizyty (przy zmianie terminu: suma z tabeli przestawnej).
      */
-    public function dostepneGodziny(Collection $uslugi, string $data, ?int $pomijanaRezerwacjaId = null): array
+    public function dostepneGodziny(Collection $uslugi, string $data, ?int $pomijanaRezerwacjaId = null, ?int $czas = null): array
     {
-        $czas = $this->lacznyCzas($uslugi);
+        $czas ??= $this->lacznyCzas($uslugi);
         $typy = $this->dozwoloneTypy($uslugi);
         $okno = $this->godzinyOtwarcia($data);
 
@@ -77,9 +78,9 @@ class DostepnoscRezerwacjiService
      * Sprawdza pojedynczy termin i zwraca stanowisko, które można przydzielić,
      * albo null, jeśli termin jest niedostępny.
      */
-    public function znajdzStanowisko(Collection $uslugi, Carbon $start, ?int $pomijanaRezerwacjaId = null): ?Stanowisko
+    public function znajdzStanowisko(Collection $uslugi, Carbon $start, ?int $pomijanaRezerwacjaId = null, ?int $czas = null): ?Stanowisko
     {
-        $czas = $this->lacznyCzas($uslugi);
+        $czas ??= $this->lacznyCzas($uslugi);
         $typy = $this->dozwoloneTypy($uslugi);
 
         if ($czas <= 0 || empty($typy)) {
@@ -129,6 +130,33 @@ class DostepnoscRezerwacjiService
             );
 
             return $rezerwacja;
+        });
+    }
+
+    /**
+     * Przenosi istniejącą rezerwację na nowy termin (zachowując jej czas trwania)
+     * i w razie potrzeby przydziela inne stanowisko. Zwraca false, jeśli termin jest niedostępny.
+     */
+    public function zmienTermin(Rezerwacja $rezerwacja, Carbon $start): bool
+    {
+        return DB::transaction(function () use ($rezerwacja, $start) {
+            Stanowisko::lockForUpdate()->get();
+
+            $rezerwacja->load('uslugi');
+            $czas = $rezerwacja->laczny_czas;
+
+            $stanowisko = $this->znajdzStanowisko($rezerwacja->uslugi, $start, $rezerwacja->id_rezerwacji, $czas);
+            if (!$stanowisko) {
+                return false;
+            }
+
+            $rezerwacja->update([
+                'id_stanowiska'      => $stanowisko->id_stanowiska,
+                'termin_rozpoczecia' => $start,
+                'termin_zakonczenia' => $start->copy()->addMinutes($czas),
+            ]);
+
+            return true;
         });
     }
 
