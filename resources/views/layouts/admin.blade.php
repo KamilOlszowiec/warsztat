@@ -36,6 +36,10 @@
                class="nav-link flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-zinc-300 {{ request()->routeIs('admin.services.*') ? 'active' : '' }}">
                 Usługi
             </a>
+            <a href="{{ route('admin.workbays.index') }}"
+               class="nav-link flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-zinc-300 {{ request()->routeIs('admin.workbays.*') ? 'active' : '' }}">
+                Stanowiska
+            </a>
             <a href="{{ route('admin.schedule.index') }}"
                class="nav-link flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-zinc-300 {{ request()->routeIs('admin.schedule.*') ? 'active' : '' }}">
                 Godziny pracy

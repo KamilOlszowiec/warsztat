@@ -102,4 +102,6 @@ Route::middleware(['auth', 'verified', 'role:administrator'])->prefix('admin')->
 
     Route::get('/reservations', [AdminRezerwacjaController::class, 'index'])->name('reservations.index');
     Route::delete('/reservations/{reservation}', [AdminRezerwacjaController::class, 'destroy'])->name('reservations.destroy');
+
+    Route::resource('workbays', \App\Http\Controllers\Admin\StanowiskoController::class)->except('show');
 });

@@ -20,6 +20,7 @@
                 <th class="px-4 py-3 font-mono text-xs text-zinc-500">NAZWA</th>
                 <th class="px-4 py-3 font-mono text-xs text-zinc-500">CENA</th>
                 <th class="px-4 py-3 font-mono text-xs text-zinc-500">CZAS</th>
+                <th class="px-4 py-3 font-mono text-xs text-zinc-500">STANOWISKO</th>
                 <th class="px-4 py-3 font-mono text-xs text-zinc-500">STATUS</th>
                 <th class="px-4 py-3 font-mono text-xs text-zinc-500 text-right">AKCJE</th>
             </tr>
@@ -30,6 +31,7 @@
                     <td class="px-4 py-3 text-zinc-200">{{ $usluga->nazwa }}</td>
                     <td class="px-4 py-3 text-zinc-400">{{ number_format($usluga->cena, 2) }} zł</td>
                     <td class="px-4 py-3 text-zinc-400">{{ $usluga->czas_trwania }} min</td>
+                    <td class="px-4 py-3 text-zinc-400">{{ $usluga->wymaganie_etykieta }}</td>
                     <td class="px-4 py-3">
                         @if ($usluga->czy_aktywna)
                             <span class="text-xs font-mono px-2 py-1 bg-green-900/30 text-green-400" style="border-radius: 2px;">AKTYWNA</span>
@@ -49,7 +51,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" class="px-4 py-6 text-center text-zinc-500">Brak dodanych usług.</td>
+                    <td colspan="6" class="px-4 py-6 text-center text-zinc-500">Brak dodanych usług.</td>
                 </tr>
             @endforelse
         </tbody>
