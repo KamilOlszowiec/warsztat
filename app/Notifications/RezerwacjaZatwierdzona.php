@@ -32,7 +32,7 @@ class RezerwacjaZatwierdzona extends Notification
             ->subject('Twoja rezerwacja została zatwierdzona')
             ->greeting('Dzień dobry, ' . $notifiable->imie . '!')
             ->line('Twoja rezerwacja została zatwierdzona przez warsztat.')
-            ->line('Usługa: ' . $this->rezerwacja->usluga->nazwa)
+            ->line('Usługi: ' . $this->rezerwacja->nazwy_uslug)
             ->line('Pojazd: ' . $this->rezerwacja->pojazd->marka . ' ' . $this->rezerwacja->pojazd->model)
             ->line('Termin: ' . $this->rezerwacja->termin_rozpoczecia->format('d.m.Y H:i'))
             ->action('Zobacz szczegóły rezerwacji', $url)

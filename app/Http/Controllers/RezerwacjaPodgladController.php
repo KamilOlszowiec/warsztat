@@ -12,7 +12,7 @@ class RezerwacjaPodgladController extends Controller
             abort(403, 'Link jest nieprawidłowy lub wygasł.');
         }
 
-        $reservation->load(['usluga', 'pojazd', 'klient']);
+        $reservation->load(['uslugi', 'pojazd', 'klient']);
 
         return view('reservations.public-show', ['rezerwacja' => $reservation]);
     }

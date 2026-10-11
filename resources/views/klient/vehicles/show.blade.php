@@ -51,7 +51,7 @@
         <tbody>
             @forelse ($rezerwacje as $r)
                 <tr class="border-b border-zinc-800/50 hover:bg-white/[0.02]">
-                    <td class="px-4 py-3 text-zinc-200">{{ $r->usluga->nazwa }}</td>
+                    <td class="px-4 py-3 text-zinc-200">{{ $r->nazwy_uslug }}</td>
                     <td class="px-4 py-3 text-zinc-400">{{ $r->termin_rozpoczecia->format('d.m.Y H:i') }}</td>
                     <td class="px-4 py-3">
                         @php

@@ -39,7 +39,7 @@
                     <td class="px-4 py-3 text-zinc-200">{{ $r->klient->imie }} {{ $r->klient->nazwisko }}</td>
                     <td class="px-4 py-3 text-zinc-400">{{ $r->pojazd->marka }} {{ $r->pojazd->model }} ({{ $r->pojazd->numer_rejestracyjny }})</td>
                     <td class="px-4 py-3 text-zinc-400">
-                        {{ $r->usluga->nazwa }}
+                        {{ $r->nazwy_uslug }}
                         @if ($r->uwagi)
                             <p class="text-xs text-zinc-600 mt-0.5">"{{ $r->uwagi }}"</p>
                         @endif

@@ -4,7 +4,7 @@
 @section('content')
 <p class="text-sm font-mono text-orange-500 mb-1">ZMIANA TERMINU</p>
 <h1 class="text-2xl font-bold text-zinc-50 mb-6">
-    {{ $rezerwacja->klient->imie }} {{ $rezerwacja->klient->nazwisko }} — {{ $rezerwacja->usluga->nazwa }}
+    {{ $rezerwacja->klient->imie }} {{ $rezerwacja->klient->nazwisko }} — {{ $rezerwacja->nazwy_uslug }}
 </h1>
 
 <form method="POST" action="{{ route('pracownik.reservations.update-termin', $rezerwacja) }}" class="bg-[#1F2128] border border-zinc-800 p-6 max-w-md space-y-4" style="border-radius: 2px;">

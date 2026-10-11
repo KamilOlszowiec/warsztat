@@ -33,7 +33,7 @@
                 <tr class="border-b border-zinc-800/50 hover:bg-white/[0.02]">
                     <td class="px-4 py-3 text-zinc-200">{{ $r->klient->imie }} {{ $r->klient->nazwisko }}</td>
                     <td class="px-4 py-3 text-zinc-400">{{ $r->pojazd->marka }} {{ $r->pojazd->model }}</td>
-                    <td class="px-4 py-3 text-zinc-400">{{ $r->usluga->nazwa }}</td>
+                    <td class="px-4 py-3 text-zinc-400">{{ $r->nazwy_uslug }}</td>
                     <td class="px-4 py-3 text-zinc-400">{{ $r->termin_rozpoczecia->format('d.m.Y H:i') }}</td>
                     <td class="px-4 py-3 text-zinc-500">{{ $r->pracownik ? $r->pracownik->imie . ' ' . $r->pracownik->nazwisko : '—' }}</td>
                     <td class="px-4 py-3">

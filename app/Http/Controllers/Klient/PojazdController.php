@@ -77,7 +77,7 @@ class PojazdController extends Controller
         $this->authorizeOwnership($vehicle);
 
         $rezerwacje = $vehicle->rezerwacje()
-            ->with('usluga')
+            ->with('uslugi')
             ->orderByDesc('termin_rozpoczecia')
             ->get();
 

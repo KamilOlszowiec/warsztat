@@ -30,7 +30,7 @@ class UslugaController extends Controller
                 }
             }],
             'czy_aktywna' => ['nullable', 'boolean'],
-            'maks_jednoczesnie' => ['required', 'integer', 'min:1', 'max:20'],
+            'wymagany_typ_stanowiska' => ['required', 'in:dowolne,podnosnik,kanal,plaskie,diagnostyczne'],
         ]);
 
         $data['czy_aktywna'] = $request->boolean('czy_aktywna');
@@ -57,7 +57,7 @@ class UslugaController extends Controller
                 }
             }],
             'czy_aktywna' => ['nullable', 'boolean'],
-            'maks_jednoczesnie' => ['required', 'integer', 'min:1', 'max:20'],
+            'wymagany_typ_stanowiska' => ['required', 'in:dowolne,podnosnik,kanal,plaskie,diagnostyczne'],
         ]);
 
         $data['czy_aktywna'] = $request->boolean('czy_aktywna');

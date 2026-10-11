@@ -2,84 +2,110 @@
 namespace App\Http\Controllers\Klient;
 
 use App\Http\Controllers\Controller;
-use App\Models\GodzinyPracy;
 use App\Models\Pojazd;
 use App\Models\Rezerwacja;
 use App\Models\Usluga;
+use App\Services\DostepnoscRezerwacjiService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
-class RezerwacjaController  extends Controller
+class RezerwacjaController extends Controller
 {
+    public function __construct(private DostepnoscRezerwacjiService $dostepnosc)
+    {
+    }
+
     public function index()
     {
         $rezerwacje = Rezerwacja::where('id_klienta', auth()->id())
-            ->with(['pojazd', 'usluga'])
+            ->with(['pojazd', 'uslugi'])
             ->orderByDesc('termin_rozpoczecia')
             ->get();
 
         return view('klient.reservations.index', compact('rezerwacje'));
     }
 
-    public function create(Request $request)
+    public function create()
     {
-        $uslugi = Usluga::where('czy_aktywna', true)->orderBy('nazwa')->get();
+        $uslugi = Usluga::aktywne()->orderBy('nazwa')->get();
         $pojazdy = auth()->user()->pojazdy()->orderBy('marka')->get();
 
-        $wybranaUsluga = null;
-        $sloty = [];
+        return view('klient.reservations.create', compact('uslugi', 'pojazdy'));
+    }
 
-        if ($request->filled('usluga_id') && $request->filled('data')) {
-            $wybranaUsluga = Usluga::find($request->usluga_id);
-            if ($wybranaUsluga) {
-                $sloty = $this->dostepneSloty($wybranaUsluga, $request->data);
-            }
+    /**
+     * Endpoint JSON: wolne godziny dla wybranych usług i dnia.
+     */
+    public function dostepneTerminy(Request $request)
+    {
+        $dane = $request->validate([
+            'uslugi'   => ['required', 'array', 'min:1'],
+            'uslugi.*' => ['integer', 'distinct', Rule::exists('uslugi', 'id_uslugi')->where('czy_aktywna', true)],
+            'data'     => ['required', 'date', 'after_or_equal:today'],
+        ]);
+
+        $uslugi = Usluga::aktywne()->whereIn('id_uslugi', $dane['uslugi'])->get();
+        $lacznyCzas = $this->dostepnosc->lacznyCzas($uslugi);
+
+        if (empty($this->dostepnosc->dozwoloneTypy($uslugi))) {
+            return response()->json([
+                'godziny'     => [],
+                'laczny_czas' => $lacznyCzas,
+                'komunikat'   => 'Wybranych usług nie da się wykonać podczas jednej wizyty – umów je osobno.',
+            ]);
         }
 
-        return view('klient.reservations.create', [
-            'uslugi' => $uslugi,
-            'pojazdy' => $pojazdy,
-            'sloty' => $sloty,
-            'wybranaUsluga' => $wybranaUsluga,
-            'wybranaData' => $request->data,
+        $godziny = $this->dostepnosc->dostepneGodziny($uslugi, $dane['data']);
+
+        return response()->json([
+            'godziny'     => $godziny,
+            'laczny_czas' => $lacznyCzas,
+            'komunikat'   => empty($godziny) ? 'Brak wolnych terminów w wybranym dniu.' : null,
         ]);
     }
 
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'usluga_id' => ['required', 'exists:uslugi,id_uslugi'],
+        $dane = $request->validate([
+            'uslugi'    => ['required', 'array', 'min:1'],
+            'uslugi.*'  => ['integer', 'distinct', Rule::exists('uslugi', 'id_uslugi')->where('czy_aktywna', true)],
             'pojazd_id' => ['required', 'exists:pojazdy,id_pojazdu'],
-            'data' => ['required', 'date', 'after_or_equal:today'],
-            'godzina' => ['required', 'date_format:H:i'],
-            'uwagi' => ['nullable', 'string', 'max:500'],
+            'data'      => ['required', 'date', 'after_or_equal:today'],
+            'godzina'   => ['required', 'date_format:H:i'],
+            'uwagi'     => ['nullable', 'string', 'max:500'],
+        ], [
+            'uslugi.required' => 'Wybierz co najmniej jedną usługę.',
         ]);
 
-        $pojazd = Pojazd::findOrFail($data['pojazd_id']);
+        $pojazd = Pojazd::findOrFail($dane['pojazd_id']);
         if ($pojazd->id_uzytkownika !== auth()->id()) {
             abort(403, 'Ten pojazd nie należy do Ciebie.');
         }
 
-        $usluga = Usluga::findOrFail($data['usluga_id']);
+        $uslugi = Usluga::aktywne()->whereIn('id_uslugi', $dane['uslugi'])->get();
 
-        $start = Carbon::parse($data['data'] . ' ' . $data['godzina']);
-        $koniec = $start->copy()->addMinutes($usluga->czas_trwania);
-
-        // Ponowna weryfikacja kolizji po stronie serwera — nie ufamy sam samym slotom wygenerowanym wcześniej,
-        // bo między wyświetleniem formularza a wysłaniem ktoś inny mógł zająć ten termin.
-        if (!$this->slotWolny($usluga, $start, $koniec)) {
-            return back()->withErrors(['godzina' => 'Ten termin został już zajęty. Wybierz inny.'])->withInput();
+        if (empty($this->dostepnosc->dozwoloneTypy($uslugi))) {
+            return back()
+                ->withErrors(['uslugi' => 'Wybranych usług nie da się wykonać podczas jednej wizyty – umów je osobno.'])
+                ->withInput();
         }
 
-        Rezerwacja::create([
+        $start = Carbon::parse($dane['data'] . ' ' . $dane['godzina']);
+
+        // Serwis ponownie sprawdza termin w transakcji – nie ufamy godzinie z formularza,
+        // bo między wyświetleniem a wysłaniem ktoś inny mógł ją zająć.
+        $rezerwacja = $this->dostepnosc->utworzRezerwacje([
             'id_klienta' => auth()->id(),
             'id_pojazdu' => $pojazd->id_pojazdu,
-            'id_uslugi' => $usluga->id_uslugi,
-            'termin_rozpoczecia' => $start,
-            'termin_zakonczenia' => $koniec,
-            'status' => 'oczekująca',
-            'uwagi' => $data['uwagi'] ?? null,
-        ]);
+            'uwagi'      => $dane['uwagi'] ?? null,
+        ], $uslugi, $start);
+
+        if (!$rezerwacja) {
+            return back()
+                ->withErrors(['godzina' => 'Ten termin jest już niedostępny. Wybierz inny.'])
+                ->withInput();
+        }
 
         return redirect()->route('klient.reservations.index')
             ->with('status', 'Rezerwacja została złożona i oczekuje na potwierdzenie.');
@@ -102,53 +128,5 @@ class RezerwacjaController  extends Controller
         $reservation->update(['status' => 'anulowana']);
 
         return back()->with('status', 'Rezerwacja została anulowana.');
-    }
-
-    /**
-     * Generuje listę dostępnych godzin startowych dla danej usługi i dnia,
-     * uwzględniając godziny pracy warsztatu oraz limit maks_jednoczesnie usługi.
-     */
-    private function dostepneSloty(Usluga $usluga, string $data): array
-    {
-        $dzien = Carbon::parse($data);
-        $godzinyPracy = GodzinyPracy::where('dzien_tygodnia', $dzien->dayOfWeekIso)->first();
-
-        if (!$godzinyPracy || !$godzinyPracy->czy_czynne) {
-            return [];
-        }
-
-        $otwarcie = Carbon::parse($data . ' ' . $godzinyPracy->godzina_otwarcia);
-        $zamkniecie = Carbon::parse($data . ' ' . $godzinyPracy->godzina_zamkniecia);
-
-        $sloty = [];
-        $obecny = $otwarcie->copy();
-
-        while ($obecny->copy()->addMinutes($usluga->czas_trwania)->lte($zamkniecie)) {
-            $start = $obecny->copy();
-            $koniec = $obecny->copy()->addMinutes($usluga->czas_trwania);
-
-            if ($start->gt(now()) && $this->slotWolny($usluga, $start, $koniec)) {
-                $sloty[] = $start->format('H:i');
-            }
-
-            $obecny->addMinutes(30);
-        }
-
-        return $sloty;
-    }
-
-    /**
-     * Sprawdza, czy w podanym przedziale czasowym usługa ma jeszcze wolną "pojemność"
-     * (liczba nachodzących rezerwacji < maks_jednoczesnie tej usługi).
-     */
-    private function slotWolny(Usluga $usluga, Carbon $start, Carbon $koniec): bool
-    {
-        $liczbaZajetych = Rezerwacja::where('id_uslugi', $usluga->id_uslugi)
-            ->whereNotIn('status', ['odrzucona', 'anulowana'])
-            ->where('termin_rozpoczecia', '<', $koniec)
-            ->where('termin_zakonczenia', '>', $start)
-            ->count();
-
-        return $liczbaZajetych < $usluga->maks_jednoczesnie;
     }
 }

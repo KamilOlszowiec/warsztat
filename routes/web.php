@@ -66,10 +66,12 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware(['auth', 'verified', 'role:klient'])->prefix('klient')->name('klient.')->group(function () {
+    
     Route::get('/', fn() => view('klient.dashboard'))->name('dashboard');
 
     Route::resource('vehicles', PojazdController::class)->parameters(['vehicles' => 'vehicle']);
 
+    Route::get('reservations/dostepne-terminy', [\App\Http\Controllers\Klient\RezerwacjaController::class, 'dostepneTerminy'])->name('reservations.availability');
     Route::get('/reservations', [KlientRezerwacjaController::class, 'index'])->name('reservations.index');
     Route::get('/reservations/create', [KlientRezerwacjaController::class, 'create'])->name('reservations.create');
     Route::post('/reservations', [KlientRezerwacjaController::class, 'store'])->name('reservations.store');

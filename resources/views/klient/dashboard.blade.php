@@ -6,7 +6,7 @@
     $nastepnaRezerwacja = \App\Models\Rezerwacja::where('id_klienta', auth()->id())
         ->whereIn('status', ['oczekująca', 'zatwierdzona'])
         ->where('termin_rozpoczecia', '>=', now())
-        ->with(['usluga', 'pojazd'])
+        ->with(['uslugi', 'pojazd'])
         ->orderBy('termin_rozpoczecia')
         ->first();
 
@@ -28,7 +28,7 @@
             <p class="text-xs font-mono text-orange-100 mb-2 tracking-wide">NAJBLIŻSZA WIZYTA</p>
             <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
                 <div>
-                    <h2 class="text-2xl font-bold text-white mb-1">{{ $nastepnaRezerwacja->usluga->nazwa }}</h2>
+                    <h2 class="text-2xl font-bold text-white mb-1">{{ $nastepnaRezerwacja->nazwy_uslug }}</h2>
                     <p class="text-orange-100 text-sm">
                         {{ $nastepnaRezerwacja->pojazd->marka }} {{ $nastepnaRezerwacja->pojazd->model }}
                         · {{ $nastepnaRezerwacja->termin_rozpoczecia->translatedFormat('d F, H:i') }}

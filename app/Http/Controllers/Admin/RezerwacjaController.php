@@ -11,7 +11,7 @@ class RezerwacjaController extends Controller
     {
         $status = $request->get('status', 'wszystkie');
 
-        $query = Rezerwacja::with(['klient', 'pojazd', 'usluga', 'pracownik'])
+        $query = Rezerwacja::with(['klient', 'pojazd', 'uslugi', 'pracownik'])
             ->orderByDesc('termin_rozpoczecia');
 
         if ($status !== 'wszystkie') {

@@ -44,7 +44,7 @@
                 </div>
                 <div>
                     <dt class="text-xs font-mono text-zinc-500 mb-1">USŁUGA</dt>
-                    <dd class="text-zinc-200">{{ $rezerwacja->usluga->nazwa }}</dd>
+                    <dd class="text-zinc-200">{{ $rezerwacja->nazwy_uslug }}</dd>
                 </div>
                 <div>
                     <dt class="text-xs font-mono text-zinc-500 mb-1">POJAZD</dt>

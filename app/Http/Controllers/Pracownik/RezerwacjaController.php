@@ -14,7 +14,7 @@ class RezerwacjaController extends Controller
     {
         $status = $request->get('status', 'oczekująca');
 
-        $query = Rezerwacja::with(['klient', 'pojazd', 'usluga'])
+        $query = Rezerwacja::with(['klient', 'pojazd', 'uslugi'])
             ->orderBy('termin_rozpoczecia');
 
         if ($status === 'dzisiaj') {
@@ -40,7 +40,7 @@ class RezerwacjaController extends Controller
             'id_pracownika' => auth()->id(),
         ]);
 
-        $reservation->load(['usluga', 'pojazd']);
+        $reservation->load(['uslugi', 'pojazd']);
 
         try {
             $reservation->klient->notify(new RezerwacjaZatwierdzona($reservation));
