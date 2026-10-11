@@ -104,4 +104,12 @@ Route::middleware(['auth', 'verified', 'role:administrator'])->prefix('admin')->
     Route::delete('/reservations/{reservation}', [AdminRezerwacjaController::class, 'destroy'])->name('reservations.destroy');
 
     Route::resource('workbays', \App\Http\Controllers\Admin\StanowiskoController::class)->except('show');
+
+    Route::get('shifts', [\App\Http\Controllers\Admin\GrafikController::class, 'index'])->name('shifts.index');
+    Route::put('shifts', [\App\Http\Controllers\Admin\GrafikController::class, 'zapisz'])->name('shifts.save');
+    Route::post('shifts/kopiuj', [\App\Http\Controllers\Admin\GrafikController::class, 'kopiuj'])->name('shifts.copy');
+    Route::post('shifts/wypelnij', [\App\Http\Controllers\Admin\GrafikController::class, 'wypelnij'])->name('shifts.fill');
+    Route::resource('days-off', \App\Http\Controllers\Admin\DzienWolnyController::class)
+        ->only(['index', 'store', 'destroy'])
+        ->parameters(['days-off' => 'dzien']);
 });

@@ -44,6 +44,14 @@
                class="nav-link flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-zinc-300 {{ request()->routeIs('admin.schedule.*') ? 'active' : '' }}">
                 Godziny pracy
             </a>
+            <a href="{{ route('admin.shifts.index') }}"
+               class="nav-link flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-zinc-300 {{ request()->routeIs('admin.shifts.*') ? 'active' : '' }}">
+                Grafik
+            </a>
+            <a href="{{ route('admin.days-off.index') }}"
+               class="nav-link flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-zinc-300 {{ request()->routeIs('admin.days-off.*') ? 'active' : '' }}">
+                Dni wolne
+            </a>
             <a href="{{ route('admin.reservations.index') }}"
                class="nav-link flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium text-zinc-300 {{ request()->routeIs('admin.reservations.*') ? 'active' : '' }}">
                 Rezerwacje
