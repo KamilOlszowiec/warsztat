@@ -19,7 +19,7 @@ class RezerwacjaController extends Controller
     {
         $status = $request->get('status', 'oczekująca');
 
-        $query = Rezerwacja::with(['klient', 'pojazd', 'uslugi'])
+        $query = Rezerwacja::with(['klient', 'pojazd', 'uslugi', 'stanowisko', 'mechanik'])
             ->orderBy('termin_rozpoczecia');
 
         if ($status === 'dzisiaj') {

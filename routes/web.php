@@ -89,6 +89,8 @@ Route::middleware(['auth', 'verified', 'role:pracownik,administrator'])->prefix(
     Route::put('/reservations/{reservation}/termin', [PracownikRezerwacjaController::class, 'updateTermin'])->name('reservations.update-termin');
 
     Route::get('/clients', [PracownikKlientController::class, 'index'])->name('clients.index');
+    Route::get('reservations/{reservation}/przydzial', [\App\Http\Controllers\Pracownik\PrzydzialController::class, 'edit'])->name('reservations.przydzial');
+    Route::put('reservations/{reservation}/przydzial', [\App\Http\Controllers\Pracownik\PrzydzialController::class, 'update'])->name('reservations.przydzial.update');
 });
 
 Route::middleware(['auth', 'verified', 'role:administrator'])->prefix('admin')->name('admin.')->group(function () {
