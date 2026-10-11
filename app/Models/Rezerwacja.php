@@ -11,7 +11,7 @@ class Rezerwacja extends Model
     protected $primaryKey = 'id_rezerwacji';
 
     protected $fillable = [
-        'id_klienta', 'id_pojazdu', 'id_stanowiska', 'id_pracownika',
+        'id_klienta', 'id_pojazdu', 'id_stanowiska', 'id_mechanika', 'id_pracownika',
         'termin_rozpoczecia', 'termin_zakonczenia', 'status', 'uwagi', 'powod_odrzucenia',
     ];
 
@@ -46,6 +46,13 @@ class Rezerwacja extends Model
         return $this->belongsTo(Stanowisko::class, 'id_stanowiska', 'id_stanowiska');
     }
 
+    // Mechanik wykonujący wizytę
+    public function mechanik()
+    {
+        return $this->belongsTo(Uzytkownik::class, 'id_mechanika', 'id_uzytkownika');
+    }
+
+    // Pracownik, który obsłużył rezerwację (zatwierdził / odrzucił)
     public function pracownik()
     {
         return $this->belongsTo(Uzytkownik::class, 'id_pracownika', 'id_uzytkownika');

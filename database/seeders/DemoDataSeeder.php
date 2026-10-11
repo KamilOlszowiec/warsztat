@@ -1,6 +1,9 @@
 <?php
 namespace Database\Seeders;
 
+use App\Models\DzienWolny;
+use App\Models\GodzinyPracy;
+use App\Models\GrafikPracownika;
 use App\Models\Pojazd;
 use App\Models\Rezerwacja;
 use App\Models\Stanowisko;
@@ -28,7 +31,7 @@ class DemoDataSeeder extends Seeder
             'rola' => 'administrator', 'email_verified_at' => now(),
         ]);
 
-        // Pracownicy
+        // Pracownicy (mechanicy)
         $pracownik1 = Uzytkownik::create([
             'imie' => 'Piotr', 'nazwisko' => 'Nowak',
             'email' => 'piotr@warsztat.pl', 'password' => Hash::make('haslo1234'),
@@ -74,6 +77,19 @@ class DemoDataSeeder extends Seeder
             'cena' => 180.00, 'czas_trwania' => 60, 'wymagany_typ_stanowiska' => 'plaskie', 'czy_aktywna' => true,
         ]);
 
+        // Dzień wolny warsztatu: najbliższe 11 listopada
+        $swieto = Carbon::create(now()->year, 11, 11);
+        if ($swieto->isPast()) {
+            $swieto->addYear();
+        }
+        DzienWolny::create(['data' => $swieto->toDateString(), 'opis' => 'Narodowe Święto Niepodległości']);
+
+        // Grafik mechaników na 6 tygodni wg godzin pracy warsztatu
+        $urlopTomasza = $this->dzienRoboczy(4);
+        $this->grafik([$pracownik1, $pracownik2], 42, [$swieto], [
+            $pracownik2->id_uzytkownika => [$urlopTomasza->toDateString()],
+        ]);
+
         // Pojazdy
         $pojazd1 = Pojazd::create([
             'id_uzytkownika' => $klient1->id_uzytkownika,
@@ -89,38 +105,79 @@ class DemoDataSeeder extends Seeder
         // Rezerwacje w różnych stanach
         $this->rezerwacja([
             'id_klienta' => $klient1->id_uzytkownika, 'id_pojazdu' => $pojazd1->id_pojazdu,
-            'id_stanowiska' => $kanal->id_stanowiska, 'id_pracownika' => $pracownik1->id_uzytkownika,
+            'id_stanowiska' => $kanal->id_stanowiska, 'id_mechanika' => $pracownik1->id_uzytkownika,
+            'id_pracownika' => $pracownik1->id_uzytkownika,
             'termin_rozpoczecia' => $this->dzienRoboczy(2)->setTime(10, 0),
             'status' => 'zatwierdzona',
         ], [$wymianaOleju, $diagnostyka]); // wizyta z dwiema usługami
 
         $this->rezerwacja([
             'id_klienta' => $klient2->id_uzytkownika, 'id_pojazdu' => $pojazd2->id_pojazdu,
-            'id_stanowiska' => $podnosnik1->id_stanowiska,
+            'id_stanowiska' => $podnosnik1->id_stanowiska, 'id_mechanika' => $pracownik1->id_uzytkownika,
             'termin_rozpoczecia' => $this->dzienRoboczy(3)->setTime(11, 0),
             'status' => 'oczekująca',
         ], [$przeglad]);
 
         $this->rezerwacja([
             'id_klienta' => $klient1->id_uzytkownika, 'id_pojazdu' => $pojazd1->id_pojazdu,
-            'id_stanowiska' => $podnosnik2->id_stanowiska,
+            'id_stanowiska' => $podnosnik2->id_stanowiska, 'id_mechanika' => $pracownik2->id_uzytkownika,
             'termin_rozpoczecia' => $this->dzienRoboczy(3)->setTime(11, 0),
             'status' => 'oczekująca',
-        ], [$hamulce]); // ta sama godzina co wyżej, ale inne stanowisko
+        ], [$hamulce]); // ta sama godzina co wyżej: drugie stanowisko i drugi mechanik
 
         $this->rezerwacja([
             'id_klienta' => $klient1->id_uzytkownika, 'id_pojazdu' => $pojazd1->id_pojazdu,
-            'id_stanowiska' => $podnosnik1->id_stanowiska, 'id_pracownika' => $pracownik2->id_uzytkownika,
+            'id_stanowiska' => $podnosnik1->id_stanowiska, 'id_mechanika' => $pracownik2->id_uzytkownika,
+            'id_pracownika' => $pracownik2->id_uzytkownika,
             'termin_rozpoczecia' => $this->dzienRoboczy(-10)->setTime(9, 0),
             'status' => 'zakończona',
         ], [$diagnostyka]);
 
         $this->rezerwacja([
             'id_klienta' => $klient2->id_uzytkownika, 'id_pojazdu' => $pojazd2->id_pojazdu,
-            'id_stanowiska' => $kanal->id_stanowiska, 'id_pracownika' => $pracownik1->id_uzytkownika,
+            'id_stanowiska' => $kanal->id_stanowiska, 'id_mechanika' => $pracownik1->id_uzytkownika,
+            'id_pracownika' => $pracownik1->id_uzytkownika,
             'termin_rozpoczecia' => $this->dzienRoboczy(-5)->setTime(14, 0),
             'status' => 'odrzucona', 'powod_odrzucenia' => 'Brak dostępnych części na magazynie.',
         ], [$wymianaOleju]);
+    }
+
+    /**
+     * Zmiany pracowników na $dni dni od dziś, zgodnie z godzinami pracy warsztatu.
+     * Pomija dni zamknięte, dni wolne warsztatu i urlopy ($urlopy: id_pracownika => [daty]).
+     */
+    private function grafik(array $pracownicy, int $dni, array $dniWolne, array $urlopy): void
+    {
+        $godzinyPracy = GodzinyPracy::all()->keyBy('dzien_tygodnia');
+
+        if ($godzinyPracy->isEmpty()) {
+            $this->command->warn('Brak godzin pracy warsztatu – grafik nie został utworzony. Uruchom seeder godzin pracy przed DemoDataSeeder.');
+            return;
+        }
+
+        $wolne = array_map(fn (Carbon $d) => $d->toDateString(), $dniWolne);
+
+        for ($i = 0; $i < $dni; $i++) {
+            $dzien = Carbon::today()->addDays($i);
+            $godziny = $godzinyPracy->get($dzien->dayOfWeekIso);
+
+            if (!$godziny || !$godziny->czy_czynne || in_array($dzien->toDateString(), $wolne, true)) {
+                continue;
+            }
+
+            foreach ($pracownicy as $p) {
+                if (in_array($dzien->toDateString(), $urlopy[$p->id_uzytkownika] ?? [], true)) {
+                    continue;
+                }
+
+                GrafikPracownika::create([
+                    'id_pracownika' => $p->id_uzytkownika,
+                    'data'          => $dzien->toDateString(),
+                    'godzina_od'    => $godziny->godzina_otwarcia,
+                    'godzina_do'    => $godziny->godzina_zamkniecia,
+                ]);
+            }
+        }
     }
 
     /**
