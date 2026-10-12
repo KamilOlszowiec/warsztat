@@ -11,7 +11,7 @@ class Rezerwacja extends Model
     protected $primaryKey = 'id_rezerwacji';
 
     protected $fillable = [
-        'id_klienta', 'id_pojazdu', 'id_stanowiska', 'id_mechanika', 'id_pracownika',
+        'id_klienta', 'id_pojazdu', 'id_mechanika', 'id_pracownika',
         'termin_rozpoczecia', 'termin_zakonczenia', 'status', 'uwagi', 'powod_odrzucenia',
     ];
 
@@ -39,11 +39,6 @@ class Rezerwacja extends Model
     {
         return $this->belongsToMany(Usluga::class, 'rezerwacja_usluga', 'id_rezerwacji', 'id_uslugi')
             ->withPivot('cena', 'czas_trwania');
-    }
-
-    public function stanowisko()
-    {
-        return $this->belongsTo(Stanowisko::class, 'id_stanowiska', 'id_stanowiska');
     }
 
     // Mechanik wykonujący wizytę

@@ -6,7 +6,7 @@ use App\Models\GodzinyPracy;
 use App\Models\GrafikPracownika;
 use App\Models\Pojazd;
 use App\Models\Rezerwacja;
-use App\Models\Stanowisko;
+use App\Models\Specjalizacja;
 use App\Models\Usluga;
 use App\Models\Uzytkownik;
 use Carbon\Carbon;
@@ -17,12 +17,11 @@ class DemoDataSeeder extends Seeder
 {
     public function run(): void
     {
-        // Stanowiska warsztatowe
-        $this->call(StanowiskoSeeder::class);
-
-        $podnosnik1 = Stanowisko::where('nazwa', 'Podnośnik 1')->first();
-        $podnosnik2 = Stanowisko::where('nazwa', 'Podnośnik 2')->first();
-        $kanal      = Stanowisko::where('nazwa', 'Kanał')->first();
+        // Specjalizacje
+        $ogolna      = Specjalizacja::create(['nazwa' => 'Mechanika ogólna']);
+        $elektryka   = Specjalizacja::create(['nazwa' => 'Elektryka samochodowa']);
+        $klimatyzacja = Specjalizacja::create(['nazwa' => 'Klimatyzacja']);
+        $diagnostyka = Specjalizacja::create(['nazwa' => 'Diagnostyka']);
 
         // Administrator
         Uzytkownik::create([
@@ -42,6 +41,17 @@ class DemoDataSeeder extends Seeder
             'email' => 'tomasz@warsztat.pl', 'password' => Hash::make('haslo1234'),
             'rola' => 'pracownik', 'email_verified_at' => now(),
         ]);
+        $pracownik3 = Uzytkownik::create([
+            'imie' => 'Adam', 'nazwisko' => 'Kaczmarek',
+            'email' => 'adam@warsztat.pl', 'password' => Hash::make('haslo1234'),
+            'rola' => 'pracownik', 'email_verified_at' => now(),
+        ]);
+
+        // Specjalizacje pracowników
+        $ogolna->pracownicy()->attach([$pracownik1->id_uzytkownika, $pracownik2->id_uzytkownika]);
+        $diagnostyka->pracownicy()->attach([$pracownik2->id_uzytkownika]);
+        $elektryka->pracownicy()->attach([$pracownik2->id_uzytkownika, $pracownik3->id_uzytkownika]);
+        $klimatyzacja->pracownicy()->attach([$pracownik3->id_uzytkownika]);
 
         // Klienci
         $klient1 = Uzytkownik::create([
@@ -55,26 +65,30 @@ class DemoDataSeeder extends Seeder
             'telefon' => '500300400', 'rola' => 'klient', 'email_verified_at' => now(),
         ]);
 
-        // Usługi z wymaganym typem stanowiska
+        // Usługi z wymaganą specjalizacją
         $wymianaOleju = Usluga::create([
             'nazwa' => 'Wymiana oleju', 'opis' => 'Wymiana oleju silnikowego wraz z filtrem',
-            'cena' => 150.00, 'czas_trwania' => 30, 'wymagany_typ_stanowiska' => 'kanal', 'czy_aktywna' => true,
+            'cena' => 150.00, 'czas_trwania' => 30, 'id_specjalizacji' => $ogolna->id_specjalizacji, 'czy_aktywna' => true,
         ]);
         $przeglad = Usluga::create([
             'nazwa' => 'Przegląd okresowy', 'opis' => 'Pełny przegląd techniczny pojazdu',
-            'cena' => 250.00, 'czas_trwania' => 60, 'wymagany_typ_stanowiska' => 'podnosnik', 'czy_aktywna' => true,
+            'cena' => 250.00, 'czas_trwania' => 60, 'id_specjalizacji' => $ogolna->id_specjalizacji, 'czy_aktywna' => true,
         ]);
-        $diagnostyka = Usluga::create([
+        $diagnostykaKomp = Usluga::create([
             'nazwa' => 'Diagnostyka komputerowa', 'opis' => 'Odczyt i analiza błędów sterownika',
-            'cena' => 120.00, 'czas_trwania' => 30, 'wymagany_typ_stanowiska' => 'dowolne', 'czy_aktywna' => true,
+            'cena' => 120.00, 'czas_trwania' => 30, 'id_specjalizacji' => $diagnostyka->id_specjalizacji, 'czy_aktywna' => true,
         ]);
         $hamulce = Usluga::create([
             'nazwa' => 'Wymiana klocków hamulcowych', 'opis' => 'Wymiana klocków hamulcowych jednej osi',
-            'cena' => 200.00, 'czas_trwania' => 60, 'wymagany_typ_stanowiska' => 'podnosnik', 'czy_aktywna' => true,
+            'cena' => 200.00, 'czas_trwania' => 60, 'id_specjalizacji' => $ogolna->id_specjalizacji, 'czy_aktywna' => true,
         ]);
         Usluga::create([
             'nazwa' => 'Serwis klimatyzacji', 'opis' => 'Odgrzybianie i uzupełnienie czynnika chłodniczego',
-            'cena' => 180.00, 'czas_trwania' => 60, 'wymagany_typ_stanowiska' => 'plaskie', 'czy_aktywna' => true,
+            'cena' => 180.00, 'czas_trwania' => 60, 'id_specjalizacji' => $klimatyzacja->id_specjalizacji, 'czy_aktywna' => true,
+        ]);
+        Usluga::create([
+            'nazwa' => 'Naprawa instalacji elektrycznej', 'opis' => 'Lokalizacja i usunięcie usterki instalacji',
+            'cena' => 220.00, 'czas_trwania' => 90, 'id_specjalizacji' => $elektryka->id_specjalizacji, 'czy_aktywna' => true,
         ]);
 
         // Dzień wolny warsztatu: najbliższe 11 listopada
@@ -86,7 +100,7 @@ class DemoDataSeeder extends Seeder
 
         // Grafik mechaników na 6 tygodni wg godzin pracy warsztatu
         $urlopTomasza = $this->dzienRoboczy(4);
-        $this->grafik([$pracownik1, $pracownik2], 42, [$swieto], [
+        $this->grafik([$pracownik1, $pracownik2, $pracownik3], 42, [$swieto], [
             $pracownik2->id_uzytkownika => [$urlopTomasza->toDateString()],
         ]);
 
@@ -105,38 +119,35 @@ class DemoDataSeeder extends Seeder
         // Rezerwacje w różnych stanach
         $this->rezerwacja([
             'id_klienta' => $klient1->id_uzytkownika, 'id_pojazdu' => $pojazd1->id_pojazdu,
-            'id_stanowiska' => $kanal->id_stanowiska, 'id_mechanika' => $pracownik1->id_uzytkownika,
-            'id_pracownika' => $pracownik1->id_uzytkownika,
+            'id_mechanika' => $pracownik2->id_uzytkownika, 'id_pracownika' => $pracownik1->id_uzytkownika,
             'termin_rozpoczecia' => $this->dzienRoboczy(2)->setTime(10, 0),
             'status' => 'zatwierdzona',
-        ], [$wymianaOleju, $diagnostyka]); // wizyta z dwiema usługami
+        ], [$wymianaOleju, $diagnostykaKomp]); // dwie usługi – tylko Tomasz ma obie specjalizacje
 
         $this->rezerwacja([
             'id_klienta' => $klient2->id_uzytkownika, 'id_pojazdu' => $pojazd2->id_pojazdu,
-            'id_stanowiska' => $podnosnik1->id_stanowiska, 'id_mechanika' => $pracownik1->id_uzytkownika,
+            'id_mechanika' => $pracownik1->id_uzytkownika,
             'termin_rozpoczecia' => $this->dzienRoboczy(3)->setTime(11, 0),
             'status' => 'oczekująca',
         ], [$przeglad]);
 
         $this->rezerwacja([
             'id_klienta' => $klient1->id_uzytkownika, 'id_pojazdu' => $pojazd1->id_pojazdu,
-            'id_stanowiska' => $podnosnik2->id_stanowiska, 'id_mechanika' => $pracownik2->id_uzytkownika,
+            'id_mechanika' => $pracownik2->id_uzytkownika,
             'termin_rozpoczecia' => $this->dzienRoboczy(3)->setTime(11, 0),
             'status' => 'oczekująca',
-        ], [$hamulce]); // ta sama godzina co wyżej: drugie stanowisko i drugi mechanik
+        ], [$hamulce]); // ta sama godzina: obaj mechanicy ogólni zajęci
 
         $this->rezerwacja([
             'id_klienta' => $klient1->id_uzytkownika, 'id_pojazdu' => $pojazd1->id_pojazdu,
-            'id_stanowiska' => $podnosnik1->id_stanowiska, 'id_mechanika' => $pracownik2->id_uzytkownika,
-            'id_pracownika' => $pracownik2->id_uzytkownika,
+            'id_mechanika' => $pracownik2->id_uzytkownika, 'id_pracownika' => $pracownik2->id_uzytkownika,
             'termin_rozpoczecia' => $this->dzienRoboczy(-10)->setTime(9, 0),
             'status' => 'zakończona',
-        ], [$diagnostyka]);
+        ], [$diagnostykaKomp]);
 
         $this->rezerwacja([
             'id_klienta' => $klient2->id_uzytkownika, 'id_pojazdu' => $pojazd2->id_pojazdu,
-            'id_stanowiska' => $kanal->id_stanowiska, 'id_mechanika' => $pracownik1->id_uzytkownika,
-            'id_pracownika' => $pracownik1->id_uzytkownika,
+            'id_mechanika' => $pracownik1->id_uzytkownika, 'id_pracownika' => $pracownik1->id_uzytkownika,
             'termin_rozpoczecia' => $this->dzienRoboczy(-5)->setTime(14, 0),
             'status' => 'odrzucona', 'powod_odrzucenia' => 'Brak dostępnych części na magazynie.',
         ], [$wymianaOleju]);

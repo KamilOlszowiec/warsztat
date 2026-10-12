@@ -7,7 +7,6 @@ use App\Models\DzienWolny;
 use App\Models\GodzinyPracy;
 use App\Models\GrafikPracownika;
 use App\Models\Rezerwacja;
-use App\Models\Stanowisko;
 use App\Models\Uzytkownik;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -28,12 +27,49 @@ class DostepnoscRezerwacjiService
     }
 
     /**
-     * Typy stanowisk, na których da się wykonać WSZYSTKIE wybrane usługi.
-     * Pusta tablica = usług nie można połączyć w jednej wizycie.
+     * Id specjalizacji wymaganych przez wybrane usługi (bez powtórzeń).
      */
-    public function dozwoloneTypy(Collection $uslugi): array
+    public function wymaganeSpecjalizacje(Collection $uslugi): array
     {
-        return Stanowisko::dozwoloneTypyDla($uslugi->pluck('wymagany_typ_stanowiska'));
+        return $uslugi->pluck('id_specjalizacji')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Id pracowników, którzy mają WSZYSTKIE specjalizacje wymagane przez usługi.
+     */
+    public function uprawnieniMechanicy(Collection $uslugi): array
+    {
+        $wymagane = $this->wymaganeSpecjalizacje($uslugi);
+
+        if (empty($wymagane)) {
+            return Uzytkownik::where('rola', 'pracownik')
+                ->pluck('id_uzytkownika')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+        }
+
+        return DB::table('pracownik_specjalizacja as ps')
+            ->join('uzytkownicy as u', 'u.id_uzytkownika', '=', 'ps.id_pracownika')
+            ->where('u.rola', 'pracownik')
+            ->whereIn('ps.id_specjalizacji', $wymagane)
+            ->groupBy('ps.id_pracownika')
+            ->havingRaw('COUNT(DISTINCT ps.id_specjalizacji) = ?', [count($wymagane)])
+            ->pluck('ps.id_pracownika')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
+    /**
+     * Czy istnieje mechanik zdolny wykonać wszystkie usługi podczas jednej wizyty.
+     */
+    public function czyKtosMozeWykonac(Collection $uslugi): bool
+    {
+        return !empty($this->uprawnieniMechanicy($uslugi));
     }
 
     /**
@@ -44,19 +80,19 @@ class DostepnoscRezerwacjiService
     public function dostepneGodziny(Collection $uslugi, string $data, ?int $pomijanaRezerwacjaId = null, ?int $czas = null): array
     {
         $czas ??= $this->lacznyCzas($uslugi);
-        $typy = $this->dozwoloneTypy($uslugi);
+        $uprawnieni = $this->uprawnieniMechanicy($uslugi);
         $okno = $this->godzinyOtwarcia($data);
 
-        if ($czas <= 0 || empty($typy) || $okno === null) {
+        if ($czas <= 0 || empty($uprawnieni) || $okno === null) {
             return [];
         }
 
         [$otwarcie, $zamkniecie] = $okno;
 
         // Wszystkie dane dnia pobierane raz, dalej sprawdzanie w pamięci
-        $kontekst = $this->kontekstDnia($otwarcie, $zamkniecie, $typy, $pomijanaRezerwacjaId);
+        $kontekst = $this->kontekstDnia($otwarcie, $zamkniecie, $uprawnieni, $pomijanaRezerwacjaId);
 
-        if ($kontekst['stanowiska']->isEmpty() || $kontekst['zmiany']->isEmpty()) {
+        if ($kontekst['zmiany']->isEmpty()) {
             return [];
         }
 
@@ -66,7 +102,7 @@ class DostepnoscRezerwacjiService
         while ($start->copy()->addMinutes($czas)->lte($zamkniecie)) {
             $koniec = $start->copy()->addMinutes($czas);
 
-            if ($start->gt(now()) && $this->przydzial($kontekst, $start, $koniec) !== null) {
+            if ($start->gt(now()) && !empty($this->wolniMechanicy($kontekst, $start, $koniec))) {
                 $godziny[] = $start->format('H:i');
             }
 
@@ -77,15 +113,15 @@ class DostepnoscRezerwacjiService
     }
 
     /**
-     * Sprawdza pojedynczy termin. Zwraca ['stanowisko' => Stanowisko, 'id_mechanika' => int]
+     * Sprawdza pojedynczy termin i zwraca id mechanika do przydzielenia
      * albo null, jeśli termin jest niedostępny.
      */
-    public function znajdzPrzydzial(Collection $uslugi, Carbon $start, ?int $pomijanaRezerwacjaId = null, ?int $czas = null): ?array
+    public function znajdzMechanika(Collection $uslugi, Carbon $start, ?int $pomijanaRezerwacjaId = null, ?int $czas = null): ?int
     {
         $czas ??= $this->lacznyCzas($uslugi);
-        $typy = $this->dozwoloneTypy($uslugi);
+        $uprawnieni = $this->uprawnieniMechanicy($uslugi);
 
-        if ($czas <= 0 || empty($typy) || !$start->gt(now())) {
+        if ($czas <= 0 || empty($uprawnieni) || !$start->gt(now())) {
             return null;
         }
 
@@ -106,30 +142,28 @@ class DostepnoscRezerwacjiService
             return null;
         }
 
-        $kontekst = $this->kontekstDnia($otwarcie, $zamkniecie, $typy, $pomijanaRezerwacjaId);
+        $kontekst = $this->kontekstDnia($otwarcie, $zamkniecie, $uprawnieni, $pomijanaRezerwacjaId);
 
-        return $this->przydzial($kontekst, $start, $koniec);
+        return $this->wolniMechanicy($kontekst, $start, $koniec)[0] ?? null;
     }
 
     /**
-     * Tworzy rezerwację w transakcji z blokadą stanowisk, co eliminuje
-     * sytuację, w której dwóch klientów jednocześnie zajmuje ten sam termin.
+     * Tworzy rezerwację w transakcji z blokadą, co eliminuje sytuację,
+     * w której dwóch klientów jednocześnie zajmuje tego samego mechanika.
      * Zwraca null, jeśli termin został w międzyczasie zajęty.
      */
     public function utworzRezerwacje(array $dane, Collection $uslugi, Carbon $start): ?Rezerwacja
     {
         return DB::transaction(function () use ($dane, $uslugi, $start) {
-            // Blokada wierszy stanowisk – równoległe zapisy czekają na koniec tej transakcji
-            Stanowisko::lockForUpdate()->get();
+            $this->zablokujMechanikow();
 
-            $przydzial = $this->znajdzPrzydzial($uslugi, $start);
-            if (!$przydzial) {
+            $idMechanika = $this->znajdzMechanika($uslugi, $start);
+            if ($idMechanika === null) {
                 return null;
             }
 
             $rezerwacja = Rezerwacja::create($dane + [
-                'id_stanowiska'      => $przydzial['stanowisko']->id_stanowiska,
-                'id_mechanika'       => $przydzial['id_mechanika'],
+                'id_mechanika'       => $idMechanika,
                 'termin_rozpoczecia' => $start,
                 'termin_zakonczenia' => $start->copy()->addMinutes($this->lacznyCzas($uslugi)),
                 'status'             => 'oczekująca',
@@ -148,24 +182,23 @@ class DostepnoscRezerwacjiService
 
     /**
      * Przenosi istniejącą rezerwację na nowy termin (zachowując jej czas trwania)
-     * i przydziela stanowisko oraz mechanika. Zwraca false, jeśli termin jest niedostępny.
+     * i przydziela mechanika. Zwraca false, jeśli termin jest niedostępny.
      */
     public function zmienTermin(Rezerwacja $rezerwacja, Carbon $start): bool
     {
         return DB::transaction(function () use ($rezerwacja, $start) {
-            Stanowisko::lockForUpdate()->get();
+            $this->zablokujMechanikow();
 
             $rezerwacja->load('uslugi');
             $czas = $rezerwacja->laczny_czas;
 
-            $przydzial = $this->znajdzPrzydzial($rezerwacja->uslugi, $start, $rezerwacja->id_rezerwacji, $czas);
-            if (!$przydzial) {
+            $idMechanika = $this->znajdzMechanika($rezerwacja->uslugi, $start, $rezerwacja->id_rezerwacji, $czas);
+            if ($idMechanika === null) {
                 return false;
             }
 
             $rezerwacja->update([
-                'id_stanowiska'      => $przydzial['stanowisko']->id_stanowiska,
-                'id_mechanika'       => $przydzial['id_mechanika'],
+                'id_mechanika'       => $idMechanika,
                 'termin_rozpoczecia' => $start,
                 'termin_zakonczenia' => $start->copy()->addMinutes($czas),
             ]);
@@ -175,55 +208,42 @@ class DostepnoscRezerwacjiService
     }
 
     /**
-     * Stanowiska i mechanicy, których można przypisać do rezerwacji w jej obecnym terminie
-     * (używane przez pracownika przy zmianie przydziału).
+     * Mechanicy, których można przypisać do rezerwacji w jej obecnym terminie
+     * (mają wymagane specjalizacje, zmianę obejmującą wizytę i są wolni).
      */
-    public function opcjePrzydzialu(Rezerwacja $rezerwacja): array
+    public function dostepniMechanicyDla(Rezerwacja $rezerwacja): Collection
     {
         $rezerwacja->loadMissing('uslugi');
 
         $start = $rezerwacja->termin_rozpoczecia;
         $koniec = $rezerwacja->termin_zakonczenia;
-        $typy = $this->dozwoloneTypy($rezerwacja->uslugi);
 
         $kontekst = $this->kontekstDnia(
             $start->copy()->startOfDay(),
             $start->copy()->endOfDay(),
-            $typy,
+            $this->uprawnieniMechanicy($rezerwacja->uslugi),
             $rezerwacja->id_rezerwacji
         );
 
-        $stanowiska = $kontekst['stanowiska']
-            ->filter(fn ($s) => !$this->kolizja($kontekst['zajete'], 'id_stanowiska', $s->id_stanowiska, $start, $koniec))
-            ->values();
-
-        $mechanicy = Uzytkownik::whereIn('id_uzytkownika', $this->wolniMechanicy($kontekst, $start, $koniec))
+        return Uzytkownik::whereIn('id_uzytkownika', $this->wolniMechanicy($kontekst, $start, $koniec))
             ->orderBy('nazwisko')
             ->get();
-
-        return ['stanowiska' => $stanowiska, 'mechanicy' => $mechanicy];
     }
 
     /**
-     * Ręczna zmiana stanowiska i mechanika dla rezerwacji. Zwraca false,
-     * jeśli wybrane stanowisko lub mechanik nie są dostępni w terminie wizyty.
+     * Ręczna zmiana mechanika rezerwacji. Zwraca false, jeśli wybrany
+     * mechanik nie jest dostępny w terminie wizyty.
      */
-    public function zmienPrzydzial(Rezerwacja $rezerwacja, int $idStanowiska, int $idMechanika): bool
+    public function zmienMechanika(Rezerwacja $rezerwacja, int $idMechanika): bool
     {
-        return DB::transaction(function () use ($rezerwacja, $idStanowiska, $idMechanika) {
-            Stanowisko::lockForUpdate()->get();
+        return DB::transaction(function () use ($rezerwacja, $idMechanika) {
+            $this->zablokujMechanikow();
 
-            $opcje = $this->opcjePrzydzialu($rezerwacja);
-
-            if (!$opcje['stanowiska']->contains('id_stanowiska', $idStanowiska)
-                || !$opcje['mechanicy']->contains('id_uzytkownika', $idMechanika)) {
+            if (!$this->dostepniMechanicyDla($rezerwacja)->contains('id_uzytkownika', $idMechanika)) {
                 return false;
             }
 
-            $rezerwacja->update([
-                'id_stanowiska' => $idStanowiska,
-                'id_mechanika'  => $idMechanika,
-            ]);
+            $rezerwacja->update(['id_mechanika' => $idMechanika]);
 
             return true;
         });
@@ -258,6 +278,15 @@ class DostepnoscRezerwacjiService
     }
 
     /**
+     * Blokada wierszy pracowników – równoległe zapisy rezerwacji
+     * czekają na zakończenie bieżącej transakcji.
+     */
+    private function zablokujMechanikow(): void
+    {
+        Uzytkownik::where('rola', 'pracownik')->lockForUpdate()->get(['id_uzytkownika']);
+    }
+
+    /**
      * Zwraca [otwarcie, zamkniecie] dla danego dnia albo null, jeśli warsztat
      * jest nieczynny w ten dzień tygodnia lub dzień jest dniem wolnym.
      */
@@ -282,37 +311,15 @@ class DostepnoscRezerwacjiService
     }
 
     /**
-     * Dane potrzebne do sprawdzania terminów w danym dniu.
+     * Dane potrzebne do sprawdzania terminów w danym dniu:
+     * zmiany uprawnionych mechaników i rezerwacje, które ich zajmują.
      */
-    private function kontekstDnia(Carbon $od, Carbon $do, array $typy, ?int $pomijanaRezerwacjaId): array
+    private function kontekstDnia(Carbon $od, Carbon $do, array $uprawnieni, ?int $pomijanaRezerwacjaId): array
     {
         return [
-            'stanowiska' => $this->stanowiskaWgPreferencji($typy),
-            'zmiany'     => $this->zmianyDnia($od->toDateString()),
-            'zajete'     => $this->zajeteRezerwacje($od, $do, $pomijanaRezerwacjaId),
+            'zmiany' => $this->zmianyDnia($od->toDateString(), $uprawnieni),
+            'zajete' => $this->zajeteRezerwacje($od, $do, $pomijanaRezerwacjaId),
         ];
-    }
-
-    /**
-     * Pierwsze wolne stanowisko i najmniej obciążony wolny mechanik albo null.
-     */
-    private function przydzial(array $kontekst, Carbon $start, Carbon $koniec): ?array
-    {
-        $stanowisko = $kontekst['stanowiska']->first(
-            fn ($s) => !$this->kolizja($kontekst['zajete'], 'id_stanowiska', $s->id_stanowiska, $start, $koniec)
-        );
-
-        if (!$stanowisko) {
-            return null;
-        }
-
-        $mechanicy = $this->wolniMechanicy($kontekst, $start, $koniec);
-
-        if (empty($mechanicy)) {
-            return null;
-        }
-
-        return ['stanowisko' => $stanowisko, 'id_mechanika' => $mechanicy[0]];
     }
 
     /**
@@ -326,7 +333,7 @@ class DostepnoscRezerwacjiService
         return $kontekst['zmiany']
             ->filter(fn ($z) => $z->od->lte($start)
                 && $z->do->gte($koniec)
-                && !$this->kolizja($zajete, 'id_mechanika', $z->id_mechanika, $start, $koniec))
+                && !$this->kolizja($zajete, $z->id_mechanika, $start, $koniec))
             ->sortBy([
                 fn ($a, $b) => $zajete->where('id_mechanika', $a->id_mechanika)->count()
                            <=> $zajete->where('id_mechanika', $b->id_mechanika)->count(),
@@ -338,12 +345,16 @@ class DostepnoscRezerwacjiService
     }
 
     /**
-     * Zmiany mechaników w danym dniu jako obiekty {id_mechanika, od, do}.
+     * Zmiany uprawnionych mechaników w danym dniu jako obiekty {id_mechanika, od, do}.
      */
-    private function zmianyDnia(string $data): Collection
+    private function zmianyDnia(string $data, array $uprawnieni): Collection
     {
+        if (empty($uprawnieni)) {
+            return collect();
+        }
+
         return GrafikPracownika::where('data', $data)
-            ->whereHas('pracownik', fn ($q) => $q->where('rola', 'pracownik'))
+            ->whereIn('id_pracownika', $uprawnieni)
             ->get()
             ->map(fn ($z) => (object) [
                 'id_mechanika' => (int) $z->id_pracownika,
@@ -353,37 +364,25 @@ class DostepnoscRezerwacjiService
     }
 
     /**
-     * Aktywne stanowiska dozwolonych typów, posortowane wg preferencji.
-     */
-    private function stanowiskaWgPreferencji(array $typy): Collection
-    {
-        return Stanowisko::aktywne()
-            ->whereIn('typ', $typy)
-            ->orderBy('id_stanowiska')
-            ->get()
-            ->sortBy(fn ($s) => array_search($s->typ, $typy, true))
-            ->values();
-    }
-
-    /**
-     * Rezerwacje blokujące stanowiska i mechaników w podanym przedziale.
+     * Rezerwacje zajmujące mechaników w podanym przedziale.
      */
     private function zajeteRezerwacje(Carbon $od, Carbon $do, ?int $pomijanaRezerwacjaId): Collection
     {
         return Rezerwacja::whereNotIn('status', self::STATUSY_NIEBLOKUJACE)
+            ->whereNotNull('id_mechanika')
             ->where('termin_rozpoczecia', '<', $do)
             ->where('termin_zakonczenia', '>', $od)
             ->when($pomijanaRezerwacjaId, fn ($q) => $q->where('id_rezerwacji', '!=', $pomijanaRezerwacjaId))
-            ->get(['id_rezerwacji', 'id_stanowiska', 'id_mechanika', 'termin_rozpoczecia', 'termin_zakonczenia']);
+            ->get(['id_rezerwacji', 'id_mechanika', 'termin_rozpoczecia', 'termin_zakonczenia']);
     }
 
     /**
-     * Czy zasób (stanowisko lub mechanik) ma rezerwację nachodzącą na [start, koniec).
+     * Czy mechanik ma rezerwację nachodzącą na [start, koniec).
      */
-    private function kolizja(Collection $zajete, string $pole, int $id, Carbon $start, Carbon $koniec): bool
+    private function kolizja(Collection $zajete, int $idMechanika, Carbon $start, Carbon $koniec): bool
     {
         return $zajete->contains(fn ($r) =>
-            (int) $r->{$pole} === $id
+            (int) $r->id_mechanika === $idMechanika
             && $r->termin_rozpoczecia->lt($koniec)
             && $r->termin_zakonczenia->gt($start)
         );

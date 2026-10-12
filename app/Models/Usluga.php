@@ -11,7 +11,7 @@ class Usluga extends Model
     protected $primaryKey = 'id_uslugi';
 
     protected $fillable = [
-        'nazwa', 'opis', 'cena', 'czas_trwania', 'wymagany_typ_stanowiska', 'czy_aktywna',
+        'nazwa', 'opis', 'cena', 'czas_trwania', 'id_specjalizacji', 'czy_aktywna',
     ];
 
     protected $casts = [
@@ -20,17 +20,14 @@ class Usluga extends Model
         'czy_aktywna'  => 'boolean',
     ];
 
-    public const WYMAGANIA = [
-        'dowolne'       => 'Dowolne stanowisko',
-        'podnosnik'     => 'Podnośnik',
-        'kanal'         => 'Kanał',
-        'plaskie'       => 'Stanowisko płaskie',
-        'diagnostyczne' => 'Stanowisko diagnostyczne',
-    ];
-
     public function getRouteKeyName(): string
     {
         return 'id_uslugi';
+    }
+
+    public function specjalizacja()
+    {
+        return $this->belongsTo(Specjalizacja::class, 'id_specjalizacji', 'id_specjalizacji');
     }
 
     public function rezerwacje()
@@ -42,10 +39,5 @@ class Usluga extends Model
     public function scopeAktywne($query)
     {
         return $query->where('czy_aktywna', true);
-    }
-
-    public function getWymaganieEtykietaAttribute(): string
-    {
-        return self::WYMAGANIA[$this->wymagany_typ_stanowiska] ?? $this->wymagany_typ_stanowiska;
     }
 }
