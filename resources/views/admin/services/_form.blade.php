@@ -1,4 +1,7 @@
-@php $s = $usluga ?? null; @endphp
+@php
+    $s = $usluga ?? null;
+    $specjalizacje = \App\Models\Specjalizacja::orderBy('nazwa')->get();
+@endphp
 
 <div>
     <label class="block text-xs font-mono text-zinc-400 mb-1.5">NAZWA USŁUGI</label>
@@ -30,17 +33,19 @@
 </div>
 
 <div>
-    <label class="block text-xs font-mono text-zinc-400 mb-1.5">WYMAGANE STANOWISKO</label>
-    <select name="wymagany_typ_stanowiska"
+    <label class="block text-xs font-mono text-zinc-400 mb-1.5">WYMAGANA SPECJALIZACJA</label>
+    <select name="id_specjalizacji"
         class="w-full bg-[#15161A] border border-zinc-700 text-zinc-100 px-3 py-2.5 focus:outline-none focus:border-orange-600" style="border-radius: 2px;">
-        @foreach (\App\Models\Usluga::WYMAGANIA as $wartosc => $etykieta)
-            <option value="{{ $wartosc }}" {{ old('wymagany_typ_stanowiska', $s->wymagany_typ_stanowiska ?? 'dowolne') === $wartosc ? 'selected' : '' }}>
-                {{ $etykieta }}
+        <option value="">— wybierz —</option>
+        @foreach ($specjalizacje as $spec)
+            <option value="{{ $spec->id_specjalizacji }}"
+                {{ (string) old('id_specjalizacji', $s->id_specjalizacji ?? '') === (string) $spec->id_specjalizacji ? 'selected' : '' }}>
+                {{ $spec->nazwa }}
             </option>
         @endforeach
     </select>
-    <p class="text-xs text-zinc-500 mt-1">Na jakim stanowisku można wykonać usługę. Liczba jednoczesnych wizyt wynika z liczby aktywnych stanowisk danego typu.</p>
-    @error('wymagany_typ_stanowiska') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
+    <p class="text-xs text-zinc-500 mt-1">Usługę mogą wykonać tylko mechanicy z tą specjalizacją.</p>
+    @error('id_specjalizacji') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
 </div>
 
 <label class="flex items-center gap-2 text-sm text-zinc-300">

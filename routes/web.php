@@ -105,7 +105,9 @@ Route::middleware(['auth', 'verified', 'role:administrator'])->prefix('admin')->
     Route::get('/reservations', [AdminRezerwacjaController::class, 'index'])->name('reservations.index');
     Route::delete('/reservations/{reservation}', [AdminRezerwacjaController::class, 'destroy'])->name('reservations.destroy');
 
-    Route::resource('workbays', \App\Http\Controllers\Admin\StanowiskoController::class)->except('show');
+    Route::resource('specializations', \App\Http\Controllers\Admin\SpecjalizacjaController::class)
+    ->except('show')
+    ->parameters(['specializations' => 'specjalizacja']);
 
     Route::get('shifts', [\App\Http\Controllers\Admin\GrafikController::class, 'index'])->name('shifts.index');
     Route::put('shifts', [\App\Http\Controllers\Admin\GrafikController::class, 'zapisz'])->name('shifts.save');

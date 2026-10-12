@@ -11,7 +11,7 @@
     <span class="text-zinc-200 font-mono">
         {{ $rezerwacja->termin_rozpoczecia->format('d.m.Y H:i') }}–{{ $rezerwacja->termin_zakonczenia->format('H:i') }}
     </span>
-    · Stanowisko: <span class="text-zinc-200">{{ $rezerwacja->stanowisko->nazwa ?? '—' }}</span>
+    · Mechanik: <span class="text-zinc-200">{{ $rezerwacja->mechanik ? $rezerwacja->mechanik->imie . ' ' . $rezerwacja->mechanik->nazwisko : '—' }}</span>
     · Czas: <span class="text-zinc-200 font-mono">{{ $rezerwacja->laczny_czas }} min</span>
 </p>
 

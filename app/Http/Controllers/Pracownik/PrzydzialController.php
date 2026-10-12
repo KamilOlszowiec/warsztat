@@ -18,16 +18,14 @@ class PrzydzialController extends Controller
     {
         if (!$this->moznaZmienic($reservation)) {
             return redirect()->route('pracownik.reservations.index')
-                ->withErrors(['error' => 'Przydział można zmienić tylko dla oczekującej lub zatwierdzonej rezerwacji, która jeszcze się nie rozpoczęła.']);
+                ->withErrors(['error' => 'Mechanika można zmienić tylko dla oczekującej lub zatwierdzonej rezerwacji, która jeszcze się nie rozpoczęła.']);
         }
 
-        $reservation->load(['klient', 'pojazd', 'uslugi', 'stanowisko', 'mechanik']);
-        $opcje = $this->dostepnosc->opcjePrzydzialu($reservation);
+        $reservation->load(['klient', 'pojazd', 'uslugi.specjalizacja', 'mechanik']);
 
         return view('pracownik.reservations.przydzial', [
             'rezerwacja' => $reservation,
-            'stanowiska' => $opcje['stanowiska'],
-            'mechanicy'  => $opcje['mechanicy'],
+            'mechanicy'  => $this->dostepnosc->dostepniMechanicyDla($reservation),
         ]);
     }
 
@@ -35,33 +33,25 @@ class PrzydzialController extends Controller
     {
         if (!$this->moznaZmienic($reservation)) {
             return redirect()->route('pracownik.reservations.index')
-                ->withErrors(['error' => 'Przydział można zmienić tylko dla oczekującej lub zatwierdzonej rezerwacji, która jeszcze się nie rozpoczęła.']);
+                ->withErrors(['error' => 'Mechanika można zmienić tylko dla oczekującej lub zatwierdzonej rezerwacji, która jeszcze się nie rozpoczęła.']);
         }
 
         $dane = $request->validate([
-            'id_stanowiska' => ['required', 'integer'],
-            'id_mechanika'  => ['required', 'integer'],
+            'id_mechanika' => ['required', 'integer'],
         ], [
-            'id_stanowiska.required' => 'Wybierz stanowisko.',
-            'id_mechanika.required'  => 'Wybierz mechanika.',
+            'id_mechanika.required' => 'Wybierz mechanika.',
         ]);
 
         // Serwis ponownie sprawdza dostępność w transakcji z blokadą
-        $zmieniono = $this->dostepnosc->zmienPrzydzial(
-            $reservation,
-            (int) $dane['id_stanowiska'],
-            (int) $dane['id_mechanika']
-        );
-
-        if (!$zmieniono) {
+        if (!$this->dostepnosc->zmienMechanika($reservation, (int) $dane['id_mechanika'])) {
             return back()
-                ->withErrors(['przydzial' => 'Wybrane stanowisko lub mechanik nie są już dostępni w terminie tej wizyty. Odśwież stronę i wybierz ponownie.'])
+                ->withErrors(['przydzial' => 'Wybrany mechanik nie jest już dostępny w terminie tej wizyty. Odśwież stronę i wybierz ponownie.'])
                 ->withInput();
         }
 
         return redirect()
             ->route('pracownik.reservations.index', ['status' => $reservation->status])
-            ->with('status', 'Przydział rezerwacji został zmieniony.');
+            ->with('status', 'Mechanik został zmieniony.');
     }
 
     private function moznaZmienic(Rezerwacja $rezerwacja): bool

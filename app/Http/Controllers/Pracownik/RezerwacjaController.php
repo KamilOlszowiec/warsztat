@@ -19,7 +19,7 @@ class RezerwacjaController extends Controller
     {
         $status = $request->get('status', 'oczekująca');
 
-        $query = Rezerwacja::with(['klient', 'pojazd', 'uslugi', 'stanowisko', 'mechanik'])
+        $query = Rezerwacja::with(['klient', 'pojazd', 'uslugi', 'mechanik'])
             ->orderBy('termin_rozpoczecia');
 
         if ($status === 'dzisiaj') {
@@ -133,7 +133,7 @@ class RezerwacjaController extends Controller
 
         if (!$this->dostepnosc->zmienTermin($reservation, $start)) {
             return back()
-                ->withErrors(['godzina' => 'Wybrany termin jest niedostępny – poza godzinami pracy lub brak wolnego stanowiska.'])
+                ->withErrors(['godzina' => 'Wybrany termin jest niedostępny – poza godzinami pracy lub brak wolnego mechanika z wymaganymi specjalizacjami.'])
                 ->withInput();
         }
 

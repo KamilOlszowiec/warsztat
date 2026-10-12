@@ -30,7 +30,7 @@ class UslugaController extends Controller
                 }
             }],
             'czy_aktywna' => ['nullable', 'boolean'],
-            'wymagany_typ_stanowiska' => ['required', 'in:dowolne,podnosnik,kanal,plaskie,diagnostyczne'],
+            'id_specjalizacji' => ['required', 'exists:specjalizacje,id_specjalizacji'],
         ]);
 
         $data['czy_aktywna'] = $request->boolean('czy_aktywna');
@@ -57,7 +57,7 @@ class UslugaController extends Controller
                 }
             }],
             'czy_aktywna' => ['nullable', 'boolean'],
-            'wymagany_typ_stanowiska' => ['required', 'in:dowolne,podnosnik,kanal,plaskie,diagnostyczne'],
+            'id_specjalizacji' => ['required', 'exists:specjalizacje,id_specjalizacji'],
         ]);
 
         $data['czy_aktywna'] = $request->boolean('czy_aktywna');

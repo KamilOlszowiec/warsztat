@@ -49,8 +49,6 @@
                             {{ $r->termin_rozpoczecia->format('d.m.Y H:i') }}–{{ $r->termin_zakonczenia->format('H:i') }}
                         </span>
                         <p class="text-xs mt-0.5">
-                            <span class="text-zinc-500">{{ $r->stanowisko->nazwa ?? 'brak stanowiska' }}</span>
-                            <span class="text-zinc-600">·</span>
                             @if ($r->mechanik)
                                 <span class="{{ $r->id_mechanika === auth()->id() ? 'text-orange-500 font-medium' : 'text-zinc-500' }}">
                                     {{ $r->mechanik->imie }} {{ $r->mechanik->nazwisko }}
@@ -86,7 +84,7 @@
                                     Odrzuć
                                 </button>
                                 @if ($r->termin_rozpoczecia->isFuture())
-                                    <a href="{{ route('pracownik.reservations.przydzial', $r) }}" class="text-zinc-300 hover:text-white">Przydział</a>
+                                    <a href="{{ route('pracownik.reservations.przydzial', $r) }}" class="text-zinc-300 hover:text-white">Mechanik</a>
                                     <a href="{{ route('pracownik.reservations.edit-termin', $r) }}" class="text-orange-500 hover:text-orange-400">Zmień termin</a>
                                 @endif
                             </div>
@@ -117,7 +115,7 @@
                         @elseif ($r->status === 'zatwierdzona')
                             <div class="inline-flex gap-3">
                                 @if ($r->termin_rozpoczecia->isFuture())
-                                    <a href="{{ route('pracownik.reservations.przydzial', $r) }}" class="text-zinc-300 hover:text-white">Przydział</a>
+                                    <a href="{{ route('pracownik.reservations.przydzial', $r) }}" class="text-zinc-300 hover:text-white">Mechanik</a>
                                 @endif
                                 <a href="{{ route('pracownik.reservations.edit-termin', $r) }}" class="text-orange-500 hover:text-orange-400">Zmień termin</a>
                                 <form method="POST" action="{{ route('pracownik.reservations.complete', $r) }}" class="inline">

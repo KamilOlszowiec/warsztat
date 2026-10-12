@@ -13,6 +13,11 @@
     </a>
 </div>
 
+@php
+    // Załadowanie specjalizacji z mechanikami dla całej strony naraz
+    $uslugi->loadMissing('specjalizacja.pracownicy');
+@endphp
+
 <div class="bg-[#1F2128] border border-zinc-800 overflow-hidden" style="border-radius: 2px;">
     <table class="w-full text-sm">
         <thead>
@@ -20,18 +25,41 @@
                 <th class="px-4 py-3 font-mono text-xs text-zinc-500">NAZWA</th>
                 <th class="px-4 py-3 font-mono text-xs text-zinc-500">CENA</th>
                 <th class="px-4 py-3 font-mono text-xs text-zinc-500">CZAS</th>
-                <th class="px-4 py-3 font-mono text-xs text-zinc-500">STANOWISKO</th>
+                <th class="px-4 py-3 font-mono text-xs text-zinc-500">SPECJALIZACJA</th>
+                <th class="px-4 py-3 font-mono text-xs text-zinc-500">MECHANICY</th>
                 <th class="px-4 py-3 font-mono text-xs text-zinc-500">STATUS</th>
                 <th class="px-4 py-3 font-mono text-xs text-zinc-500 text-right">AKCJE</th>
             </tr>
         </thead>
         <tbody>
             @forelse ($uslugi as $usluga)
+                @php
+                    $mechanicy = $usluga->specjalizacja
+                        ? $usluga->specjalizacja->pracownicy->where('rola', 'pracownik')
+                        : collect();
+                @endphp
                 <tr class="border-b border-zinc-800/50 hover:bg-white/[0.02]">
                     <td class="px-4 py-3 text-zinc-200">{{ $usluga->nazwa }}</td>
                     <td class="px-4 py-3 text-zinc-400">{{ number_format($usluga->cena, 2) }} zł</td>
                     <td class="px-4 py-3 text-zinc-400">{{ $usluga->czas_trwania }} min</td>
-                    <td class="px-4 py-3 text-zinc-400">{{ $usluga->wymaganie_etykieta }}</td>
+                    <td class="px-4 py-3">
+                        @if ($usluga->specjalizacja)
+                            <span class="text-xs px-2 py-0.5 border border-zinc-700 text-zinc-300" style="border-radius: 2px;">{{ $usluga->specjalizacja->nazwa }}</span>
+                        @else
+                            <span class="text-xs text-zinc-500">—</span>
+                        @endif
+                    </td>
+                    <td class="px-4 py-3">
+                        @if (!$usluga->specjalizacja)
+                            <p class="text-xs text-zinc-500">Każdy mechanik</p>
+                        @else
+                            @forelse ($mechanicy as $m)
+                                <p class="text-xs text-zinc-400">{{ $m->imie }} {{ $m->nazwisko }}</p>
+                            @empty
+                                <p class="text-xs text-red-400">Nikt nie wykona tej usługi</p>
+                            @endforelse
+                        @endif
+                    </td>
                     <td class="px-4 py-3">
                         @if ($usluga->czy_aktywna)
                             <span class="text-xs font-mono px-2 py-1 bg-green-900/30 text-green-400" style="border-radius: 2px;">AKTYWNA</span>
@@ -39,7 +67,7 @@
                             <span class="text-xs font-mono px-2 py-1 bg-zinc-800 text-zinc-500" style="border-radius: 2px;">NIEAKTYWNA</span>
                         @endif
                     </td>
-                    <td class="px-4 py-3 text-right space-x-3">
+                    <td class="px-4 py-3 text-right space-x-3 whitespace-nowrap">
                         <a href="{{ route('admin.services.edit', $usluga) }}" class="text-orange-500 hover:text-orange-400">Edytuj</a>
                         <form method="POST" action="{{ route('admin.services.destroy', $usluga) }}" class="inline"
                               onsubmit="return confirm('Na pewno usunąć tę usługę?');">
@@ -51,7 +79,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="6" class="px-4 py-6 text-center text-zinc-500">Brak dodanych usług.</td>
+                    <td colspan="7" class="px-4 py-6 text-center text-zinc-500">Brak dodanych usług.</td>
                 </tr>
             @endforelse
         </tbody>
