@@ -10,7 +10,15 @@ class PojazdController extends Controller
 {
     public function index()
     {
-        $pojazdy = auth()->user()->pojazdy()->orderBy('marka')->get();
+        // Pojazdy z pełną historią wizyt – jedno zapytanie na relację, nie na kafelek
+        $pojazdy = auth()->user()->pojazdy()
+            ->with(['rezerwacje' => function ($q) {
+                $q->with(['uslugi', 'mechanik'])->orderByDesc('termin_rozpoczecia');
+            }])
+            ->orderBy('marka')
+            ->orderBy('model')
+            ->get();
+
         return view('klient.vehicles.index', compact('pojazdy'));
     }
 
@@ -34,6 +42,18 @@ class PojazdController extends Controller
         Pojazd::create($data);
 
         return redirect()->route('klient.vehicles.index')->with('status', 'Pojazd został dodany.');
+    }
+
+    public function show(Pojazd $vehicle)
+    {
+        $this->authorizeOwnership($vehicle);
+
+        $rezerwacje = $vehicle->rezerwacje()
+            ->with('uslugi')
+            ->orderByDesc('termin_rozpoczecia')
+            ->get();
+
+        return view('klient.vehicles.show', ['pojazd' => $vehicle, 'rezerwacje' => $rezerwacje]);
     }
 
     public function edit(Pojazd $vehicle)
@@ -62,7 +82,16 @@ class PojazdController extends Controller
     public function destroy(Pojazd $vehicle)
     {
         $this->authorizeOwnership($vehicle);
+
+        // Pojazd z historią wizyt zostaje – usunięcie skasowałoby historię napraw warsztatu
+        if ($vehicle->rezerwacje()->exists()) {
+            return back()->withErrors([
+                'error' => "Pojazdu {$vehicle->marka} {$vehicle->model} nie można usunąć, bo ma historię wizyt w warsztacie.",
+            ]);
+        }
+
         $vehicle->delete();
+
         return redirect()->route('klient.vehicles.index')->with('status', 'Pojazd został usunięty.');
     }
 
@@ -71,16 +100,5 @@ class PojazdController extends Controller
         if ($vehicle->id_uzytkownika !== auth()->id()) {
             abort(403, 'Brak dostępu do tego pojazdu.');
         }
-    }
-    public function show(Pojazd $vehicle)
-    {
-        $this->authorizeOwnership($vehicle);
-
-        $rezerwacje = $vehicle->rezerwacje()
-            ->with('uslugi')
-            ->orderByDesc('termin_rozpoczecia')
-            ->get();
-
-        return view('klient.vehicles.show', ['pojazd' => $vehicle, 'rezerwacje' => $rezerwacje]);
     }
 }

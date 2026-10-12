@@ -72,7 +72,7 @@
                 @endforeach
             </div>
         </section>
-        
+
         {{-- KROK 2: Termin --}}
         <section data-krok="2" class="hidden">
             <h2 class="text-lg font-semibold text-zinc-50 mb-1">Wybierz termin</h2>
@@ -117,7 +117,7 @@
                         <input type="radio" name="pojazd_id" value="{{ $p->id_pojazdu }}"
                                data-opis="{{ $p->marka }} {{ $p->model }} ({{ $p->numer_rejestracyjny }})"
                                class="peer sr-only"
-                               {{ (string) old('pojazd_id') === (string) $p->id_pojazdu ? 'checked' : '' }}>
+                               {{ (string) old('pojazd_id', request('pojazd')) === (string) $p->id_pojazdu ? 'checked' : '' }}>
                         <div class="flex items-center justify-between gap-4 px-4 py-3 bg-[#1F2128] border border-zinc-800 hover:border-zinc-600 peer-checked:border-orange-600 peer-checked:bg-orange-600/10 transition" style="border-radius: 2px;">
                             <div>
                                 <p class="font-medium text-zinc-100">{{ $p->marka }} {{ $p->model }}</p>
