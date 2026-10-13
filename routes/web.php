@@ -132,6 +132,18 @@ if (app()->isLocal()) {
 
                 return (new \App\Notifications\RezerwacjaZatwierdzona($rezerwacja))->toMail($rezerwacja->klient);
             })(),
+            'zakonczona' => (function () {
+                $rezerwacja = \App\Models\Rezerwacja::where('status', 'zakończona')->latest('id_rezerwacji')->first()
+                    ?? \App\Models\Rezerwacja::latest('id_rezerwacji')->firstOrFail();
+
+                return (new \App\Notifications\RezerwacjaZakonczona($rezerwacja))->toMail($rezerwacja->klient);
+            })(),
+            'odrzucona' => (function () {
+                $rezerwacja = \App\Models\Rezerwacja::where('status', 'odrzucona')->latest('id_rezerwacji')->first()
+                    ?? \App\Models\Rezerwacja::latest('id_rezerwacji')->firstOrFail();
+
+                return (new \App\Notifications\RezerwacjaOdrzucona($rezerwacja))->toMail($rezerwacja->klient);
+            })(),            
             default => abort(404),
         };
     });

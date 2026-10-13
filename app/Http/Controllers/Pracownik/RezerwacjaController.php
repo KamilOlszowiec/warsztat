@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Pracownik;
 use App\Http\Controllers\Controller;
 use App\Models\Rezerwacja;
 use App\Notifications\RezerwacjaZatwierdzona;
+use App\Notifications\RezerwacjaZakonczona;
+use App\Notifications\RezerwacjaOdrzucona;
 use App\Services\DostepnoscRezerwacjiService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -72,6 +74,14 @@ class RezerwacjaController extends Controller
             'powod_odrzucenia' => $data['powod'] ?? null,
         ]);
 
+        $reservation->load(['uslugi', 'pojazd']);
+
+        try {
+            $reservation->klient->notify(new RezerwacjaOdrzucona($reservation));
+        } catch (\Exception $e) {
+            Log::warning('Nie udało się wysłać powiadomienia email o odrzuceniu rezerwacji: ' . $e->getMessage());
+        }
+
         return back()->with('status', 'Rezerwacja została odrzucona.');
     }
 
@@ -82,6 +92,14 @@ class RezerwacjaController extends Controller
         }
 
         $reservation->update(['status' => 'zakończona']);
+
+        $reservation->load(['uslugi', 'pojazd', 'mechanik']);
+
+        try {
+            $reservation->klient->notify(new RezerwacjaZakonczona($reservation));
+        } catch (\Exception $e) {
+            Log::warning('Nie udało się wysłać powiadomienia email o zakończeniu rezerwacji: ' . $e->getMessage());
+        }
 
         return back()->with('status', 'Rezerwacja została oznaczona jako zakończona.');
     }
