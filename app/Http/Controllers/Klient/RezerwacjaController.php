@@ -33,6 +33,17 @@ class RezerwacjaController extends Controller
         return view('klient.reservations.index', compact('rezerwacje'));
     }
 
+    public function show(Rezerwacja $reservation)
+    {
+        if ($reservation->id_klienta !== auth()->id()) {
+            abort(403);
+        }
+
+        $reservation->load(['uslugi', 'pojazd', 'mechanik']);
+
+        return view('klient.reservations.show', ['rezerwacja' => $reservation]);
+    }
+
     public function create()
     {
         $uslugi = Usluga::aktywne()->orderBy('nazwa')->get();
@@ -130,7 +141,7 @@ class RezerwacjaController extends Controller
                 ->withInput();
         }
 
-        return redirect()->route('klient.reservations.index')
+        return redirect()->route('klient.reservations.show', $rezerwacja)
             ->with('status', 'Rezerwacja została złożona i oczekuje na potwierdzenie.');
     }
 

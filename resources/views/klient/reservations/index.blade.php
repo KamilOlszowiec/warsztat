@@ -19,7 +19,17 @@
     </div>
 @enderror
 
-<div class="bg-[#1F2128] border border-zinc-800 overflow-hidden" style="border-radius: 2px;">
+@php
+    $kolory = [
+        'oczekująca' => 'bg-yellow-900/30 text-yellow-400',
+        'zatwierdzona' => 'bg-green-900/30 text-green-400',
+        'odrzucona' => 'bg-red-900/30 text-red-400',
+        'anulowana' => 'bg-zinc-800 text-zinc-500',
+        'zakończona' => 'bg-blue-900/30 text-blue-400',
+    ];
+@endphp
+
+<div class="bg-[#1F2128] border border-zinc-800 overflow-x-auto" style="border-radius: 2px;">
     <table class="w-full text-sm">
         <thead>
             <tr class="border-b border-zinc-800 text-left">
@@ -33,21 +43,15 @@
         <tbody>
             @forelse ($rezerwacje as $r)
                 <tr class="border-b border-zinc-800/50 hover:bg-white/[0.02]">
-                    <td class="px-4 py-3 text-zinc-200">{{ $r->nazwy_uslug }}</td>
+                    <td class="px-4 py-3 text-zinc-200">
+                        <a href="{{ route('klient.reservations.show', $r) }}" class="hover:text-orange-400">{{ $r->nazwy_uslug }}</a>
+                    </td>
                     <td class="px-4 py-3 text-zinc-400">{{ $r->pojazd->marka }} {{ $r->pojazd->model }}</td>
-                    <td class="px-4 py-3 text-zinc-400">
-                        {{ $r->termin_rozpoczecia->format('d.m.Y H:i') }}
+                    <td class="px-4 py-3 text-zinc-400 whitespace-nowrap">
+                        {{ $r->termin_rozpoczecia->format('d.m.Y') }}
+                        <span class="text-zinc-300">{{ $r->termin_rozpoczecia->format('H:i') }}–{{ $r->termin_zakonczenia->format('H:i') }}</span>
                     </td>
                     <td class="px-4 py-3">
-                        @php
-                            $kolory = [
-                                'oczekująca' => 'bg-yellow-900/30 text-yellow-400',
-                                'zatwierdzona' => 'bg-green-900/30 text-green-400',
-                                'odrzucona' => 'bg-red-900/30 text-red-400',
-                                'anulowana' => 'bg-zinc-800 text-zinc-500',
-                                'zakończona' => 'bg-blue-900/30 text-blue-400',
-                            ];
-                        @endphp
                         <span class="text-xs font-mono px-2 py-1 {{ $kolory[$r->status] }}" style="border-radius: 2px;">
                             {{ mb_strtoupper($r->status, 'UTF-8') }}
                         </span>
@@ -55,16 +59,17 @@
                             <p class="text-xs text-zinc-500 mt-1">{{ $r->powod_odrzucenia }}</p>
                         @endif
                     </td>
-                    <td class="px-4 py-3 text-right">
-                        @if (in_array($r->status, ['oczekująca', 'zatwierdzona']) && $r->termin_rozpoczecia->isFuture())
-                            <form method="POST" action="{{ route('klient.reservations.cancel', $r) }}" class="inline"
-                                  onsubmit="return confirm('Na pewno anulować tę rezerwację?');">
-                                @csrf
-                                <button type="submit" class="text-red-500 hover:text-red-400">Anuluj</button>
-                            </form>
-                        @else
-                            <span class="text-zinc-600">—</span>
-                        @endif
+                    <td class="px-4 py-3 text-right whitespace-nowrap">
+                        <div class="inline-flex gap-3">
+                            <a href="{{ route('klient.reservations.show', $r) }}" class="text-orange-500 hover:text-orange-400">Szczegóły</a>
+                            @if (in_array($r->status, ['oczekująca', 'zatwierdzona']) && $r->termin_rozpoczecia->isFuture())
+                                <form method="POST" action="{{ route('klient.reservations.cancel', $r) }}" class="inline"
+                                      onsubmit="return confirm('Na pewno anulować tę rezerwację?');">
+                                    @csrf
+                                    <button type="submit" class="text-red-500 hover:text-red-400">Anuluj</button>
+                                </form>
+                            @endif
+                        </div>
                     </td>
                 </tr>
             @empty
