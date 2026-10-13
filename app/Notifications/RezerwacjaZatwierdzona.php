@@ -22,20 +22,22 @@ class RezerwacjaZatwierdzona extends Notification
 
     public function toMail($notifiable): MailMessage
     {
+        $this->rezerwacja->loadMissing(['uslugi', 'pojazd', 'mechanik']);
+
         $url = URL::temporarySignedRoute(
             'reservations.public-show',
             now()->addDays(30),
             ['reservation' => $this->rezerwacja->id_rezerwacji]
         );
 
+        $termin = $this->rezerwacja->termin_rozpoczecia;
+
         return (new MailMessage)
-            ->subject('Twoja rezerwacja została zatwierdzona')
-            ->greeting('Dzień dobry, ' . $notifiable->imie . '!')
-            ->line('Twoja rezerwacja została zatwierdzona przez warsztat.')
-            ->line('Usługi: ' . $this->rezerwacja->nazwy_uslug)
-            ->line('Pojazd: ' . $this->rezerwacja->pojazd->marka . ' ' . $this->rezerwacja->pojazd->model)
-            ->line('Termin: ' . $this->rezerwacja->termin_rozpoczecia->format('d.m.Y H:i'))
-            ->action('Zobacz szczegóły rezerwacji', $url)
-            ->line('Do zobaczenia w warsztacie!');
+            ->subject('Wizyta potwierdzona: ' . $termin->translatedFormat('l, d.m') . ' o ' . $termin->format('H:i'))
+            ->view('emails.rezerwacja-zatwierdzona', [
+                'rezerwacja' => $this->rezerwacja,
+                'imie'       => $notifiable->imie,
+                'url'        => $url,
+            ]);
     }
 }

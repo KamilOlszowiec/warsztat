@@ -23,14 +23,32 @@ class RezerwacjaController extends Controller
     {
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $rezerwacje = Rezerwacja::where('id_klienta', auth()->id())
-            ->with(['pojazd', 'uslugi'])
+        $zakladka = $request->get('zakladka') === 'historia' ? 'historia' : 'nadchodzace';
+
+        $relacje = ['pojazd', 'uslugi', 'mechanik'];
+        $aktywne = ['oczekująca', 'zatwierdzona'];
+
+        // Nadchodzące: aktywne i jeszcze się nie zaczęły – od najbliższej
+        $nadchodzace = Rezerwacja::where('id_klienta', auth()->id())
+            ->whereIn('status', $aktywne)
+            ->where('termin_rozpoczecia', '>', now())
+            ->with($relacje)
+            ->orderBy('termin_rozpoczecia')
+            ->get();
+
+        // Historia: wszystko pozostałe – od najnowszej
+        $historia = Rezerwacja::where('id_klienta', auth()->id())
+            ->where(function ($q) use ($aktywne) {
+                $q->whereNotIn('status', $aktywne)
+                  ->orWhere('termin_rozpoczecia', '<=', now());
+            })
+            ->with($relacje)
             ->orderByDesc('termin_rozpoczecia')
             ->get();
 
-        return view('klient.reservations.index', compact('rezerwacje'));
+        return view('klient.reservations.index', compact('zakladka', 'nadchodzace', 'historia'));
     }
 
     public function show(Rezerwacja $reservation)

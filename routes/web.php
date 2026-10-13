@@ -119,3 +119,20 @@ Route::middleware(['auth', 'verified', 'role:administrator'])->prefix('admin')->
         ->only(['index', 'store', 'destroy'])
         ->parameters(['days-off' => 'dzien']);
 });
+if (app()->isLocal()) {
+    Route::get('/podglad-maila/{rodzaj}', function (string $rodzaj) {
+        $klient = \App\Models\Uzytkownik::where('rola', 'klient')->first();
+
+        return match ($rodzaj) {
+            'weryfikacja'  => (new \Illuminate\Auth\Notifications\VerifyEmail)->toMail($klient),
+            'haslo'        => (new \Illuminate\Auth\Notifications\ResetPassword('przykladowy-token'))->toMail($klient),
+            'zatwierdzona' => (function () {
+                $rezerwacja = \App\Models\Rezerwacja::where('status', 'zatwierdzona')->latest('id_rezerwacji')->first()
+                    ?? \App\Models\Rezerwacja::latest('id_rezerwacji')->firstOrFail();
+
+                return (new \App\Notifications\RezerwacjaZatwierdzona($rezerwacja))->toMail($rezerwacja->klient);
+            })(),
+            default => abort(404),
+        };
+    });
+}
