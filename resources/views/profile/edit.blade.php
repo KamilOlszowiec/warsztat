@@ -13,6 +13,7 @@
 @php
     $inicjaly = mb_strtoupper(mb_substr($user->imie, 0, 1) . mb_substr($user->nazwisko, 0, 1), 'UTF-8');
     $nazwyRol = ['klient' => 'Klient', 'pracownik' => 'Mechanik', 'administrator' => 'Administrator'];
+    $tylkoPodglad = $user->rola === 'pracownik';
 
     // Statystyki do karty – zależne od roli
     if ($user->rola === 'klient') {
@@ -59,25 +60,27 @@
             </span>
         </div>
 
-        <div class="p-5 space-y-3 text-sm border-b border-zinc-800">
-            <div>
-                <p class="text-xs font-mono text-zinc-500 mb-0.5">E-MAIL</p>
-                <p class="text-zinc-200 break-all">{{ $user->email }}</p>
-                @if ($user->email_verified_at)
-                    <span class="inline-block mt-1 text-[10px] font-mono px-1.5 py-0.5 bg-green-900/30 text-green-400" style="border-radius: 2px;">ZWERYFIKOWANY</span>
-                @else
-                    <span class="inline-block mt-1 text-[10px] font-mono px-1.5 py-0.5 bg-yellow-900/30 text-yellow-400" style="border-radius: 2px;">NIEZWERYFIKOWANY</span>
-                @endif
+        @if (!$tylkoPodglad)
+            <div class="p-5 space-y-3 text-sm border-b border-zinc-800">
+                <div>
+                    <p class="text-xs font-mono text-zinc-500 mb-0.5">E-MAIL</p>
+                    <p class="text-zinc-200 break-all">{{ $user->email }}</p>
+                    @if ($user->email_verified_at)
+                        <span class="inline-block mt-1 text-[10px] font-mono px-1.5 py-0.5 bg-green-900/30 text-green-400" style="border-radius: 2px;">ZWERYFIKOWANY</span>
+                    @else
+                        <span class="inline-block mt-1 text-[10px] font-mono px-1.5 py-0.5 bg-yellow-900/30 text-yellow-400" style="border-radius: 2px;">NIEZWERYFIKOWANY</span>
+                    @endif
+                </div>
+                <div>
+                    <p class="text-xs font-mono text-zinc-500 mb-0.5">TELEFON</p>
+                    <p class="text-zinc-200">{{ $user->telefon ?: '—' }}</p>
+                </div>
+                <div>
+                    <p class="text-xs font-mono text-zinc-500 mb-0.5">KONTO OD</p>
+                    <p class="text-zinc-200">{{ $user->created_at ? $user->created_at->format('d.m.Y') : '—' }}</p>
+                </div>
             </div>
-            <div>
-                <p class="text-xs font-mono text-zinc-500 mb-0.5">TELEFON</p>
-                <p class="text-zinc-200">{{ $user->telefon ?: '—' }}</p>
-            </div>
-            <div>
-                <p class="text-xs font-mono text-zinc-500 mb-0.5">KONTO OD</p>
-                <p class="text-zinc-200">{{ $user->created_at ? $user->created_at->format('d.m.Y') : '—' }}</p>
-            </div>
-        </div>
+        @endif
 
         @if ($user->rola === 'klient')
             <div class="grid grid-cols-2 divide-x divide-zinc-800 border-b border-zinc-800">
@@ -129,10 +132,16 @@
 
     {{-- Zakładki --}}
     <div>
+        @error('error')
+            <div class="mb-4 bg-red-900/30 border border-red-700 text-red-300 px-4 py-3 text-sm" style="border-radius: 2px;">
+                {{ $message }}
+            </div>
+        @enderror
+
         <div class="flex border-b border-zinc-800 mb-5" role="tablist">
             <button type="button" data-zakladka="dane" role="tab"
                 class="zakladka px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition">
-                Dane osobowe
+                {{ $tylkoPodglad ? 'Dane konta' : 'Dane osobowe' }}
             </button>
             <button type="button" data-zakladka="haslo" role="tab"
                 class="zakladka px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition">
@@ -140,46 +149,81 @@
             </button>
         </div>
 
-        {{-- Dane osobowe --}}
-        <form data-panel="dane" method="POST" action="{{ route('profile.update') }}#dane"
-              class="bg-[#1F2128] border border-zinc-800 p-6 space-y-4" style="border-radius: 2px;">
-            @csrf
-            @method('PUT')
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-mono text-zinc-400 mb-1.5">IMIĘ</label>
-                    <input type="text" name="imie" value="{{ old('imie', $user->imie) }}" class="{{ $klasaPola }}" style="border-radius: 2px;">
-                    @error('imie') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
+        @if ($tylkoPodglad)
+            {{-- Dane konta służbowego – tylko do podglądu --}}
+            <div data-panel="dane" class="bg-[#1F2128] border border-zinc-800" style="border-radius: 2px;">
+                <div class="flex gap-3 items-start px-5 py-3.5 bg-[#18191D] border-b border-zinc-800">
+                    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-zinc-400 shrink-0 mt-0.5">
+                        <rect x="5" y="11" width="14" height="10" rx="1"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path>
+                    </svg>
+                    <p class="text-sm text-zinc-300">To konto służbowe – dane zmienia administrator warsztatu. Jeśli coś się nie zgadza, zgłoś to przełożonemu.</p>
                 </div>
-                <div>
-                    <label class="block text-xs font-mono text-zinc-400 mb-1.5">NAZWISKO</label>
-                    <input type="text" name="nazwisko" value="{{ old('nazwisko', $user->nazwisko) }}" class="{{ $klasaPola }}" style="border-radius: 2px;">
-                    @error('nazwisko') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
-                </div>
+                <dl class="divide-y divide-zinc-800">
+                    <div class="flex flex-wrap gap-x-4 gap-y-1 px-5 py-3.5">
+                        <dt class="w-36 shrink-0 text-[11px] font-mono text-zinc-400 pt-0.5">IMIĘ I NAZWISKO</dt>
+                        <dd class="text-sm text-zinc-100">{{ $user->imie }} {{ $user->nazwisko }}</dd>
+                    </div>
+                    <div class="flex flex-wrap gap-x-4 gap-y-1 px-5 py-3.5">
+                        <dt class="w-36 shrink-0 text-[11px] font-mono text-zinc-400 pt-0.5">E-MAIL (LOGIN)</dt>
+                        <dd class="text-sm text-zinc-100">
+                            {{ $user->email }}
+                            @if ($user->email_verified_at)
+                                <span class="ml-1.5 text-[10px] font-mono px-1.5 py-0.5 bg-green-900/30 text-green-400" style="border-radius: 2px;">ZWERYFIKOWANY</span>
+                            @endif
+                        </dd>
+                    </div>
+                    <div class="flex flex-wrap gap-x-4 gap-y-1 px-5 py-3.5">
+                        <dt class="w-36 shrink-0 text-[11px] font-mono text-zinc-400 pt-0.5">TELEFON</dt>
+                        <dd class="text-sm text-zinc-100">{{ $user->telefon ?: '—' }}</dd>
+                    </div>
+                    <div class="flex flex-wrap gap-x-4 gap-y-1 px-5 py-3.5">
+                        <dt class="w-36 shrink-0 text-[11px] font-mono text-zinc-400 pt-0.5">KONTO OD</dt>
+                        <dd class="text-sm text-zinc-100">{{ $user->created_at ? $user->created_at->format('d.m.Y') : '—' }}</dd>
+                    </div>
+                </dl>
             </div>
+        @else
+            {{-- Dane osobowe – formularz --}}
+            <form data-panel="dane" method="POST" action="{{ route('profile.update') }}#dane"
+                  class="bg-[#1F2128] border border-zinc-800 p-6 space-y-4" style="border-radius: 2px;">
+                @csrf
+                @method('PUT')
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-mono text-zinc-400 mb-1.5">E-MAIL</label>
-                    <input type="email" name="email" value="{{ old('email', $user->email) }}" class="{{ $klasaPola }}" style="border-radius: 2px;">
-                    @error('email') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-mono text-zinc-400 mb-1.5">IMIĘ</label>
+                        <input type="text" name="imie" value="{{ old('imie', $user->imie) }}" class="{{ $klasaPola }}" style="border-radius: 2px;">
+                        @error('imie') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label class="block text-xs font-mono text-zinc-400 mb-1.5">NAZWISKO</label>
+                        <input type="text" name="nazwisko" value="{{ old('nazwisko', $user->nazwisko) }}" class="{{ $klasaPola }}" style="border-radius: 2px;">
+                        @error('nazwisko') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-mono text-zinc-400 mb-1.5">TELEFON</label>
-                    <input type="text" name="telefon" value="{{ old('telefon', $user->telefon) }}" placeholder="np. 500 100 200" class="{{ $klasaPola }}" style="border-radius: 2px;">
-                    @error('telefon') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-mono text-zinc-400 mb-1.5">E-MAIL</label>
+                        <input type="email" name="email" value="{{ old('email', $user->email) }}" class="{{ $klasaPola }}" style="border-radius: 2px;">
+                        @error('email') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label class="block text-xs font-mono text-zinc-400 mb-1.5">TELEFON</label>
+                        <input type="text" name="telefon" value="{{ old('telefon', $user->telefon) }}" placeholder="np. 500 100 200" class="{{ $klasaPola }}" style="border-radius: 2px;">
+                        @error('telefon') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
+                    </div>
                 </div>
-            </div>
 
-            <p class="text-xs text-zinc-500">Zmiana adresu e-mail wymaga jego ponownej weryfikacji – wyślemy link na nowy adres.</p>
+                <p class="text-xs text-zinc-500">Zmiana adresu e-mail wymaga jego ponownej weryfikacji – wyślemy link na nowy adres.</p>
 
-            <div class="flex justify-end pt-2">
-                <button type="submit" class="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 py-2.5 transition" style="border-radius: 2px;">
-                    Zapisz zmiany
-                </button>
-            </div>
-        </form>
+                <div class="flex justify-end pt-2">
+                    <button type="submit" class="bg-orange-600 hover:bg-orange-700 text-white font-semibold px-6 py-2.5 transition" style="border-radius: 2px;">
+                        Zapisz zmiany
+                    </button>
+                </div>
+            </form>
+        @endif
 
         {{-- Hasło --}}
         <form data-panel="haslo" method="POST" action="{{ route('profile.password') }}#haslo"
