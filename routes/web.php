@@ -101,7 +101,11 @@ Route::middleware(['auth', 'verified', 'role:pracownik,administrator'])->prefix(
 Route::middleware(['auth', 'verified', 'role:administrator'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', \App\Http\Controllers\Admin\DashboardController::class)->name('dashboard');
 
-    Route::resource('users', AdminUserController::class)->except(['show']);
+    Route::resource('users', AdminUserController::class);
+    Route::post('users/{user}/link-hasla', [AdminUserController::class, 'wyslijLinkHasla'])->name('users.password-link');
+    Route::post('users/{user}/weryfikacja', [AdminUserController::class, 'wyslijWeryfikacje'])->name('users.verification');
+    Route::put('users/{user}/haslo', [AdminUserController::class, 'ustawHaslo'])->name('users.password');
+
     Route::resource('services', UslugaController::class)->except(['show'])->parameters(['services' => 'service']);
 
     Route::get('/schedule', [GodzinyPracyController::class, 'index'])->name('schedule.index');

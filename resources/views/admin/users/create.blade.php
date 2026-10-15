@@ -1,23 +1,26 @@
-{{-- resources/views/admin/users/create.blade.php --}}
 @extends('layouts.admin')
-@section('title', 'Dodaj konto')
+@section('title', 'Nowy pracownik')
 
 @section('content')
-<p class="text-sm font-mono text-orange-500 mb-1">NOWE KONTO</p>
-<h1 class="text-2xl font-bold text-zinc-50 mb-6">Dodaj użytkownika</h1>
+<div class="max-w-3xl space-y-5">
+    <a href="{{ route('admin.users.index') }}" class="inline-block text-[13px] text-zinc-400 hover:text-zinc-200">← Użytkownicy</a>
 
-<form method="POST" action="{{ route('admin.users.store') }}" class="bg-[#1F2128] border border-zinc-800 p-6 max-w-lg space-y-4" style="border-radius: 2px;">
-    @csrf
-    @include('admin.users._form')
-
-    <div class="flex gap-3">
-        <button type="submit" class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 transition" style="border-radius: 2px;">
-            Utwórz konto
-        </button>
-        <a href="{{ route('admin.users.index') }}"
-           class="flex-1 text-center border border-zinc-600 hover:border-zinc-400 text-zinc-300 font-semibold py-3 transition" style="border-radius: 2px;">
-            Anuluj
-        </a>
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <p class="text-sm font-mono text-orange-500 mb-1">ZESPÓŁ</p>
+            <h1 class="text-2xl font-bold text-zinc-50">Nowy pracownik</h1>
+        </div>
+        <div class="flex gap-2.5">
+            <a href="{{ route('admin.users.index') }}"
+               class="inline-flex items-center min-h-[44px] px-4 border border-zinc-700 text-zinc-300 hover:text-white text-sm font-medium" style="border-radius: 2px;">Anuluj</a>
+            <button type="submit" form="form-uzytkownika"
+                    class="min-h-[44px] px-5 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold transition" style="border-radius: 2px;">Utwórz konto</button>
+        </div>
     </div>
-</form>
+
+    <form id="form-uzytkownika" method="POST" action="{{ route('admin.users.store') }}" class="space-y-5">
+        @csrf
+        @include('admin.users._form')
+    </form>
+</div>
 @endsection
