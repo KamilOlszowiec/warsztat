@@ -2,64 +2,111 @@
 @section('title', 'Dni wolne')
 
 @section('content')
-<p class="text-sm font-mono text-orange-500 mb-1">DNI WOLNE</p>
-<h1 class="text-2xl font-bold text-zinc-50 mb-6">Dni wolne warsztatu</h1>
+@php
+    $skrotyDni = ['PN', 'WT', 'ŚR', 'CZW', 'PT', 'SO', 'ND'];
+    $odmianaWizyt = fn ($n) => $n === 1 ? 'umówiona wizyta' : ($n % 10 >= 2 && $n % 10 <= 4 && ($n % 100 < 12 || $n % 100 > 14) ? 'umówione wizyty' : 'umówionych wizyt');
+@endphp
 
-{{-- Dodawanie --}}
-<form method="POST" action="{{ route('admin.days-off.store') }}"
-      class="bg-[#1F2128] border border-zinc-800 p-6 mb-6 grid grid-cols-1 md:grid-cols-[180px_1fr_auto] gap-3 items-end" style="border-radius: 2px;">
-    @csrf
-    <div>
-        <label class="block text-xs font-mono text-zinc-400 mb-1.5">DATA</label>
-        <input type="date" name="data" min="{{ now()->format('Y-m-d') }}" value="{{ old('data') }}"
-            class="w-full bg-[#15161A] border border-zinc-700 text-zinc-100 px-3 py-2.5 focus:outline-none focus:border-orange-600" style="border-radius: 2px;">
-    </div>
-    <div>
-        <label class="block text-xs font-mono text-zinc-400 mb-1.5">OPIS (OPCJONALNIE)</label>
-        <input type="text" name="opis" value="{{ old('opis') }}" placeholder="np. Wigilia, inwentaryzacja"
-            class="w-full bg-[#15161A] border border-zinc-700 text-zinc-100 px-3 py-2.5 focus:outline-none focus:border-orange-600" style="border-radius: 2px;">
-    </div>
-    <button type="submit" class="bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold px-4 py-2.5 transition" style="border-radius: 2px;">
-        + Dodaj dzień wolny
-    </button>
-    @error('data') <p class="text-sm text-red-500 md:col-span-3">{{ $message }}</p> @enderror
-    @error('opis') <p class="text-sm text-red-500 md:col-span-3">{{ $message }}</p> @enderror
-</form>
+<div class="max-w-4xl space-y-5">
 
-{{-- Lista nadchodzących --}}
-<div class="bg-[#1F2128] border border-zinc-800 overflow-hidden" style="border-radius: 2px;">
-    <table class="w-full text-sm">
-        <thead>
-            <tr class="border-b border-zinc-800 text-left">
-                <th class="px-4 py-3 font-mono text-xs text-zinc-500">DATA</th>
-                <th class="px-4 py-3 font-mono text-xs text-zinc-500">OPIS</th>
-                <th class="px-4 py-3 font-mono text-xs text-zinc-500">AKTYWNE REZERWACJE</th>
-                <th class="px-4 py-3 font-mono text-xs text-zinc-500 text-right">AKCJE</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse ($dniWolne as $dzien)
-                <tr class="border-b border-zinc-800/50 hover:bg-white/[0.02]">
-                    <td class="px-4 py-3 text-zinc-200 font-mono">{{ $dzien->data->format('d.m.Y') }}</td>
-                    <td class="px-4 py-3 text-zinc-400">{{ $dzien->opis ?? '—' }}</td>
-                    <td class="px-4 py-3 font-mono {{ $dzien->liczba_rezerwacji > 0 ? 'text-red-400' : 'text-zinc-400' }}">
-                        {{ $dzien->liczba_rezerwacji }}
-                    </td>
-                    <td class="px-4 py-3 text-right">
-                        <form method="POST" action="{{ route('admin.days-off.destroy', $dzien) }}" class="inline"
-                              onsubmit="return confirm('Na pewno usunąć ten dzień wolny?');">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="text-red-500 hover:text-red-400">Usuń</button>
-                        </form>
-                    </td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="4" class="px-4 py-6 text-center text-zinc-500">Brak zaplanowanych dni wolnych.</td>
-                </tr>
-            @endforelse
-        </tbody>
-    </table>
+    <div>
+        <p class="text-sm font-mono text-orange-500 mb-1">USTAWIENIA</p>
+        <h1 class="text-2xl font-bold text-zinc-50">Dni wolne warsztatu</h1>
+        <p class="text-sm text-zinc-400 mt-1.5">W te dni warsztat jest zamknięty – klienci nie zobaczą wolnych terminów, niezależnie od grafiku.</p>
+    </div>
+
+    {{-- Dodawanie --}}
+    <form id="form-dnia-wolnego" method="POST" action="{{ route('admin.days-off.store') }}"
+          class="bg-[#1F2128] border border-zinc-800 p-5 flex flex-wrap items-end gap-3" style="border-radius: 2px;">
+        @csrf
+        <label class="w-[180px]">
+            <span class="block mb-1.5 text-[11px] font-mono text-zinc-400">DATA</span>
+            <input type="date" id="pole-data" name="data" min="{{ now()->format('Y-m-d') }}" value="{{ old('data') }}" required
+                class="w-full h-[42px] px-2.5 bg-[#15161A] border border-zinc-700 text-zinc-100 text-sm focus:outline-none focus:border-orange-600 [color-scheme:dark]" style="border-radius: 2px;">
+        </label>
+        <label class="flex-1 min-w-[220px]">
+            <span class="block mb-1.5 text-[11px] font-mono text-zinc-400">OPIS (OPCJONALNIE)</span>
+            <input type="text" name="opis" value="{{ old('opis') }}" maxlength="100" placeholder="np. Wigilia, inwentaryzacja, szkolenie zespołu"
+                class="w-full h-[42px] px-3 bg-[#15161A] border border-zinc-700 text-zinc-100 text-sm placeholder-zinc-500 focus:outline-none focus:border-orange-600" style="border-radius: 2px;">
+        </label>
+        <button type="submit" class="h-[42px] px-5 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold transition" style="border-radius: 2px;">
+            + Dodaj dzień wolny
+        </button>
+        <p id="ostrzezenie-wizyt" class="hidden w-full text-[13px] text-red-300"></p>
+        @error('data') <p class="w-full text-sm text-red-400">{{ $message }}</p> @enderror
+        @error('opis') <p class="w-full text-sm text-red-400">{{ $message }}</p> @enderror
+    </form>
+
+    {{-- Zaplanowane --}}
+    <section class="bg-[#1F2128] border border-zinc-800" style="border-radius: 2px;" aria-label="Zaplanowane dni wolne">
+        <div class="flex items-baseline justify-between px-5 py-4 border-b border-zinc-800">
+            <h2 class="text-[15px] font-semibold text-zinc-50">Zaplanowane</h2>
+            <span class="text-[11px] font-mono text-zinc-400">{{ $dniWolne->count() }} {{ $dniWolne->count() === 1 ? 'DZIEŃ' : 'DNI' }}</span>
+        </div>
+
+        @forelse ($dniWolne as $d)
+            @php
+                $za = (int) today()->diffInDays($d->data);
+                $kiedy = $za === 0 ? 'dziś' : ($za === 1 ? 'jutro' : "za {$za} dni");
+            @endphp
+            <div class="flex items-center gap-4 px-5 py-4 {{ $loop->last ? '' : 'border-b border-zinc-800' }}">
+                <div class="w-[58px] shrink-0 text-center py-2 bg-[#18191D] border border-zinc-800" style="border-radius: 2px;">
+                    <p class="text-[10px] font-mono text-zinc-400">{{ $skrotyDni[$d->data->dayOfWeekIso - 1] }}</p>
+                    <p class="text-[22px] font-bold text-zinc-50 leading-tight">{{ $d->data->format('d') }}</p>
+                    <p class="text-[10px] font-mono text-zinc-400">{{ mb_strtoupper($d->data->translatedFormat('M'), 'UTF-8') }}</p>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-zinc-50">{{ $d->opis ?: 'Dzień wolny' }}</p>
+                    @if ($d->liczba_rezerwacji > 0)
+                        <p class="text-xs text-red-300 mt-0.5">{{ $d->liczba_rezerwacji }} {{ $odmianaWizyt($d->liczba_rezerwacji) }} w tym dniu – przenieś je albo odwołaj</p>
+                    @else
+                        <p class="text-xs text-zinc-400 mt-0.5">{{ $kiedy }} · brak rezerwacji</p>
+                    @endif
+                </div>
+                @if ($d->liczba_rezerwacji > 0)
+                    <a href="{{ route('pracownik.reservations.plan', ['data' => $d->data->toDateString()]) }}"
+                       class="text-[13px] font-medium text-orange-500 hover:text-orange-400 whitespace-nowrap">Pokaż wizyty →</a>
+                @endif
+                <form method="POST" action="{{ route('admin.days-off.destroy', $d) }}"
+                      onsubmit="return confirm('Usunąć dzień wolny {{ $d->data->format('d.m.Y') }}? Dzień znów będzie dostępny do rezerwacji.');">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="text-[13px] text-red-400/80 hover:text-red-400">Usuń</button>
+                </form>
+            </div>
+        @empty
+            <p class="px-5 py-8 text-center text-sm text-zinc-400">Brak zaplanowanych dni wolnych.</p>
+        @endforelse
+    </section>
 </div>
+
+<script>
+(function () {
+    const wizyty = @json($wizytyWgDni);
+    const form = document.getElementById('form-dnia-wolnego');
+    const poleData = document.getElementById('pole-data');
+    const ostrzezenie = document.getElementById('ostrzezenie-wizyt');
+
+    function liczba() {
+        return parseInt(wizyty[poleData.value] || 0, 10);
+    }
+
+    // Ostrzeżenie od razu po wybraniu daty
+    poleData.addEventListener('change', function () {
+        const n = liczba();
+        ostrzezenie.classList.toggle('hidden', n === 0);
+        ostrzezenie.textContent = n > 0
+            ? 'W tym dniu jest już ' + n + ' umówionych wizyt. Po zamknięciu warsztatu trzeba je będzie przenieść albo odwołać.'
+            : '';
+    });
+
+    // Potwierdzenie przed zapisem, gdy w tym dniu są wizyty
+    form.addEventListener('submit', function (e) {
+        const n = liczba();
+        if (n > 0 && !confirm('W tym dniu jest ' + n + ' umówionych wizyt. Na pewno zamknąć warsztat? Wizyty nie zostaną odwołane automatycznie.')) {
+            e.preventDefault();
+        }
+    });
+})();
+</script>
 @endsection
