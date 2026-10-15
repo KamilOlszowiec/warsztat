@@ -41,7 +41,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', function () {
         return match (auth()->user()->rola) {
             'administrator' => redirect('/admin'),
-            'pracownik' => redirect()->route('pracownik.reservations.index'),
+            'pracownik' => redirect()->route('pracownik.reservations.plan'),
             default => redirect('/klient'),
         };
     })->name('dashboard');
@@ -81,7 +81,8 @@ Route::middleware(['auth', 'verified', 'role:klient'])->prefix('klient')->name('
 });
 
 Route::middleware(['auth', 'verified', 'role:pracownik,administrator'])->prefix('pracownik')->name('pracownik.')->group(function () {
-
+    
+    Route::get('/reservations/plan', [PracownikRezerwacjaController::class, 'plan'])->name('reservations.plan');    
     Route::get('reservations/{reservation}/dostepne-terminy', [\App\Http\Controllers\Pracownik\RezerwacjaController::class, 'dostepneTerminy'])->name('reservations.availability');
     Route::get('/reservations', [PracownikRezerwacjaController::class, 'index'])->name('reservations.index');
     Route::post('/reservations/{reservation}/approve', [PracownikRezerwacjaController::class, 'approve'])->name('reservations.approve');

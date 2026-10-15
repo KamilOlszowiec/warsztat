@@ -53,9 +53,10 @@
                         </div>
 
                         @if ($dzien['wizyty'] > 0)
-                            <span class="shrink-0 text-xs px-2 py-0.5 bg-zinc-800 text-zinc-300" style="border-radius: 2px;">
-                                {{ $dzien['wizyty'] }} {{ $odmianaWizyt($dzien['wizyty']) }}
-                            </span>
+                            <a href="{{ route('pracownik.reservations.plan', ['data' => $dzien['data']->toDateString()]) }}"
+                               class="shrink-0 text-xs px-2 py-0.5 bg-zinc-800 text-zinc-300 hover:text-orange-400 hover:bg-zinc-700 transition" style="border-radius: 2px;">
+                                {{ $dzien['wizyty'] }} {{ $odmianaWizyt($dzien['wizyty']) }} →
+                            </a>
                         @endif
                     </div>
                 @endforeach

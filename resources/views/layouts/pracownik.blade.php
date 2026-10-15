@@ -48,7 +48,7 @@
 
             <p class="px-3 mt-4 mb-1.5 text-[10px] font-mono tracking-widest text-zinc-500">PRACA</p>
 
-            <a href="{{ route('pracownik.reservations.index') }}"
+            <a href="{{ route('pracownik.reservations.plan') }}"
                class="nav-link flex items-center gap-3 min-h-[40px] px-3 text-sm font-medium {{ request()->routeIs('pracownik.reservations.*') ? 'active' : '' }}">
                 <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="3" y="5" width="18" height="16" rx="1"></rect><path d="M3 10h18M8 3v4M16 3v4"></path>

@@ -3,6 +3,10 @@ namespace App\Http\Controllers\Pracownik;
 
 use App\Http\Controllers\Controller;
 use App\Models\Rezerwacja;
+use App\Models\DzienWolny;
+use App\Models\GodzinyPracy;
+use App\Models\GrafikPracownika;
+use App\Models\Uzytkownik;
 use App\Notifications\RezerwacjaZatwierdzona;
 use App\Notifications\RezerwacjaZakonczona;
 use App\Notifications\RezerwacjaOdrzucona;
@@ -35,7 +39,112 @@ class RezerwacjaController extends Controller
 
         return view('pracownik.reservations.index', compact('rezerwacje', 'status'));
     }
+    /**
+     * Plan dnia: kolumny mechaników, wizyty jako bloki na osi czasu.
+     */
+    public function plan(Request $request)
+    {
+        try {
+            $dzien = $request->filled('data') ? Carbon::parse($request->get('data'))->startOfDay() : today();
+        } catch (\Exception $e) {
+            $dzien = today();
+        }
+        $data = $dzien->toDateString();
 
+        $dzienWolny = DzienWolny::where('data', $data)->first();
+        $godzinyPracy = GodzinyPracy::where('dzien_tygodnia', $dzien->dayOfWeekIso)->first();
+        $otwarteWTenDzien = $godzinyPracy && $godzinyPracy->czy_czynne;
+
+        // Zakres widoku: godziny otwarcia, a gdy warsztat zamknięty – 8:00–16:00
+        $od = Carbon::parse($data . ' ' . ($otwarteWTenDzien ? $godzinyPracy->godzina_otwarcia : '08:00'));
+        $do = Carbon::parse($data . ' ' . ($otwarteWTenDzien ? $godzinyPracy->godzina_zamkniecia : '16:00'));
+
+        $rezerwacje = Rezerwacja::whereDate('termin_rozpoczecia', $data)
+            ->whereNotIn('status', ['odrzucona', 'anulowana'])
+            ->with(['klient', 'pojazd', 'uslugi', 'mechanik'])
+            ->orderBy('termin_rozpoczecia')
+            ->get();
+
+        // Poszerzenie widoku, jeśli jakaś wizyta wychodzi poza godziny otwarcia
+        foreach ($rezerwacje as $r) {
+            if ($r->termin_rozpoczecia->lt($od)) {
+                $od = $r->termin_rozpoczecia->copy()->startOfHour();
+            }
+            if ($r->termin_zakonczenia->gt($do)) {
+                $do = $r->termin_zakonczenia->copy()->addMinutes(59)->startOfHour();
+            }
+        }
+
+        // 32 px na każde 30 minut
+        $pxNaMinute = 32 / 30;
+        $poz = fn (Carbon $t) => max(0, (int) round(($t->getTimestamp() - $od->getTimestamp()) / 60 * $pxNaMinute));
+        $wysokosc = $poz($do);
+
+        $bloki = fn ($lista) => $lista->map(fn ($r) => [
+            'rezerwacja' => $r,
+            'top'        => $poz($r->termin_rozpoczecia),
+            'wysokosc'   => $poz($r->termin_zakonczenia) - $poz($r->termin_rozpoczecia),
+        ])->values()->all();
+
+        $mechanicy = Uzytkownik::where('rola', 'pracownik')->orderBy('nazwisko')->orderBy('imie')->get();
+        $zmiany = GrafikPracownika::where('data', $data)->get()->keyBy('id_pracownika');
+
+        $kolumny = [];
+        foreach ($mechanicy as $m) {
+            $zmiana = $zmiany->get($m->id_uzytkownika);
+            $poza = [];
+
+            if (!$zmiana) {
+                $poza[] = ['top' => 0, 'wysokosc' => $wysokosc, 'etykieta' => 'wolne'];
+            } else {
+                $start = $poz($zmiana->poczatek());
+                $koniec = $poz($zmiana->koniec());
+                if ($start > 0) {
+                    $poza[] = ['top' => 0, 'wysokosc' => $start, 'etykieta' => 'poza zmianą'];
+                }
+                if ($koniec < $wysokosc) {
+                    $poza[] = ['top' => $koniec, 'wysokosc' => $wysokosc - $koniec, 'etykieta' => 'poza zmianą'];
+                }
+            }
+
+            $kolumny[] = [
+                'tytul'     => $m->imie . ' ' . $m->nazwisko,
+                'inicjaly'  => mb_strtoupper(mb_substr($m->imie, 0, 1) . mb_substr($m->nazwisko, 0, 1), 'UTF-8'),
+                'podtytul'  => $zmiana ? substr($zmiana->godzina_od, 0, 5) . ' – ' . substr($zmiana->godzina_do, 0, 5) : 'wolne',
+                'poza'      => $poza,
+                'wizyty'    => $bloki($rezerwacje->where('id_mechanika', $m->id_uzytkownika)),
+            ];
+        }
+
+        // Wizyty bez mechanika (np. po usunięciu konta) – osobna kolumna, żeby nie zginęły
+        $idMechanikow = $mechanicy->pluck('id_uzytkownika');
+        $bezMechanika = $rezerwacje->filter(fn ($r) => !$r->id_mechanika || !$idMechanikow->contains($r->id_mechanika));
+        if ($bezMechanika->isNotEmpty()) {
+            $kolumny[] = [
+                'tytul'    => 'Bez mechanika',
+                'inicjaly' => '?',
+                'podtytul' => 'do przydzielenia',
+                'poza'     => [],
+                'wizyty'   => $bloki($bezMechanika),
+            ];
+        }
+
+        $etykietyGodzin = [];
+        for ($t = $od->copy(); $t->lt($do); $t->addHour()) {
+            $etykietyGodzin[] = ['top' => $poz($t), 'etykieta' => $t->format('H:i')];
+        }
+
+        // Wybrana wizyta: z adresu, a domyślnie pierwsza oczekująca albo pierwsza w ogóle
+        $wybrana = $rezerwacje->firstWhere('id_rezerwacji', (int) $request->get('wizyta'))
+            ?? $rezerwacje->firstWhere('status', 'oczekująca')
+            ?? $rezerwacje->first();
+
+        $teraz = $dzien->isToday() && now()->between($od, $do) ? $poz(now()) : null;
+
+        return view('pracownik.reservations.plan', compact(
+            'dzien', 'dzienWolny', 'otwarteWTenDzien', 'kolumny', 'etykietyGodzin', 'wysokosc', 'wybrana', 'teraz'
+        ));
+    }
     public function approve(Rezerwacja $reservation)
     {
         if ($reservation->status !== 'oczekująca') {

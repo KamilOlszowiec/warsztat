@@ -16,6 +16,8 @@ class PrzydzialController extends Controller
 
     public function edit(Rezerwacja $reservation)
     {
+        $this->tylkoAdministrator();
+
         if (!$this->moznaZmienic($reservation)) {
             return redirect()->route('pracownik.reservations.index')
                 ->withErrors(['error' => 'Mechanika można zmienić tylko dla oczekującej lub zatwierdzonej rezerwacji, która jeszcze się nie rozpoczęła.']);
@@ -31,6 +33,8 @@ class PrzydzialController extends Controller
 
     public function update(Request $request, Rezerwacja $reservation)
     {
+        $this->tylkoAdministrator();
+
         if (!$this->moznaZmienic($reservation)) {
             return redirect()->route('pracownik.reservations.index')
                 ->withErrors(['error' => 'Mechanika można zmienić tylko dla oczekującej lub zatwierdzonej rezerwacji, która jeszcze się nie rozpoczęła.']);
@@ -50,8 +54,21 @@ class PrzydzialController extends Controller
         }
 
         return redirect()
-            ->route('pracownik.reservations.index', ['status' => $reservation->status])
+            ->route('pracownik.reservations.plan', [
+                'data'   => $reservation->termin_rozpoczecia->toDateString(),
+                'wizyta' => $reservation->id_rezerwacji,
+            ])
             ->with('status', 'Mechanik został zmieniony.');
+    }
+
+    /**
+     * Przydział mechaników to decyzja kierownicza – zmienia go tylko administrator.
+     */
+    private function tylkoAdministrator(): void
+    {
+        if (auth()->user()->rola !== 'administrator') {
+            abort(403, 'Mechanika może zmienić tylko administrator.');
+        }
     }
 
     private function moznaZmienic(Rezerwacja $rezerwacja): bool
