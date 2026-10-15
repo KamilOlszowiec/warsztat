@@ -99,7 +99,7 @@ Route::middleware(['auth', 'verified', 'role:pracownik,administrator'])->prefix(
 });
 
 Route::middleware(['auth', 'verified', 'role:administrator'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/', fn() => view('admin.dashboard'))->name('dashboard');
+    Route::get('/', \App\Http\Controllers\Admin\DashboardController::class)->name('dashboard');
 
     Route::resource('users', AdminUserController::class)->except(['show']);
     Route::resource('services', UslugaController::class)->except(['show'])->parameters(['services' => 'service']);
