@@ -107,6 +107,7 @@ Route::middleware(['auth', 'verified', 'role:administrator'])->prefix('admin')->
     Route::put('users/{user}/haslo', [AdminUserController::class, 'ustawHaslo'])->name('users.password');
 
     Route::resource('services', UslugaController::class)->except(['show'])->parameters(['services' => 'service']);
+    Route::patch('services/{service}/widocznosc', [UslugaController::class, 'przelaczWidocznosc'])->name('services.toggle');
 
     Route::get('/schedule', [GodzinyPracyController::class, 'index'])->name('schedule.index');
     Route::put('/schedule', [GodzinyPracyController::class, 'update'])->name('schedule.update');

@@ -13,8 +13,10 @@ class SpecjalizacjaController extends Controller
 {
     public function index()
     {
-        $specjalizacje = Specjalizacja::with(['pracownicy' => fn ($q) => $q->orderBy('nazwisko')])
-            ->withCount('uslugi')
+        $specjalizacje = Specjalizacja::with([
+                'pracownicy' => fn ($q) => $q->where('rola', 'pracownik')->orderBy('nazwisko'),
+                'uslugi'     => fn ($q) => $q->orderBy('nazwa'),
+            ])
             ->orderBy('nazwa')
             ->get();
 

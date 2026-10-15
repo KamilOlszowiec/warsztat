@@ -2,59 +2,91 @@
 @section('title', 'Specjalizacje')
 
 @section('content')
-<div class="flex items-center justify-between mb-6">
-    <div>
-        <p class="text-sm font-mono text-orange-500 mb-1">SPECJALIZACJE</p>
-        <h1 class="text-2xl font-bold text-zinc-50">Specjalizacje mechaników</h1>
+@php
+    $odmiana = fn ($n, $a, $b, $c) => $n === 1 ? $a : ($n % 10 >= 2 && $n % 10 <= 4 && ($n % 100 < 12 || $n % 100 > 14) ? $b : $c);
+@endphp
+
+<div class="max-w-6xl space-y-5">
+
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <p class="text-sm font-mono text-orange-500 mb-1">ZESPÓŁ</p>
+            <h1 class="text-2xl font-bold text-zinc-50">Specjalizacje</h1>
+            <p class="text-sm text-zinc-400 mt-1.5">Łączą usługi z mechanikami: wizytę dostaje tylko ktoś, kto ma wymaganą specjalizację.</p>
+        </div>
+        <a href="{{ route('admin.specializations.create') }}"
+           class="inline-flex items-center min-h-[44px] px-5 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold transition" style="border-radius: 2px;">
+            + Dodaj specjalizację
+        </a>
     </div>
-    <a href="{{ route('admin.specializations.create') }}"
-       class="bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold px-4 py-2.5 transition" style="border-radius: 2px;">
-        + Dodaj specjalizację
-    </a>
-</div>
 
-@error('error')
-    <p class="text-sm text-red-500 mb-4">{{ $message }}</p>
-@enderror
+    @error('error')
+        <div class="bg-red-900/30 border border-red-700 text-red-300 px-4 py-3 text-sm" style="border-radius: 2px;">{{ $message }}</div>
+    @enderror
 
-<div class="bg-[#1F2128] border border-zinc-800 overflow-hidden" style="border-radius: 2px;">
-    <table class="w-full text-sm">
-        <thead>
-            <tr class="border-b border-zinc-800 text-left">
-                <th class="px-4 py-3 font-mono text-xs text-zinc-500">NAZWA</th>
-                <th class="px-4 py-3 font-mono text-xs text-zinc-500">MECHANICY</th>
-                <th class="px-4 py-3 font-mono text-xs text-zinc-500">USŁUGI</th>
-                <th class="px-4 py-3 font-mono text-xs text-zinc-500 text-right">AKCJE</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse ($specjalizacje as $spec)
-                <tr class="border-b border-zinc-800/50 hover:bg-white/[0.02]">
-                    <td class="px-4 py-3 text-zinc-200">{{ $spec->nazwa }}</td>
-                    <td class="px-4 py-3">
-                        @forelse ($spec->pracownicy as $p)
-                            <p class="text-xs text-zinc-400">{{ $p->imie }} {{ $p->nazwisko }}</p>
-                        @empty
-                            <p class="text-xs text-red-400">Nikt – usługi z tą specjalizacją nie będą dostępne</p>
-                        @endforelse
-                    </td>
-                    <td class="px-4 py-3 text-zinc-400 font-mono">{{ $spec->uslugi_count }}</td>
-                    <td class="px-4 py-3 text-right space-x-3 whitespace-nowrap">
-                        <a href="{{ route('admin.specializations.edit', $spec) }}" class="text-orange-500 hover:text-orange-400">Edytuj</a>
-                        <form method="POST" action="{{ route('admin.specializations.destroy', $spec) }}" class="inline"
-                              onsubmit="return confirm('Na pewno usunąć tę specjalizację?');">
+    <div class="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-4">
+        @foreach ($specjalizacje as $s)
+            @php
+                $liczbaMech = $s->pracownicy->count();
+                $liczbaUslug = $s->uslugi->count();
+                $brak = $liczbaMech === 0 && $liczbaUslug > 0;
+            @endphp
+            <article class="bg-[#1F2128] border {{ $brak ? 'border-red-900' : 'border-zinc-800' }} flex flex-col" style="border-radius: 2px;">
+                <div class="px-5 py-4 border-b border-zinc-800">
+                    <h2 class="font-semibold text-zinc-50">{{ $s->nazwa }}</h2>
+                    <p class="text-xs text-zinc-400 mt-0.5">
+                        {{ $liczbaMech }} {{ $odmiana($liczbaMech, 'mechanik', 'mechaników', 'mechaników') }}
+                        · {{ $liczbaUslug }} {{ $odmiana($liczbaUslug, 'usługa', 'usługi', 'usług') }}
+                    </p>
+                </div>
+
+                <div class="px-5 py-3.5 flex-1 space-y-3">
+                    @if ($liczbaMech > 0)
+                        <div class="flex flex-wrap gap-1.5">
+                            @foreach ($s->pracownicy as $p)
+                                <a href="{{ route('admin.users.edit', $p) }}"
+                                   class="inline-flex items-center gap-1.5 pl-[3px] pr-2 py-[3px] bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-200 transition" style="border-radius: 12px;">
+                                    <span class="w-5 h-5 flex items-center justify-center bg-zinc-600 text-zinc-50 text-[9px] font-bold" style="border-radius: 50%;">{{ mb_strtoupper(mb_substr($p->imie, 0, 1) . mb_substr($p->nazwisko, 0, 1), 'UTF-8') }}</span>
+                                    {{ $p->imie }} {{ $p->nazwisko }}
+                                </a>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    @if ($liczbaUslug > 0)
+                        <p class="text-xs leading-relaxed text-zinc-400">{{ $s->uslugi->pluck('nazwa')->implode(' · ') }}</p>
+                    @else
+                        <p class="text-xs text-zinc-500">Żadna usługa nie wymaga jeszcze tej specjalizacji.</p>
+                    @endif
+
+                    @if ($brak)
+                        <p class="text-[13px] text-red-300">Nikt nie ma tej specjalizacji – {{ $liczbaUslug === 1 ? 'ta usługa nie ma' : 'te usługi nie mają' }} żadnych wolnych terminów.</p>
+                    @elseif ($liczbaMech === 1 && $liczbaUslug > 0)
+                        <p class="text-xs text-yellow-400">Tylko jedna osoba – gdy ma wolne, {{ $liczbaUslug === 1 ? 'usługa nie ma' : 'usługi nie mają' }} terminów.</p>
+                    @endif
+                </div>
+
+                <div class="flex items-center gap-4 px-5 py-3 border-t border-zinc-800 text-[13px]">
+                    <a href="{{ route('admin.specializations.edit', $s) }}" class="font-medium text-orange-500 hover:text-orange-400">
+                        {{ $brak ? 'Przypisz mechaników →' : 'Edytuj' }}
+                    </a>
+                    @if ($liczbaUslug === 0)
+                        <form method="POST" action="{{ route('admin.specializations.destroy', $s) }}" class="ml-auto"
+                              onsubmit="return confirm('Usunąć specjalizację „{{ $s->nazwa }}”?');">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="text-red-500 hover:text-red-400">Usuń</button>
+                            <button type="submit" class="text-red-400/80 hover:text-red-400">Usuń</button>
                         </form>
-                    </td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="4" class="px-4 py-6 text-center text-zinc-500">Brak specjalizacji.</td>
-                </tr>
-            @endforelse
-        </tbody>
-    </table>
+                    @endif
+                </div>
+            </article>
+        @endforeach
+
+        <a href="{{ route('admin.specializations.create') }}"
+           class="min-h-[180px] flex flex-col items-center justify-center gap-1.5 border border-dashed border-zinc-600 hover:border-orange-600 text-zinc-300 hover:text-orange-400 text-sm font-medium transition" style="border-radius: 2px;">
+            <span class="text-2xl text-zinc-500">+</span>
+            Nowa specjalizacja
+        </a>
+    </div>
 </div>
 @endsection
