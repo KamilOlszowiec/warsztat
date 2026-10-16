@@ -128,9 +128,7 @@
                                                 style="border-radius: 2px;">
                                             <span class="kropka hidden absolute top-1 right-1 w-1.5 h-1.5 bg-orange-500" style="border-radius: 50%;"></span>
                                             <span class="tekst text-[11px] font-mono"></span>
-                                            <span class="tor relative block h-1 bg-white/5" style="border-radius: 2px;">
-                                                <span class="pasek absolute inset-y-0 bg-green-400" style="border-radius: 2px;"></span>
-                                            </span>
+                                            <span class="uwaga hidden text-[10px] leading-tight text-yellow-400">poza godzinami otwarcia</span>
                                         </button>
                                         <input type="hidden" class="pole-od" name="zmiany[{{ $p->id_uzytkownika }}][{{ $data }}][od]" value="{{ old($klucz . '.od', $startOd) }}">
                                         <input type="hidden" class="pole-do" name="zmiany[{{ $p->id_uzytkownika }}][{{ $data }}][do]" value="{{ old($klucz . '.do', $startDo) }}">
@@ -218,32 +216,39 @@
 
     function rysuj(k) {
         const p = pola(k);
-        const maZmiane = p.od.value && p.do.value;
         const tekst = k.querySelector('.tekst');
-        const pasek = k.querySelector('.pasek');
-        const otw = naMin(k.dataset.otwarcie), zam = naMin(k.dataset.zamkniecie);       
+        const uwaga = k.querySelector('.uwaga');
+        const maZmiane = p.od.value && p.do.value;
 
-        let tlo = maZmiane
-            ? 'bg-green-900/30 border border-green-500/35'
-            : 'border border-zinc-800 bg-[repeating-linear-gradient(135deg,#18191D_0_5px,#202127_5px_10px)]';
+        // Zmiana wychodząca poza godziny otwarcia (np. po skróceniu godzin pracy)
+        const pozaGodzinami = maZmiane && (
+            naMin(p.od.value) < naMin(k.dataset.otwarcie) || naMin(p.do.value) > naMin(k.dataset.zamkniecie)
+        );
+
+        let tlo;
+        if (!maZmiane) {
+            tlo = 'border border-zinc-800 bg-[repeating-linear-gradient(135deg,#18191D_0_5px,#202127_5px_10px)]';
+        } else if (pozaGodzinami) {
+            tlo = 'bg-yellow-900/25 border border-yellow-500/50';
+        } else {
+            tlo = 'bg-green-900/30 border border-green-500/35';
+        }
         if (k === wybrana) tlo += ' outline outline-2 outline-orange-500 outline-offset-1';
 
-        k.className = 'komorka relative w-full min-h-[52px] px-2 py-1.5 flex flex-col justify-center gap-1.5 text-left transition hover:brightness-125 ' + tlo;
+        k.className = 'komorka relative w-full min-h-[52px] px-2 py-1.5 flex flex-col justify-center gap-0.5 text-left transition hover:brightness-125 ' + tlo;
 
         if (maZmiane) {
             tekst.textContent = p.od.value + '–' + p.do.value;
-            tekst.className = 'tekst text-[11px] font-mono font-semibold text-zinc-50';
-            k.querySelector('.tor').classList.remove('hidden');
-            pasek.style.left = ((naMin(p.od.value) - otw) / (zam - otw) * 100) + '%';
-            pasek.style.width = ((naMin(p.do.value) - naMin(p.od.value)) / (zam - otw) * 100) + '%';
+            tekst.className = 'tekst text-[11px] font-mono font-semibold ' + (pozaGodzinami ? 'text-yellow-200' : 'text-zinc-50');
         } else {
             tekst.textContent = 'wolne';
             tekst.className = 'tekst text-[11px] font-mono text-zinc-500';
-            k.querySelector('.tor').classList.add('hidden');
         }
 
+        uwaga.classList.toggle('hidden', !pozaGodzinami);
         k.querySelector('.kropka').classList.toggle('hidden', !zmieniona(k));
-        k.setAttribute('aria-label', k.dataset.nazwa + ', ' + k.dataset.etykieta + ': ' + (maZmiane ? p.od.value + ' do ' + p.do.value : 'wolne'));
+        k.setAttribute('aria-label', k.dataset.nazwa + ', ' + k.dataset.etykieta + ': '
+            + (maZmiane ? p.od.value + ' do ' + p.do.value + (pozaGodzinami ? ', poza godzinami otwarcia' : '') : 'wolne'));
     }
 
     function podsumowania() {
