@@ -127,6 +127,14 @@
                                     </form>
                                 </div>
                             @endif
+                            @if (auth()->user()->rola === 'administrator')
+                                <form method="POST" action="{{ route('admin.reservations.destroy', $r) }}" class="inline ml-3"
+                                      onsubmit="return confirm('Trwale usunąć rezerwację {{ $r->klient->imie }} {{ $r->klient->nazwisko }} z {{ $r->termin_rozpoczecia->format('d.m.Y H:i') }}? Zniknie też z historii pojazdu.');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-400/80 hover:text-red-400">Usuń</button>
+                                </form>
+                            @endif                            
                         </td>
                     </tr>
                 @empty

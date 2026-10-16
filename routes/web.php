@@ -112,7 +112,6 @@ Route::middleware(['auth', 'verified', 'role:administrator'])->prefix('admin')->
     Route::get('/schedule', [\App\Http\Controllers\Admin\GodzinyPracyController::class, 'index'])->name('schedule.index');
     Route::put('/schedule', [\App\Http\Controllers\Admin\GodzinyPracyController::class, 'update'])->name('schedule.update');
 
-    Route::get('/reservations', [AdminRezerwacjaController::class, 'index'])->name('reservations.index');
     Route::delete('/reservations/{reservation}', [AdminRezerwacjaController::class, 'destroy'])->name('reservations.destroy');
 
     Route::resource('specializations', \App\Http\Controllers\Admin\SpecjalizacjaController::class)

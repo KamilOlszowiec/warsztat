@@ -30,7 +30,7 @@
             'PRZEGLĄD' => [
                 ['admin.dashboard', 'admin.dashboard', 'Panel główny', '<path d="M3 11l9-7 9 7"></path><path d="M5 10v10h14V10"></path>'],
                 ['pracownik.reservations.plan', 'pracownik.reservations.plan', 'Plan dnia', '<rect x="3" y="5" width="18" height="16" rx="1"></rect><path d="M3 10h18M8 3v4M16 3v4"></path>'],
-                ['admin.reservations.index', 'admin.reservations.*', 'Rezerwacje', '<path d="M8 6h12M8 12h12M8 18h12"></path><circle cx="4" cy="6" r="1"></circle><circle cx="4" cy="12" r="1"></circle><circle cx="4" cy="18" r="1"></circle>'],
+                ['pracownik.reservations.index', ['pracownik.reservations.index', 'pracownik.reservations.edit-termin', 'pracownik.reservations.przydzial'], 'Rezerwacje', '<path d="M8 6h12M8 12h12M8 18h12"></path><circle cx="4" cy="6" r="1"></circle><circle cx="4" cy="12" r="1"></circle><circle cx="4" cy="18" r="1"></circle>'],
             ],
             'ZESPÓŁ' => [
                 ['admin.users.index', 'admin.users.*', 'Użytkownicy', '<circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c0-3.5 3-5.5 6.5-5.5s6.5 2 6.5 5.5"></path><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 14.8c1.8.7 3 2.3 3 5.2"></path>'],
@@ -66,10 +66,10 @@
                 <p class="px-3 {{ $loop->first ? 'mt-4' : 'mt-5' }} mb-1.5 text-[10px] font-mono tracking-widest text-zinc-500">{{ $nazwaSekcji }}</p>
                 @foreach ($pozycje as [$trasa, $wzorzec, $etykieta, $ikona])
                     <a href="{{ route($trasa) }}"
-                       class="nav-link flex items-center gap-3 min-h-[38px] px-3 text-sm font-medium {{ request()->routeIs($wzorzec) ? 'active' : '' }}">
+                       class="nav-link flex items-center gap-3 min-h-[38px] px-3 text-sm font-medium {{ request()->routeIs(...(array) $wzorzec) ? 'active' : '' }}">
                         <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{!! $ikona !!}</svg>
                         {{ $etykieta }}
-                        @if ($trasa === 'admin.reservations.index' && $liczbaOczekujacych > 0)
+                        @if ($trasa === 'pracownik.reservations.index' && $liczbaOczekujacych > 0)
                             <span class="ml-auto min-w-[20px] px-1.5 text-center text-[11px] font-semibold bg-yellow-900 text-yellow-200" style="border-radius: 10px;"
                                   title="Oczekujące na zatwierdzenie">{{ $liczbaOczekujacych }}</span>
                         @endif
