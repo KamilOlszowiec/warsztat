@@ -76,7 +76,7 @@
                                 <span class="w-[34px] h-[34px] shrink-0 flex items-center justify-center text-xs font-bold text-zinc-50 {{ $awatarStyl }}" style="border-radius: 50%;">{{ $inicjaly }}</span>
                                 <div class="min-w-0">
                                     <p class="font-semibold text-zinc-50">{{ $u->imie }} {{ $u->nazwisko }}</p>
-                                    <p class="text-xs text-zinc-400">{{ $u->email }}</p>
+                                    <p class="text-xs text-zinc-400">{{ $u->email ?? ($u->telefon ? 'tel. ' . $u->telefon : '—') }}</p>
                                 </div>
                             </div>
                         </td>
@@ -100,7 +100,9 @@
                             @endif
                         </td>
                         <td class="px-4 py-3">
-                            @if ($u->email_verified_at)
+                            @if (!$u->email)
+                                <span class="text-[10px] font-mono px-2 py-0.5 bg-zinc-800 text-zinc-300" style="border-radius: 2px;">BEZ E-MAILA</span>
+                            @elseif ($u->email_verified_at)
                                 <span class="text-[10px] font-mono px-2 py-0.5 bg-green-900/40 text-green-400" style="border-radius: 2px;">AKTYWNE</span>
                             @else
                                 <span class="text-[10px] font-mono px-2 py-0.5 bg-yellow-900/40 text-yellow-400" style="border-radius: 2px;">NIEZWERYFIKOWANE</span>

@@ -8,6 +8,7 @@ use App\Http\Controllers\Klient\PojazdController;
 use App\Http\Controllers\Klient\RezerwacjaController as KlientRezerwacjaController;
 use App\Http\Controllers\Pracownik\RezerwacjaController as PracownikRezerwacjaController;
 use App\Http\Controllers\Pracownik\KlientController as PracownikKlientController;
+use App\Http\Controllers\Pracownik\NowaWizytaController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\UslugaController;
 use App\Http\Controllers\Admin\RezerwacjaController as AdminRezerwacjaController;
@@ -91,6 +92,13 @@ Route::middleware(['auth', 'verified', 'role:pracownik,administrator'])->prefix(
     Route::post('/reservations/{reservation}/complete', [PracownikRezerwacjaController::class, 'complete'])->name('reservations.complete');
     Route::get('/reservations/{reservation}/edit-termin', [PracownikRezerwacjaController::class, 'editTermin'])->name('reservations.edit-termin');
     Route::put('/reservations/{reservation}/termin', [PracownikRezerwacjaController::class, 'updateTermin'])->name('reservations.update-termin');
+
+    // Nowa wizyta przyjmowana przez pracownika (np. telefonicznie)
+    Route::get('/reservations/nowa', [NowaWizytaController::class, 'create'])->name('reservations.nowa');
+    Route::get('/reservations/nowa/mechanicy', [NowaWizytaController::class, 'mechanicy'])->name('reservations.nowa.mechanicy');
+    Route::get('/reservations/nowa/terminy', [NowaWizytaController::class, 'terminy'])->name('reservations.nowa.terminy');
+    Route::get('/reservations/nowa/klienci', [NowaWizytaController::class, 'klienci'])->name('reservations.nowa.klienci');
+    Route::post('/reservations/nowa', [NowaWizytaController::class, 'store'])->name('reservations.nowa.store');
 
     Route::get('/clients', [PracownikKlientController::class, 'index'])->name('clients.index');
 

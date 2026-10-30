@@ -29,7 +29,9 @@
             <div class="flex flex-wrap items-center gap-2">
                 <h1 class="text-2xl font-bold text-zinc-50">{{ $user->imie }} {{ $user->nazwisko }}</h1>
                 <span class="text-[10px] font-mono px-2 py-0.5 border border-zinc-700 text-zinc-400" style="border-radius: 2px;">KLIENT</span>
-                @if ($user->email_verified_at)
+                @if (!$user->email)
+                    <span class="text-[10px] font-mono px-2 py-0.5 bg-zinc-800 text-zinc-300" style="border-radius: 2px;">BEZ E-MAILA</span>
+                @elseif ($user->email_verified_at)
                     <span class="text-[10px] font-mono px-2 py-0.5 bg-green-900/40 text-green-400" style="border-radius: 2px;">AKTYWNE</span>
                 @else
                     <span class="text-[10px] font-mono px-2 py-0.5 bg-yellow-900/40 text-yellow-400" style="border-radius: 2px;">NIEZWERYFIKOWANE</span>
@@ -153,7 +155,13 @@
                     </div>
                     <div>
                         <dt class="text-[11px] font-mono text-zinc-400">E-MAIL</dt>
-                        <dd class="mt-0.5"><a href="mailto:{{ $user->email }}" class="text-zinc-100 hover:text-orange-400 break-all">{{ $user->email }}</a></dd>
+                        <dd class="mt-0.5">
+                            @if ($user->email)
+                                <a href="mailto:{{ $user->email }}" class="text-zinc-100 hover:text-orange-400 break-all">{{ $user->email }}</a>
+                            @else
+                                <span class="text-zinc-500">nie podano</span>
+                            @endif
+                        </dd>
                     </div>
                 </dl>
             </section>
@@ -161,7 +169,12 @@
             <section class="bg-[#1F2128] border border-zinc-800" style="border-radius: 2px;">
                 <h2 class="px-5 py-4 border-b border-zinc-800 text-[15px] font-semibold text-zinc-50">Konto</h2>
                 <div class="px-5 py-4 space-y-2.5">
-                    @unless ($user->email_verified_at)
+                    @if (!$user->email)
+                        <div class="flex gap-2.5 items-start px-3 py-2.5 bg-zinc-800/60 border border-zinc-700" style="border-radius: 2px;">
+                            <span class="w-2 h-2 shrink-0 mt-1.5 bg-zinc-400" style="border-radius: 50%;"></span>
+                            <p class="text-[13px] text-zinc-200">Klient zapisany telefonicznie, bez adresu e-mail – nie loguje się do aplikacji i nie dostaje powiadomień. Wizyty umawia z nim warsztat.</p>
+                        </div>
+                    @elseif (!$user->email_verified_at)
                         <div class="flex gap-2.5 items-start px-3 py-2.5 bg-yellow-900/20 border border-yellow-700/40" style="border-radius: 2px;">
                             <span class="w-2 h-2 shrink-0 mt-1.5 bg-yellow-400" style="border-radius: 50%;"></span>
                             <p class="text-[13px] text-zinc-200">Klient nie potwierdził adresu e-mail – nie może składać nowych rezerwacji.</p>
@@ -172,7 +185,7 @@
                                 Wyślij ponownie link weryfikacyjny
                             </button>
                         </form>
-                    @endunless
+                    @endif
 
                     <p class="text-xs text-zinc-400 pt-1">Dane osobowe i pojazdy zmienia klient w swoim panelu.</p>
 
@@ -186,7 +199,9 @@
                     @endif
                 </div>
             </section>
-            @include('admin.users._haslo')
+            @if ($user->email)
+                @include('admin.users._haslo')
+            @endif
         </div>
     </div>
 </div>
