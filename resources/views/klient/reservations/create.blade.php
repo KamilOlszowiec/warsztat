@@ -78,6 +78,16 @@
             <h2 class="text-lg font-semibold text-zinc-50 mb-1">Wybierz termin</h2>
             <p class="text-sm text-zinc-500 mb-5">Dni zamknięte i dni wolne warsztatu są wyszarzone.</p>
 
+            {{-- Wybór mechanika (opcjonalny) --}}
+            <div class="mb-5 max-w-sm">
+                <label for="pole-mechanik" class="block text-xs font-mono text-zinc-400 mb-1.5">MECHANIK</label>
+                <select id="pole-mechanik" name="id_mechanika"
+                        class="w-full bg-[#1F2128] border border-zinc-700 text-zinc-100 px-3 py-2.5 focus:outline-none focus:border-orange-600" style="border-radius: 2px;">
+                    <option value="">Dowolny mechanik (najwcześniejszy termin)</option>
+                </select>
+                <p class="text-xs text-zinc-500 mt-1.5">Lista zawiera tylko mechaników, którzy wykonują wszystkie wybrane usługi.</p>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-[minmax(0,300px)_1fr] gap-6">
                 {{-- Kalendarz --}}
                 <div class="bg-[#1F2128] border border-zinc-800 p-4" style="border-radius: 2px;">
@@ -202,6 +212,10 @@
     const btnPotwierdz = document.getElementById('btn-potwierdz');
 
     const url = @json(route('klient.reservations.availability'));
+    const urlMechanicy = @json(route('klient.reservations.mechanicy'));
+    const poleMechanik = document.getElementById('pole-mechanik');
+    let poprzedniMechanik = @json(old('id_mechanika'));
+    let numerZapytaniaMechanikow = 0;
     const dniZamkniete = @json($dniZamkniete);
     const dniWolne = @json($dniWolne);
     const dzisiaj = @json(now()->toDateString());
@@ -463,6 +477,7 @@
         const params = new URLSearchParams();
         wybrane.forEach(c => params.append('uslugi[]', c.value));
         params.append('data', poleData.value);
+        if (poleMechanik.value) params.append('mechanik', poleMechanik.value);
 
         const numer = ++numerZapytania;
         pokazKomunikat('Szukam wolnych terminów…');
@@ -490,6 +505,48 @@
             if (numer === numerZapytania) {
                 pokazKomunikat('Nie udało się pobrać terminów. Sprawdź połączenie i spróbuj ponownie.');
             }
+        }
+    }
+
+    // ---------- Mechanicy ----------
+
+    async function pobierzMechanikow() {
+        const wybrane = zaznaczoneUslugi();
+        const przed = poleMechanik.value;
+        const obecny = przed || poprzedniMechanik || '';
+        const numer = ++numerZapytaniaMechanikow;
+
+        // Bez usług zostaje tylko opcja „dowolny”
+        poleMechanik.querySelectorAll('option:not([value=""])').forEach(o => o.remove());
+        if (wybrane.length === 0) {
+            poleMechanik.value = '';
+            return;
+        }
+
+        const params = new URLSearchParams();
+        wybrane.forEach(c => params.append('uslugi[]', c.value));
+
+        try {
+            const odp = await fetch(urlMechanicy + '?' + params.toString(), { headers: { 'Accept': 'application/json' } });
+            const dane = await odp.json();
+            if (numer !== numerZapytaniaMechanikow || !odp.ok) return;
+
+            dane.mechanicy.forEach(m => {
+                const opcja = document.createElement('option');
+                opcja.value = m.id;
+                opcja.textContent = m.nazwa;
+                poleMechanik.appendChild(opcja);
+            });
+
+            // Zachowujemy wybór, jeśli mechanik nadal wykonuje wszystkie usługi
+            const nadal = dane.mechanicy.some(m => String(m.id) === String(obecny));
+            poleMechanik.value = nadal ? String(obecny) : '';
+            poprzedniMechanik = null;
+
+            // Jeśli wybór mechanika się zmienił, wolne godziny trzeba pobrać ponownie
+            if (poleMechanik.value !== przed && poleData.value) pobierzGodziny();
+        } catch (e) {
+            // Brak listy nie blokuje rezerwacji – zostaje „dowolny mechanik”
         }
     }
 
@@ -523,6 +580,7 @@
             wiersz('Usługi', uslugi),
             wiersz('Termin', formatData(poleData.value) + '\n' + g + '–' + dodajMinuty(g, czas)),
             wiersz('Czas trwania', formatCzas(czas)),
+            wiersz('Mechanik', poleMechanik.value ? poleMechanik.options[poleMechanik.selectedIndex].textContent : 'Dowolny'),
             wiersz('Pojazd', wybranyPojazd().dataset.opis)
         );
 
@@ -537,6 +595,7 @@
 
     checkboxy.forEach(c => c.addEventListener('change', () => {
         odswiezPodsumowanie();
+        pobierzMechanikow();
         if (poleData.value) {
             // Zmiana usług zmienia czas wizyty – godziny trzeba pobrać ponownie
             poprzedniaGodzina = wybranaGodzina();
@@ -547,6 +606,10 @@
     }));
 
     kontenerSlotow.addEventListener('change', odswiez);
+    poleMechanik.addEventListener('change', () => {
+        poprzedniaGodzina = wybranaGodzina();
+        if (poleData.value) pobierzGodziny();
+    });
     radiaPojazdu.forEach(r => r.addEventListener('change', odswiez));
 
     document.getElementById('kal-dni').addEventListener('click', e => {
@@ -593,6 +656,7 @@
 
     renderujKalendarz();
     odswiezPodsumowanie();
+    pobierzMechanikow();
 
     if (poleData.value && zaznaczoneUslugi().length) {
         pobierzGodziny();

@@ -10,6 +10,7 @@ use App\Models\Uzytkownik;
 use App\Notifications\RezerwacjaZatwierdzona;
 use App\Notifications\RezerwacjaZakonczona;
 use App\Notifications\RezerwacjaOdrzucona;
+use App\Notifications\RezerwacjaTerminZmieniony;
 use App\Services\DostepnoscRezerwacjiService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -17,18 +18,35 @@ use Illuminate\Support\Facades\Log;
 
 class RezerwacjaController extends Controller
 {
+    private const AKTYWNE = ['oczekująca', 'zatwierdzona'];
+
+    private const FILTRY = ['moje', 'zalegle', 'dzisiaj', 'oczekująca', 'zatwierdzona', 'zakończona', 'wszystkie'];
+
     public function __construct(private DostepnoscRezerwacjiService $dostepnosc)
     {
     }
 
     public function index(Request $request)
     {
-        $status = $request->get('status', 'oczekująca');
+        $uzytkownik = auth()->user();
+        $czyAdmin = $uzytkownik->rola === 'administrator';
+
+        // Pracownik domyślnie widzi swoje wizyty, administrator – oczekujące na zatwierdzenie
+        $status = $request->get('status', $czyAdmin ? 'oczekująca' : 'moje');
+        if (!in_array($status, self::FILTRY, true) || ($status === 'moje' && $czyAdmin)) {
+            $status = $czyAdmin ? 'oczekująca' : 'moje';
+        }
 
         $query = Rezerwacja::with(['klient', 'pojazd', 'uslugi', 'mechanik'])
             ->orderBy('termin_rozpoczecia');
 
-        if ($status === 'dzisiaj') {
+        if ($status === 'moje') {
+            $query->where('id_mechanika', $uzytkownik->id_uzytkownika)
+                ->whereIn('status', self::AKTYWNE)
+                ->where('termin_rozpoczecia', '>=', today());
+        } elseif ($status === 'zalegle') {
+            $this->zalegle($query, $uzytkownik);
+        } elseif ($status === 'dzisiaj') {
             $query->whereDate('termin_rozpoczecia', today())
                 ->whereNotIn('status', ['odrzucona', 'anulowana']);
         } elseif ($status !== 'wszystkie') {
@@ -37,7 +55,41 @@ class RezerwacjaController extends Controller
 
         $rezerwacje = $query->get();
 
-        return view('pracownik.reservations.index', compact('rezerwacje', 'status'));
+        $liczbaZaleglych = $this->zalegle(Rezerwacja::query(), $uzytkownik)->count();
+
+        return view('pracownik.reservations.index', compact('rezerwacje', 'status', 'czyAdmin', 'liczbaZaleglych'));
+    }
+
+    /**
+     * Wizyty, które już się skończyły, a nikt ich nie obsłużył:
+     * nadal oczekują na zatwierdzenie albo nie zostały oznaczone jako zakończone.
+     * Pracownik widzi tylko swoje, administrator wszystkie.
+     */
+    private function zalegle($query, Uzytkownik $uzytkownik)
+    {
+        return $query->whereIn('status', self::AKTYWNE)
+            ->where('termin_zakonczenia', '<', now())
+            ->when($uzytkownik->rola !== 'administrator',
+                fn ($q) => $q->where('id_mechanika', $uzytkownik->id_uzytkownika));
+    }
+
+    /**
+     * Pracownik może wykonywać akcje tylko na wizytach, w których jest mechanikiem.
+     */
+    private function wymagajUprawnien(Rezerwacja $rezerwacja): void
+    {
+        if (!$rezerwacja->mozeZarzadzac(auth()->user())) {
+            abort(403, 'Możesz zarządzać tylko swoimi wizytami.');
+        }
+    }
+
+    /**
+     * Pracownik przekłada wizytę tylko na swoje wolne terminy,
+     * administrator – na terminy dowolnego mechanika.
+     */
+    private function mechanikPrzyZmianieTerminu(): ?int
+    {
+        return auth()->user()->rola === 'administrator' ? null : (int) auth()->id();
     }
     /**
      * Plan dnia: kolumny mechaników, wizyty jako bloki na osi czasu.
@@ -134,9 +186,11 @@ class RezerwacjaController extends Controller
             $etykietyGodzin[] = ['top' => $poz($t), 'etykieta' => $t->format('H:i')];
         }
 
-        // Wybrana wizyta: z adresu, a domyślnie pierwsza oczekująca albo pierwsza w ogóle
+        // Wybrana wizyta: z adresu, a domyślnie pierwsza własna oczekująca, potem pierwsza własna, potem pierwsza w ogóle
+        $uzytkownik = auth()->user();
         $wybrana = $rezerwacje->firstWhere('id_rezerwacji', (int) $request->get('wizyta'))
-            ?? $rezerwacje->firstWhere('status', 'oczekująca')
+            ?? $rezerwacje->first(fn ($r) => $r->status === 'oczekująca' && $r->mozeZarzadzac($uzytkownik))
+            ?? $rezerwacje->first(fn ($r) => $r->mozeZarzadzac($uzytkownik))
             ?? $rezerwacje->first();
 
         $teraz = $dzien->isToday() && now()->between($od, $do) ? $poz(now()) : null;
@@ -147,14 +201,13 @@ class RezerwacjaController extends Controller
     }
     public function approve(Rezerwacja $reservation)
     {
+        $this->wymagajUprawnien($reservation);
+
         if ($reservation->status !== 'oczekująca') {
             return back()->withErrors(['error' => 'Można zatwierdzić tylko oczekujące rezerwacje.']);
         }
 
-        $reservation->update([
-            'status' => 'zatwierdzona',
-            'id_pracownika' => auth()->id(),
-        ]);
+        $reservation->update(['status' => 'zatwierdzona']);
 
         $reservation->load(['uslugi', 'pojazd']);
 
@@ -169,6 +222,8 @@ class RezerwacjaController extends Controller
 
     public function reject(Request $request, Rezerwacja $reservation)
     {
+        $this->wymagajUprawnien($reservation);
+
         if ($reservation->status !== 'oczekująca') {
             return back()->withErrors(['error' => 'Można odrzucić tylko oczekujące rezerwacje.']);
         }
@@ -179,7 +234,6 @@ class RezerwacjaController extends Controller
 
         $reservation->update([
             'status' => 'odrzucona',
-            'id_pracownika' => auth()->id(),
             'powod_odrzucenia' => $data['powod'] ?? null,
         ]);
 
@@ -196,6 +250,8 @@ class RezerwacjaController extends Controller
 
     public function complete(Rezerwacja $reservation)
     {
+        $this->wymagajUprawnien($reservation);
+
         if ($reservation->status !== 'zatwierdzona') {
             return back()->withErrors(['error' => 'Można zakończyć tylko zatwierdzone rezerwacje.']);
         }
@@ -215,6 +271,8 @@ class RezerwacjaController extends Controller
 
     public function editTermin(Rezerwacja $reservation)
     {
+        $this->wymagajUprawnien($reservation);
+
         $reservation->load(['klient', 'uslugi']);
 
         return view('pracownik.reservations.edit-termin', ['rezerwacja' => $reservation]);
@@ -225,6 +283,8 @@ class RezerwacjaController extends Controller
      */
     public function dostepneTerminy(Request $request, Rezerwacja $reservation)
     {
+        $this->wymagajUprawnien($reservation);
+
         $data = $request->validate([
             'data' => ['required', 'date', 'after_or_equal:today'],
         ]);
@@ -235,7 +295,8 @@ class RezerwacjaController extends Controller
             $reservation->uslugi,
             $data['data'],
             $reservation->id_rezerwacji,
-            $reservation->laczny_czas
+            $reservation->laczny_czas,
+            $this->mechanikPrzyZmianieTerminu()
         );
 
         return response()->json([
@@ -247,6 +308,8 @@ class RezerwacjaController extends Controller
 
     public function updateTermin(Request $request, Rezerwacja $reservation)
     {
+        $this->wymagajUprawnien($reservation);
+
         if (!in_array($reservation->status, ['oczekująca', 'zatwierdzona'])) {
             return back()->withErrors(['error' => 'Można zmienić termin tylko oczekującej lub zatwierdzonej rezerwacji.']);
         }
@@ -258,12 +321,20 @@ class RezerwacjaController extends Controller
 
         $start = Carbon::parse($data['data'] . ' ' . $data['godzina']);
 
-        if (!$this->dostepnosc->zmienTermin($reservation, $start)) {
+        if (!$this->dostepnosc->zmienTermin($reservation, $start, $this->mechanikPrzyZmianieTerminu())) {
             return back()
                 ->withErrors(['godzina' => 'Wybrany termin jest niedostępny – poza godzinami pracy lub brak wolnego mechanika z wymaganymi specjalizacjami.'])
                 ->withInput();
         }
 
-        return redirect()->route('pracownik.reservations.index')->with('status', 'Termin rezerwacji został zmieniony.');
+        $reservation->load(['uslugi', 'pojazd', 'mechanik']);
+
+        try {
+            $reservation->klient->notify(new RezerwacjaTerminZmieniony($reservation));
+        } catch (\Exception $e) {
+            Log::warning('Nie udało się wysłać powiadomienia email o zmianie terminu: ' . $e->getMessage());
+        }
+
+        return redirect()->route('pracownik.reservations.index')->with('status', 'Termin rezerwacji został zmieniony, a klient otrzymał powiadomienie.');
     }
 }

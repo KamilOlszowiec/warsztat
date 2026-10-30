@@ -11,15 +11,31 @@
         </div>
     @enderror
 
+    @php
+        $filtry = ($czyAdmin ? [] : ['moje' => 'Moje wizyty'])
+            + ['zalegle' => 'Zaległe', 'dzisiaj' => 'Dzisiaj', 'oczekująca' => 'Oczekujące', 'zatwierdzona' => 'Zatwierdzone', 'zakończona' => 'Zakończone', 'wszystkie' => 'Wszystkie'];
+        $uzytkownik = auth()->user();
+    @endphp
+
     <div class="flex gap-2 mb-4 flex-wrap">
-        @foreach (['dzisiaj' => 'Dzisiaj', 'oczekująca' => 'Oczekujące', 'zatwierdzona' => 'Zatwierdzone', 'zakończona' => 'Zakończone', 'wszystkie' => 'Wszystkie'] as $key => $label)
+        @foreach ($filtry as $key => $label)
             <a href="{{ route('pracownik.reservations.index', ['status' => $key]) }}"
-               class="text-sm font-medium px-3 py-1.5 transition {{ $status === $key ? 'bg-orange-600 text-white' : 'bg-[#1F2128] text-zinc-400 hover:text-zinc-200' }}"
+               class="inline-flex items-center gap-2 text-sm font-medium px-3 py-1.5 transition {{ $status === $key ? 'bg-orange-600 text-white' : 'bg-[#1F2128] text-zinc-400 hover:text-zinc-200' }}"
                style="border-radius: 2px;">
                 {{ $label }}
+                @if ($key === 'zalegle' && $liczbaZaleglych > 0)
+                    <span class="min-w-[20px] px-1.5 text-center text-[11px] font-semibold bg-red-900 text-red-200" style="border-radius: 10px;">{{ $liczbaZaleglych }}</span>
+                @endif
             </a>
         @endforeach
     </div>
+
+    @if ($status === 'zalegle')
+        <p class="mb-4 text-sm text-zinc-400">
+            Wizyty, które już minęły, a nadal czekają na zatwierdzenie albo nie zostały oznaczone jako zakończone.
+            @unless ($czyAdmin) Widoczne są tylko Twoje wizyty. @endunless
+        </p>
+    @endif
 
     <div class="bg-[#1F2128] border border-zinc-800 overflow-x-auto" style="border-radius: 2px;">
         <table class="w-full text-sm">
@@ -74,7 +90,9 @@
                             </span>
                         </td>
                         <td class="px-4 py-3 text-right whitespace-nowrap">
-                            @if ($r->status === 'oczekująca')
+                            @if (!$r->mozeZarzadzac($uzytkownik) && in_array($r->status, ['oczekująca', 'zatwierdzona']))
+                                <span class="text-xs text-zinc-500">wizyta innego mechanika</span>
+                            @elseif ($r->status === 'oczekująca')
                                 <div class="inline-flex gap-3">
                                     <form method="POST" action="{{ route('pracownik.reservations.approve', $r) }}" class="inline">
                                         @csrf
@@ -85,7 +103,7 @@
                                         Odrzuć
                                     </button>
                                     @if ($r->termin_rozpoczecia->isFuture())
-                                        @if (auth()->user()->rola === 'administrator')
+                                        @if ($czyAdmin)
                                             <a href="{{ route('pracownik.reservations.przydzial', $r) }}" class="text-zinc-300 hover:text-white">Mechanik</a>
                                         @endif
                                         <a href="{{ route('pracownik.reservations.edit-termin', $r) }}" class="text-orange-500 hover:text-orange-400">Zmień termin</a>
@@ -117,17 +135,19 @@
                                 </div>
                             @elseif ($r->status === 'zatwierdzona')
                                 <div class="inline-flex gap-3">
-                                    @if ($r->termin_rozpoczecia->isFuture() && auth()->user()->rola === 'administrator')
+                                    @if ($r->termin_rozpoczecia->isFuture() && $czyAdmin)
                                         <a href="{{ route('pracownik.reservations.przydzial', $r) }}" class="text-zinc-300 hover:text-white">Mechanik</a>
                                     @endif
-                                    <a href="{{ route('pracownik.reservations.edit-termin', $r) }}" class="text-orange-500 hover:text-orange-400">Zmień termin</a>
+                                    @if ($r->termin_rozpoczecia->isFuture())
+                                        <a href="{{ route('pracownik.reservations.edit-termin', $r) }}" class="text-orange-500 hover:text-orange-400">Zmień termin</a>
+                                    @endif
                                     <form method="POST" action="{{ route('pracownik.reservations.complete', $r) }}" class="inline">
                                         @csrf
                                         <button type="submit" class="text-blue-500 hover:text-blue-400">Zakończ</button>
                                     </form>
                                 </div>
                             @endif
-                            @if (auth()->user()->rola === 'administrator')
+                            @if ($czyAdmin)
                                 <form method="POST" action="{{ route('admin.reservations.destroy', $r) }}" class="inline ml-3"
                                       onsubmit="return confirm('Trwale usunąć rezerwację {{ $r->klient->imie }} {{ $r->klient->nazwisko }} z {{ $r->termin_rozpoczecia->format('d.m.Y H:i') }}? Zniknie też z historii pojazdu.');">
                                     @csrf

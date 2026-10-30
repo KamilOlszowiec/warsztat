@@ -22,8 +22,9 @@
         $uzytkownik = auth()->user();
         $inicjaly = mb_strtoupper(mb_substr($uzytkownik->imie, 0, 1) . mb_substr($uzytkownik->nazwisko, 0, 1), 'UTF-8');
 
-        // Licznik przy "Rezerwacjach": nadchodzące wizyty czekające na zatwierdzenie
+        // Licznik przy "Rezerwacjach": własne nadchodzące wizyty czekające na zatwierdzenie
         $liczbaOczekujacych = \App\Models\Rezerwacja::where('status', 'oczekująca')
+            ->where('id_mechanika', $uzytkownik->id_uzytkownika)
             ->where('termin_rozpoczecia', '>', now())
             ->count();
     @endphp
@@ -56,7 +57,7 @@
                 Rezerwacje
                 @if ($liczbaOczekujacych > 0)
                     <span class="ml-auto min-w-[20px] px-1.5 text-center text-[11px] font-semibold bg-yellow-900 text-yellow-200" style="border-radius: 10px;"
-                          title="Oczekujące na zatwierdzenie">{{ $liczbaOczekujacych }}</span>
+                          title="Twoje wizyty oczekujące na zatwierdzenie">{{ $liczbaOczekujacych }}</span>
                 @endif
             </a>
 

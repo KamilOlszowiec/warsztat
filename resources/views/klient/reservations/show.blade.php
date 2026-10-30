@@ -48,6 +48,10 @@
                 Umów kolejną wizytę
             </a>
             @if ($moznaAnulowac)
+                <a href="{{ route('klient.reservations.edit-termin', $r) }}"
+                   class="inline-flex items-center min-h-[44px] px-4 border border-orange-600 text-orange-500 hover:bg-orange-600 hover:text-white text-sm font-semibold transition" style="border-radius: 2px;">
+                    Zmień termin
+                </a>
                 <form method="POST" action="{{ route('klient.reservations.cancel', $r) }}"
                       onsubmit="return confirm('Na pewno anulować tę rezerwację?');">
                     @csrf

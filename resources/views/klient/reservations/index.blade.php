@@ -112,6 +112,7 @@
                                 <span class="text-sm text-yellow-400">Czeka na potwierdzenie warsztatu – dostaniesz e-mail.</span>
                             @endif
                             <div class="ml-auto flex items-center gap-5">
+                                <a href="{{ route('klient.reservations.edit-termin', $r) }}" class="min-h-[36px] inline-flex items-center text-sm text-zinc-300 hover:text-zinc-100">Zmień termin</a>
                                 <form method="POST" action="{{ route('klient.reservations.cancel', $r) }}"
                                       onsubmit="return confirm('Na pewno anulować tę rezerwację?');">
                                     @csrf

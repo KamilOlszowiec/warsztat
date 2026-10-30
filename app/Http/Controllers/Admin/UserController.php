@@ -3,7 +3,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\GrafikPracownika;
-use App\Models\Rezerwacja;
 use App\Models\Specjalizacja;
 use App\Models\Usluga;
 use App\Models\Uzytkownik;
@@ -241,8 +240,7 @@ class UserController extends Controller
             return !$user->rezerwacjeKlienta()->exists();
         }
 
-        return !$user->wizytyMechanika()->exists()
-            && !Rezerwacja::where('id_pracownika', $user->id_uzytkownika)->exists();
+        return !$user->wizytyMechanika()->exists();
     }
 
     private function statystykiPracownika(Uzytkownik $user): array

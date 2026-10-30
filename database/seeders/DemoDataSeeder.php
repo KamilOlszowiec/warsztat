@@ -119,7 +119,7 @@ class DemoDataSeeder extends Seeder
         // Rezerwacje w różnych stanach
         $this->rezerwacja([
             'id_klienta' => $klient1->id_uzytkownika, 'id_pojazdu' => $pojazd1->id_pojazdu,
-            'id_mechanika' => $pracownik2->id_uzytkownika, 'id_pracownika' => $pracownik1->id_uzytkownika,
+            'id_mechanika' => $pracownik2->id_uzytkownika,
             'termin_rozpoczecia' => $this->dzienRoboczy(2)->setTime(10, 0),
             'status' => 'zatwierdzona',
         ], [$wymianaOleju, $diagnostykaKomp]); // dwie usługi – tylko Tomasz ma obie specjalizacje
@@ -140,14 +140,14 @@ class DemoDataSeeder extends Seeder
 
         $this->rezerwacja([
             'id_klienta' => $klient1->id_uzytkownika, 'id_pojazdu' => $pojazd1->id_pojazdu,
-            'id_mechanika' => $pracownik2->id_uzytkownika, 'id_pracownika' => $pracownik2->id_uzytkownika,
+            'id_mechanika' => $pracownik2->id_uzytkownika,
             'termin_rozpoczecia' => $this->dzienRoboczy(-10)->setTime(9, 0),
             'status' => 'zakończona',
         ], [$diagnostykaKomp]);
 
         $this->rezerwacja([
             'id_klienta' => $klient2->id_uzytkownika, 'id_pojazdu' => $pojazd2->id_pojazdu,
-            'id_mechanika' => $pracownik1->id_uzytkownika, 'id_pracownika' => $pracownik1->id_uzytkownika,
+            'id_mechanika' => $pracownik1->id_uzytkownika,
             'termin_rozpoczecia' => $this->dzienRoboczy(-5)->setTime(14, 0),
             'status' => 'odrzucona', 'powod_odrzucenia' => 'Brak dostępnych części na magazynie.',
         ], [$wymianaOleju]);

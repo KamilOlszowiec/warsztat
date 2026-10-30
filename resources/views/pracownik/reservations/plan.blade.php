@@ -185,7 +185,11 @@
                 </div>
 
                 <div class="px-5 py-4 space-y-2">
-                    @if ($r->status === 'oczekująca')
+                    @if (!$r->mozeZarzadzac(auth()->user()))
+                        <p class="text-[13px] text-zinc-400">
+                            {{ $r->mechanik ? 'Wizyta innego mechanika – tylko podgląd.' : 'Wizyta bez mechanika – obsłuży ją administrator.' }}
+                        </p>
+                    @elseif ($r->status === 'oczekująca')
                         <div class="flex gap-2">
                             <form method="POST" action="{{ route('pracownik.reservations.approve', $r) }}" class="flex-1">
                                 @csrf
@@ -201,7 +205,7 @@
                         </form>
                     @endif
 
-                    @if (in_array($r->status, ['oczekująca', 'zatwierdzona']))
+                    @if (in_array($r->status, ['oczekująca', 'zatwierdzona']) && $r->mozeZarzadzac(auth()->user()) && $przyszla)
                         <div class="flex gap-2">
                             @if ($przyszla && auth()->user()->rola === 'administrator')
                                 <a href="{{ route('pracownik.reservations.przydzial', $r) }}"
@@ -216,7 +220,7 @@
                 </div>
 
                 {{-- Okienko odrzucenia --}}
-                @if ($r->status === 'oczekująca')
+                @if ($r->status === 'oczekująca' && $r->mozeZarzadzac(auth()->user()))
                     <div id="modal-odrzucenia" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
                         <div class="bg-[#1F2128] border border-zinc-800 p-6 max-w-sm w-full" style="border-radius: 2px;">
                             <p class="text-zinc-200 font-semibold mb-3">Odrzuć rezerwację</p>

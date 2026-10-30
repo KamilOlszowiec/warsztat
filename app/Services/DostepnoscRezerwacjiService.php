@@ -73,14 +73,40 @@ class DostepnoscRezerwacjiService
     }
 
     /**
+     * Mechanicy, których klient może wybrać dla danych usług (mają wszystkie specjalizacje).
+     */
+    public function mechanicyDoWyboru(Collection $uslugi): Collection
+    {
+        return Uzytkownik::whereIn('id_uzytkownika', $this->uprawnieniMechanicy($uslugi))
+            ->orderBy('nazwisko')
+            ->orderBy('imie')
+            ->get(['id_uzytkownika', 'imie', 'nazwisko']);
+    }
+
+    /**
+     * Zawęża listę uprawnionych mechaników do jednego, wskazanego
+     * (wybór klienta albo pracownik przekładający własną wizytę).
+     * Null oznacza dowolnego mechanika.
+     */
+    private function ograniczDoMechanika(array $uprawnieni, ?int $idMechanika): array
+    {
+        if ($idMechanika === null) {
+            return $uprawnieni;
+        }
+
+        return in_array($idMechanika, $uprawnieni, true) ? [$idMechanika] : [];
+    }
+
+    /**
      * Lista wolnych godzin rozpoczęcia (np. ['08:00', '08:30']) dla danego dnia.
      * $pomijanaRezerwacjaId – przy zmianie terminu rezerwacja nie koliduje sama ze sobą.
      * $czas – jawnie podany czas wizyty (przy zmianie terminu: suma z tabeli przestawnej).
+     * $idMechanika – tylko terminy wskazanego mechanika (null = dowolny).
      */
-    public function dostepneGodziny(Collection $uslugi, string $data, ?int $pomijanaRezerwacjaId = null, ?int $czas = null): array
+    public function dostepneGodziny(Collection $uslugi, string $data, ?int $pomijanaRezerwacjaId = null, ?int $czas = null, ?int $idMechanika = null): array
     {
         $czas ??= $this->lacznyCzas($uslugi);
-        $uprawnieni = $this->uprawnieniMechanicy($uslugi);
+        $uprawnieni = $this->ograniczDoMechanika($this->uprawnieniMechanicy($uslugi), $idMechanika);
         $okno = $this->godzinyOtwarcia($data);
 
         if ($czas <= 0 || empty($uprawnieni) || $okno === null) {
@@ -116,10 +142,10 @@ class DostepnoscRezerwacjiService
      * Sprawdza pojedynczy termin i zwraca id mechanika do przydzielenia
      * albo null, jeśli termin jest niedostępny.
      */
-    public function znajdzMechanika(Collection $uslugi, Carbon $start, ?int $pomijanaRezerwacjaId = null, ?int $czas = null): ?int
+    public function znajdzMechanika(Collection $uslugi, Carbon $start, ?int $pomijanaRezerwacjaId = null, ?int $czas = null, ?int $idMechanika = null): ?int
     {
         $czas ??= $this->lacznyCzas($uslugi);
-        $uprawnieni = $this->uprawnieniMechanicy($uslugi);
+        $uprawnieni = $this->ograniczDoMechanika($this->uprawnieniMechanicy($uslugi), $idMechanika);
 
         if ($czas <= 0 || empty($uprawnieni) || !$start->gt(now())) {
             return null;
@@ -152,12 +178,12 @@ class DostepnoscRezerwacjiService
      * w której dwóch klientów jednocześnie zajmuje tego samego mechanika.
      * Zwraca null, jeśli termin został w międzyczasie zajęty.
      */
-    public function utworzRezerwacje(array $dane, Collection $uslugi, Carbon $start): ?Rezerwacja
+    public function utworzRezerwacje(array $dane, Collection $uslugi, Carbon $start, ?int $wybranyMechanik = null): ?Rezerwacja
     {
-        return DB::transaction(function () use ($dane, $uslugi, $start) {
+        return DB::transaction(function () use ($dane, $uslugi, $start, $wybranyMechanik) {
             $this->zablokujMechanikow();
 
-            $idMechanika = $this->znajdzMechanika($uslugi, $start);
+            $idMechanika = $this->znajdzMechanika($uslugi, $start, null, null, $wybranyMechanik);
             if ($idMechanika === null) {
                 return null;
             }
@@ -182,17 +208,18 @@ class DostepnoscRezerwacjiService
 
     /**
      * Przenosi istniejącą rezerwację na nowy termin (zachowując jej czas trwania)
-     * i przydziela mechanika. Zwraca false, jeśli termin jest niedostępny.
+     * i przydziela mechanika – dowolnego albo wskazanego.
+     * Zwraca false, jeśli termin jest niedostępny.
      */
-    public function zmienTermin(Rezerwacja $rezerwacja, Carbon $start): bool
+    public function zmienTermin(Rezerwacja $rezerwacja, Carbon $start, ?int $wybranyMechanik = null): bool
     {
-        return DB::transaction(function () use ($rezerwacja, $start) {
+        return DB::transaction(function () use ($rezerwacja, $start, $wybranyMechanik) {
             $this->zablokujMechanikow();
 
             $rezerwacja->load('uslugi');
             $czas = $rezerwacja->laczny_czas;
 
-            $idMechanika = $this->znajdzMechanika($rezerwacja->uslugi, $start, $rezerwacja->id_rezerwacji, $czas);
+            $idMechanika = $this->znajdzMechanika($rezerwacja->uslugi, $start, $rezerwacja->id_rezerwacji, $czas, $wybranyMechanik);
             if ($idMechanika === null) {
                 return false;
             }

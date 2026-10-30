@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\GodzinyPracyController;
 use App\Http\Controllers\RezerwacjaPodgladController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Klient\PojazdController;
@@ -71,11 +70,15 @@ Route::middleware(['auth', 'verified', 'role:klient'])->prefix('klient')->name('
 
     // Kolejność ma znaczenie: stałe ścieżki przed {reservation}
     Route::get('/reservations/dostepne-terminy', [KlientRezerwacjaController::class, 'dostepneTerminy'])->name('reservations.availability');
+    Route::get('/reservations/mechanicy', [KlientRezerwacjaController::class, 'mechanicy'])->name('reservations.mechanicy');
     Route::get('/reservations', [KlientRezerwacjaController::class, 'index'])->name('reservations.index');
     Route::get('/reservations/create', [KlientRezerwacjaController::class, 'create'])->name('reservations.create');
     Route::post('/reservations', [KlientRezerwacjaController::class, 'store'])->name('reservations.store');
     Route::get('/reservations/{reservation}', [KlientRezerwacjaController::class, 'show'])->name('reservations.show');
     Route::post('/reservations/{reservation}/cancel', [KlientRezerwacjaController::class, 'cancel'])->name('reservations.cancel');
+    Route::get('/reservations/{reservation}/zmien-termin', [KlientRezerwacjaController::class, 'editTermin'])->name('reservations.edit-termin');
+    Route::get('/reservations/{reservation}/dostepne-terminy', [KlientRezerwacjaController::class, 'dostepneTerminyDlaRezerwacji'])->name('reservations.availability-for');
+    Route::put('/reservations/{reservation}/termin', [KlientRezerwacjaController::class, 'updateTermin'])->name('reservations.update-termin');
 });
 
 Route::middleware(['auth', 'verified', 'role:pracownik,administrator'])->prefix('pracownik')->name('pracownik.')->group(function () {
@@ -90,9 +93,12 @@ Route::middleware(['auth', 'verified', 'role:pracownik,administrator'])->prefix(
     Route::put('/reservations/{reservation}/termin', [PracownikRezerwacjaController::class, 'updateTermin'])->name('reservations.update-termin');
 
     Route::get('/clients', [PracownikKlientController::class, 'index'])->name('clients.index');
-    Route::get('reservations/{reservation}/przydzial', [\App\Http\Controllers\Pracownik\PrzydzialController::class, 'edit'])->name('reservations.przydzial');
-    
-    Route::put('reservations/{reservation}/przydzial', [\App\Http\Controllers\Pracownik\PrzydzialController::class, 'update'])->name('reservations.przydzial.update');
+
+    // Ręczny przydział mechanika – tylko administrator
+    Route::middleware('role:administrator')->group(function () {
+        Route::get('reservations/{reservation}/przydzial', [\App\Http\Controllers\Pracownik\PrzydzialController::class, 'edit'])->name('reservations.przydzial');
+        Route::put('reservations/{reservation}/przydzial', [\App\Http\Controllers\Pracownik\PrzydzialController::class, 'update'])->name('reservations.przydzial.update');
+    });
     Route::get('/grafik', [\App\Http\Controllers\Pracownik\GrafikController::class, 'index'])->name('schedule.index');
 });
 

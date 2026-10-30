@@ -14,6 +14,13 @@
     · Mechanik: <span class="text-zinc-200">{{ $rezerwacja->mechanik ? $rezerwacja->mechanik->imie . ' ' . $rezerwacja->mechanik->nazwisko : '—' }}</span>
     · Czas: <span class="text-zinc-200 font-mono">{{ $rezerwacja->laczny_czas }} min</span>
 </p>
+<p class="text-sm text-zinc-500 -mt-4 mb-6">
+    @if (auth()->user()->rola === 'administrator')
+        Pokazane są wolne terminy wszystkich mechaników z wymaganymi specjalizacjami. Klient otrzyma e-mail z nowym terminem.
+    @else
+        Pokazane są tylko terminy, w których masz zmianę i jesteś wolny – wizyta pozostanie przypisana do Ciebie. Klient otrzyma e-mail z nowym terminem.
+    @endif
+</p>
 
 <form id="formularz-terminu" method="POST" action="{{ route('pracownik.reservations.update-termin', $rezerwacja) }}"
       class="bg-[#1F2128] border border-zinc-800 p-6 max-w-md space-y-4" style="border-radius: 2px;">

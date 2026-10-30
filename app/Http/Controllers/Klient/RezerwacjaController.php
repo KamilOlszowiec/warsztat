@@ -85,7 +85,25 @@ class RezerwacjaController extends Controller
     }
 
     /**
-     * Endpoint JSON: wolne godziny dla wybranych usług i dnia.
+     * Endpoint JSON: mechanicy, których klient może wybrać dla zaznaczonych usług.
+     */
+    public function mechanicy(Request $request)
+    {
+        $dane = $request->validate([
+            'uslugi'   => ['required', 'array', 'min:1'],
+            'uslugi.*' => ['integer', 'distinct', Rule::exists('uslugi', 'id_uslugi')->where('czy_aktywna', true)],
+        ]);
+
+        $uslugi = Usluga::aktywne()->whereIn('id_uslugi', $dane['uslugi'])->get();
+
+        return response()->json([
+            'mechanicy' => $this->listaMechanikow($uslugi),
+        ]);
+    }
+
+    /**
+     * Endpoint JSON: wolne godziny dla wybranych usług i dnia,
+     * opcjonalnie tylko dla wybranego mechanika.
      */
     public function dostepneTerminy(Request $request)
     {
@@ -93,6 +111,7 @@ class RezerwacjaController extends Controller
             'uslugi'   => ['required', 'array', 'min:1'],
             'uslugi.*' => ['integer', 'distinct', Rule::exists('uslugi', 'id_uslugi')->where('czy_aktywna', true)],
             'data'     => ['required', 'date', 'after_or_equal:today', 'before_or_equal:' . $this->maksData()],
+            'mechanik' => ['nullable', 'integer'],
         ]);
 
         $uslugi = Usluga::aktywne()->whereIn('id_uslugi', $dane['uslugi'])->get();
@@ -106,12 +125,16 @@ class RezerwacjaController extends Controller
             ]);
         }
 
-        $godziny = $this->dostepnosc->dostepneGodziny($uslugi, $dane['data']);
+        $mechanik = isset($dane['mechanik']) ? (int) $dane['mechanik'] : null;
+
+        $godziny = $this->dostepnosc->dostepneGodziny($uslugi, $dane['data'], null, null, $mechanik);
 
         return response()->json([
             'godziny'     => $godziny,
             'laczny_czas' => $lacznyCzas,
-            'komunikat'   => empty($godziny) ? 'Brak wolnych terminów w wybranym dniu.' : null,
+            'komunikat'   => empty($godziny)
+                ? ($mechanik ? 'Wybrany mechanik nie ma wolnych terminów w tym dniu. Wybierz inny dzień albo dowolnego mechanika.' : 'Brak wolnych terminów w wybranym dniu.')
+                : null,
         ]);
     }
 
@@ -124,6 +147,7 @@ class RezerwacjaController extends Controller
             'data'      => ['required', 'date', 'after_or_equal:today', 'before_or_equal:' . $this->maksData()],
             'godzina'   => ['required', 'date_format:H:i'],
             'uwagi'     => ['nullable', 'string', 'max:500'],
+            'id_mechanika' => ['nullable', 'integer'],
         ], [
             'uslugi.required'      => 'Wybierz co najmniej jedną usługę.',
             'data.required'        => 'Wybierz dzień wizyty.',
@@ -151,7 +175,7 @@ class RezerwacjaController extends Controller
             'id_klienta' => auth()->id(),
             'id_pojazdu' => $pojazd->id_pojazdu,
             'uwagi'      => $dane['uwagi'] ?? null,
-        ], $uslugi, $start);
+        ], $uslugi, $start, isset($dane['id_mechanika']) ? (int) $dane['id_mechanika'] : null);
 
         if (!$rezerwacja) {
             return back()
@@ -180,6 +204,135 @@ class RezerwacjaController extends Controller
         $reservation->update(['status' => 'anulowana']);
 
         return back()->with('status', 'Rezerwacja została anulowana.');
+    }
+
+    /**
+     * Formularz zmiany terminu przez klienta.
+     */
+    public function editTermin(Rezerwacja $reservation)
+    {
+        $this->sprawdzMozliwoscZmiany($reservation);
+
+        $reservation->load(['uslugi', 'pojazd', 'mechanik']);
+
+        $czynne = GodzinyPracy::where('czy_czynne', true)
+            ->pluck('dzien_tygodnia')
+            ->map(fn ($d) => (int) $d)
+            ->all();
+        $dniZamkniete = array_values(array_diff(range(1, 7), $czynne));
+
+        $maksData = $this->maksData();
+
+        $dniWolne = DzienWolny::whereBetween('data', [today()->toDateString(), $maksData])
+            ->get()
+            ->map(fn ($d) => $d->data->toDateString())
+            ->all();
+
+        $mechanicy = $this->listaMechanikow($reservation->uslugi);
+
+        // Domyślnie obecny mechanik wizyty, jeśli nadal może ją wykonać
+        $domyslnyMechanik = collect($mechanicy)->contains('id', (int) $reservation->id_mechanika)
+            ? (int) $reservation->id_mechanika
+            : null;
+
+        return view('klient.reservations.edit-termin', [
+            'rezerwacja'       => $reservation,
+            'dniZamkniete'     => $dniZamkniete,
+            'dniWolne'         => $dniWolne,
+            'maksData'         => $maksData,
+            'mechanicy'        => $mechanicy,
+            'domyslnyMechanik' => $domyslnyMechanik,
+        ]);
+    }
+
+    /**
+     * Endpoint JSON: wolne godziny dla przekładanej rezerwacji klienta.
+     * Rezerwacja nie koliduje sama ze sobą, a czas wizyty pochodzi z tabeli przestawnej.
+     */
+    public function dostepneTerminyDlaRezerwacji(Request $request, Rezerwacja $reservation)
+    {
+        $this->sprawdzMozliwoscZmiany($reservation);
+
+        $dane = $request->validate([
+            'data'     => ['required', 'date', 'after_or_equal:today', 'before_or_equal:' . $this->maksData()],
+            'mechanik' => ['nullable', 'integer'],
+        ]);
+
+        $reservation->load('uslugi');
+
+        $godziny = $this->dostepnosc->dostepneGodziny(
+            $reservation->uslugi,
+            $dane['data'],
+            $reservation->id_rezerwacji,
+            $reservation->laczny_czas,
+            isset($dane['mechanik']) ? (int) $dane['mechanik'] : null
+        );
+
+        return response()->json([
+            'godziny'     => $godziny,
+            'laczny_czas' => $reservation->laczny_czas,
+            'komunikat'   => empty($godziny) ? 'Brak wolnych terminów w wybranym dniu.' : null,
+        ]);
+    }
+
+    /**
+     * Zapis nowego terminu wybranego przez klienta.
+     * Rezerwacja wraca do statusu „oczekująca” i wymaga ponownego zatwierdzenia przez warsztat.
+     */
+    public function updateTermin(Request $request, Rezerwacja $reservation)
+    {
+        $this->sprawdzMozliwoscZmiany($reservation);
+
+        $dane = $request->validate([
+            'data'    => ['required', 'date', 'after_or_equal:today', 'before_or_equal:' . $this->maksData()],
+            'godzina' => ['required', 'date_format:H:i'],
+            'id_mechanika' => ['nullable', 'integer'],
+        ], [
+            'data.required'        => 'Wybierz dzień wizyty.',
+            'data.before_or_equal' => 'Wizytę można zarezerwować najwyżej ' . self::DNI_NAPRZOD . ' dni naprzód.',
+            'godzina.required'     => 'Wybierz godzinę wizyty.',
+        ]);
+
+        $start = Carbon::parse($dane['data'] . ' ' . $dane['godzina']);
+
+        $wybranyMechanik = isset($dane['id_mechanika']) ? (int) $dane['id_mechanika'] : null;
+
+        if (!$this->dostepnosc->zmienTermin($reservation, $start, $wybranyMechanik)) {
+            return back()
+                ->withErrors(['godzina' => 'Ten termin jest już niedostępny. Wybierz inny.'])
+                ->withInput();
+        }
+
+        $reservation->update(['status' => 'oczekująca']);
+
+        return redirect()->route('klient.reservations.show', $reservation)
+            ->with('status', 'Termin został zmieniony. Rezerwacja czeka na ponowne potwierdzenie warsztatu.');
+    }
+
+    /**
+     * Zmienić termin można tylko we własnej, aktywnej rezerwacji, która jeszcze się nie rozpoczęła.
+     */
+    private function sprawdzMozliwoscZmiany(Rezerwacja $reservation): void
+    {
+        if ($reservation->id_klienta !== auth()->id()) {
+            abort(403);
+        }
+
+        if (!in_array($reservation->status, ['oczekująca', 'zatwierdzona'])
+            || !$reservation->termin_rozpoczecia->isFuture()) {
+            abort(403, 'Terminu tej rezerwacji nie można już zmienić.');
+        }
+    }
+
+    /**
+     * Lista mechaników do pola wyboru: [{id, nazwa}].
+     */
+    private function listaMechanikow($uslugi): array
+    {
+        return $this->dostepnosc->mechanicyDoWyboru($uslugi)
+            ->map(fn ($m) => ['id' => (int) $m->id_uzytkownika, 'nazwa' => $m->imie . ' ' . $m->nazwisko])
+            ->values()
+            ->all();
     }
 
     private function maksData(): string

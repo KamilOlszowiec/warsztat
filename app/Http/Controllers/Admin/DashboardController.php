@@ -112,7 +112,36 @@ class DashboardController extends Controller
             ];
         }
 
-        // 5. Pusty grafik na następny tydzień
+        // 5. Zaległe wizyty: minęły, a nadal oczekują albo nie zostały zakończone
+        $zalegle = Rezerwacja::whereIn('status', self::AKTYWNE)
+            ->where('termin_zakonczenia', '<', now())
+            ->count();
+        if ($zalegle > 0) {
+            $alerty[] = [
+                'pilne' => true,
+                'tytul' => $zalegle . ' ' . self::odmiana($zalegle, 'zaległa wizyta', 'zaległe wizyty', 'zaległych wizyt'),
+                'opis'  => 'Termin minął, a wizyta nadal czeka na zatwierdzenie albo nie została oznaczona jako zakończona.',
+                'link'  => route('pracownik.reservations.index', ['status' => 'zalegle']),
+                'akcja' => 'Przejrzyj',
+            ];
+        }
+
+        // 6. Przyszłe wizyty bez przydzielonego mechanika
+        $bezPrzydzialu = Rezerwacja::whereIn('status', self::AKTYWNE)
+            ->whereNull('id_mechanika')
+            ->where('termin_rozpoczecia', '>', now())
+            ->count();
+        if ($bezPrzydzialu > 0) {
+            $alerty[] = [
+                'pilne' => true,
+                'tytul' => $bezPrzydzialu . ' ' . self::odmiana($bezPrzydzialu, 'wizyta', 'wizyty', 'wizyt') . ' bez przydzielonego mechanika',
+                'opis'  => 'Np. po usunięciu konta pracownika – przydziel mechanika albo zmień termin.',
+                'link'  => route('pracownik.reservations.index', ['status' => 'wszystkie']),
+                'akcja' => 'Przejrzyj',
+            ];
+        }
+
+        // 7. Pusty grafik na następny tydzień
         $nastepny = today()->startOfWeek(Carbon::MONDAY)->addWeek();
         $pustyGrafik = GrafikPracownika::whereBetween('data', [$nastepny->toDateString(), $nastepny->copy()->addDays(6)->toDateString()])
             ->doesntExist();

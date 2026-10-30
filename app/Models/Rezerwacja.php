@@ -11,7 +11,7 @@ class Rezerwacja extends Model
     protected $primaryKey = 'id_rezerwacji';
 
     protected $fillable = [
-        'id_klienta', 'id_pojazdu', 'id_mechanika', 'id_pracownika',
+        'id_klienta', 'id_pojazdu', 'id_mechanika',
         'termin_rozpoczecia', 'termin_zakonczenia', 'status', 'uwagi', 'powod_odrzucenia',
     ];
 
@@ -47,12 +47,6 @@ class Rezerwacja extends Model
         return $this->belongsTo(Uzytkownik::class, 'id_mechanika', 'id_uzytkownika');
     }
 
-    // Pracownik, który obsłużył rezerwację (zatwierdził / odrzucił)
-    public function pracownik()
-    {
-        return $this->belongsTo(Uzytkownik::class, 'id_pracownika', 'id_uzytkownika');
-    }
-
     // Suma cen z chwili rezerwacji (z tabeli przestawnej)
     public function getLacznaCenaAttribute(): float
     {
@@ -69,5 +63,19 @@ class Rezerwacja extends Model
     public function getNazwyUslugAttribute(): string
     {
         return $this->uslugi->pluck('nazwa')->implode(', ');
+    }
+
+    /**
+     * Administrator zarządza wszystkimi wizytami,
+     * pracownik tylko tymi, w których jest przydzielonym mechanikiem.
+     */
+    public function mozeZarzadzac(?Uzytkownik $uzytkownik): bool
+    {
+        if (!$uzytkownik) {
+            return false;
+        }
+
+        return $uzytkownik->rola === 'administrator'
+            || (int) $this->id_mechanika === (int) $uzytkownik->id_uzytkownika;
     }
 }
