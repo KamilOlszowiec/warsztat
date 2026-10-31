@@ -74,6 +74,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 items-start">
 
         {{-- Usługi --}}
+        <div class="space-y-6">
         <section class="bg-[#1F2128] border border-zinc-800" style="border-radius: 2px;">
             <div class="px-5 py-4 border-b border-zinc-800">
                 <h2 class="font-semibold text-zinc-50">Usługi</h2>
@@ -94,7 +95,49 @@
                 </div>
                 <p class="text-xl font-bold text-zinc-50">{{ number_format($r->laczna_cena, 2, ',', ' ') }} zł</p>
             </div>
+            @if ($r->maProtokol() && $r->koszt_koncowy !== null)
+                <div class="flex items-center justify-between gap-4 px-5 py-4">
+                    <div>
+                        <p class="text-sm text-zinc-200 font-medium">Koszt końcowy</p>
+                        <p class="text-xs text-zinc-500 mt-0.5">ustalony przez warsztat po wykonaniu prac</p>
+                    </div>
+                    <p class="text-xl font-bold text-orange-400">{{ number_format($r->koszt_koncowy, 2, ',', ' ') }} zł</p>
+                </div>
+            @endif
         </section>
+
+        @if ($r->maProtokol())
+            {{-- Protokół z wizyty --}}
+            <section class="bg-[#1F2128] border border-zinc-800 divide-y divide-zinc-800" style="border-radius: 2px;">
+                <div class="px-5 py-4">
+                    <p class="text-sm font-mono text-orange-500">PROTOKÓŁ Z WIZYTY</p>
+                </div>
+                <div class="px-5 py-4">
+                    <p class="text-[11px] font-mono text-zinc-400 mb-1">PRZEBIEG</p>
+                    <p class="text-zinc-100 font-mono">{{ number_format($r->przebieg, 0, ',', ' ') }} km</p>
+                </div>
+                <div class="px-5 py-4">
+                    <p class="text-[11px] font-mono text-zinc-400 mb-1">WYKONANE PRACE</p>
+                    <p class="text-sm text-zinc-200 whitespace-pre-line">{{ $r->opis_prac }}</p>
+                </div>
+                @if ($r->zalecenia)
+                    <div class="px-5 py-4">
+                        <p class="text-[11px] font-mono text-amber-400 mb-1">ZALECENIA</p>
+                        <p class="text-sm text-zinc-200 whitespace-pre-line">{{ $r->zalecenia }}</p>
+                    </div>
+                @endif
+                @if ($r->data_nastepnej_wizyty)
+                    <div class="px-5 py-4 flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <p class="text-[11px] font-mono text-zinc-400 mb-1">ZALECANA KOLEJNA WIZYTA</p>
+                            <p class="text-zinc-100">{{ $r->data_nastepnej_wizyty->translatedFormat('j F Y') }}</p>
+                        </div>
+                        <a href="{{ route('klient.reservations.create', ['pojazd' => $r->id_pojazdu]) }}" class="text-sm text-orange-500 hover:text-orange-400">Umów wizytę →</a>
+                    </div>
+                @endif
+            </section>
+        @endif
+        </div>
 
         {{-- Szczegóły --}}
         <aside class="bg-[#1F2128] border border-zinc-800 divide-y divide-zinc-800" style="border-radius: 2px;">

@@ -195,13 +195,14 @@
                                                 @if ($r->status === 'odrzucona' && $r->powod_odrzucenia)
                                                     Powód: {{ $r->powod_odrzucenia }}
                                                 @else
-                                                    {{ number_format($r->laczna_cena, 2, ',', ' ') }} zł
+                                                    {{ number_format($r->kwota_koncowa, 2, ',', ' ') }} zł
                                                     @if ($r->mechanik) · {{ $r->mechanik->imie }} {{ $r->mechanik->nazwisko }} @endif
                                                 @endif
                                             </p>
                                             @if ($r->uwagi)
                                                 <p class="text-xs text-zinc-500 mt-0.5">„{{ $r->uwagi }}”</p>
                                             @endif
+                                            @include('partials.protokol', ['r' => $r])
                                         </li>
                                     @endforeach
                                 </ol>

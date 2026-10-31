@@ -199,10 +199,8 @@
                                     class="flex-1 min-h-[44px] border border-red-800 text-red-400 hover:bg-red-900/30 text-sm font-semibold transition" style="border-radius: 2px;">Odrzuć</button>
                         </div>
                     @elseif ($r->status === 'zatwierdzona')
-                        <form method="POST" action="{{ route('pracownik.reservations.complete', $r) }}">
-                            @csrf
-                            <button type="submit" class="w-full min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition" style="border-radius: 2px;">Zakończ wizytę</button>
-                        </form>
+                        <a href="{{ route('pracownik.reservations.protokol', $r) }}"
+                           class="w-full min-h-[44px] inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition" style="border-radius: 2px;">Zakończ wizytę</a>
                     @endif
 
                     @if (in_array($r->status, ['oczekująca', 'zatwierdzona']) && $r->mozeZarzadzac(auth()->user()) && $przyszla)
@@ -216,6 +214,11 @@
                         </div>
                     @elseif ($r->status === 'zakończona')
                         <p class="text-[13px] text-zinc-400">Wizyta zakończona – klient dostał mail z podsumowaniem.</p>
+                        @include('partials.protokol', ['r' => $r])
+                        @if ($r->mozeEdytowacProtokol(auth()->user()))
+                            <a href="{{ route('pracownik.reservations.protokol', $r) }}"
+                               class="w-full min-h-[40px] mt-2 inline-flex items-center justify-center border border-zinc-700 text-zinc-300 hover:text-white text-[13px]" style="border-radius: 2px;">Popraw protokół</a>
+                        @endif
                     @endif
                 </div>
 

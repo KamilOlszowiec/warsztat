@@ -8,7 +8,6 @@ use App\Models\GodzinyPracy;
 use App\Models\GrafikPracownika;
 use App\Models\Uzytkownik;
 use App\Notifications\RezerwacjaZatwierdzona;
-use App\Notifications\RezerwacjaZakonczona;
 use App\Notifications\RezerwacjaOdrzucona;
 use App\Notifications\RezerwacjaTerminZmieniony;
 use App\Services\DostepnoscRezerwacjiService;
@@ -246,27 +245,6 @@ class RezerwacjaController extends Controller
         }
 
         return back()->with('status', 'Rezerwacja została odrzucona.');
-    }
-
-    public function complete(Rezerwacja $reservation)
-    {
-        $this->wymagajUprawnien($reservation);
-
-        if ($reservation->status !== 'zatwierdzona') {
-            return back()->withErrors(['error' => 'Można zakończyć tylko zatwierdzone rezerwacje.']);
-        }
-
-        $reservation->update(['status' => 'zakończona']);
-
-        $reservation->load(['uslugi', 'pojazd', 'mechanik']);
-
-        try {
-            $reservation->klient->notify(new RezerwacjaZakonczona($reservation));
-        } catch (\Exception $e) {
-            Log::warning('Nie udało się wysłać powiadomienia email o zakończeniu rezerwacji: ' . $e->getMessage());
-        }
-
-        return back()->with('status', 'Rezerwacja została oznaczona jako zakończona.');
     }
 
     public function editTermin(Rezerwacja $reservation)

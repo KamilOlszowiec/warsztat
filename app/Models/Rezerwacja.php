@@ -13,11 +13,16 @@ class Rezerwacja extends Model
     protected $fillable = [
         'id_klienta', 'id_pojazdu', 'id_mechanika',
         'termin_rozpoczecia', 'termin_zakonczenia', 'status', 'uwagi', 'powod_odrzucenia',
+        // Protokół z wizyty
+        'przebieg', 'opis_prac', 'zalecenia', 'data_nastepnej_wizyty', 'koszt_koncowy', 'data_zakonczenia',
     ];
 
     protected $casts = [
-        'termin_rozpoczecia' => 'datetime',
-        'termin_zakonczenia' => 'datetime',
+        'termin_rozpoczecia'    => 'datetime',
+        'termin_zakonczenia'    => 'datetime',
+        'data_nastepnej_wizyty' => 'date',
+        'data_zakonczenia'      => 'datetime',
+        'koszt_koncowy'         => 'decimal:2',
     ];
 
     public function getRouteKeyName(): string
@@ -77,5 +82,49 @@ class Rezerwacja extends Model
 
         return $uzytkownik->rola === 'administrator'
             || (int) $this->id_mechanika === (int) $uzytkownik->id_uzytkownika;
+    }
+
+    // ---------- Protokół z wizyty ----------
+
+    public function maProtokol(): bool
+    {
+        return $this->status === 'zakończona' && $this->opis_prac !== null;
+    }
+
+    // Kwota do zapłaty: koszt końcowy z protokołu, a bez niego suma wg cennika z chwili rezerwacji
+    public function getKwotaKoncowaAttribute(): float
+    {
+        return $this->koszt_koncowy !== null ? (float) $this->koszt_koncowy : $this->laczna_cena;
+    }
+
+    /**
+     * Protokół może poprawić administrator zawsze, a mechanik wizyty – tylko w dniu jej zakończenia.
+     */
+    public function mozeEdytowacProtokol(?Uzytkownik $uzytkownik): bool
+    {
+        if (!$uzytkownik || $this->status !== 'zakończona') {
+            return false;
+        }
+
+        if ($uzytkownik->rola === 'administrator') {
+            return true;
+        }
+
+        return (int) $this->id_mechanika === (int) $uzytkownik->id_uzytkownika
+            && $this->data_zakonczenia?->isToday();
+    }
+
+    /**
+     * Ostatnia wcześniejsza zakończona wizyta tego samego pojazdu z wpisanym przebiegiem.
+     */
+    public function poprzedniaWizytaPojazdu(): ?self
+    {
+        return self::where('id_pojazdu', $this->id_pojazdu)
+            ->where('id_rezerwacji', '!=', $this->id_rezerwacji)
+            ->where('status', 'zakończona')
+            ->whereNotNull('przebieg')
+            ->where('termin_rozpoczecia', '<', $this->termin_rozpoczecia)
+            ->orderByDesc('termin_rozpoczecia')
+            ->first();
     }
 }

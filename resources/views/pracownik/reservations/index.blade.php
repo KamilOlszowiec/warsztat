@@ -141,11 +141,10 @@
                                     @if ($r->termin_rozpoczecia->isFuture())
                                         <a href="{{ route('pracownik.reservations.edit-termin', $r) }}" class="text-orange-500 hover:text-orange-400">Zmień termin</a>
                                     @endif
-                                    <form method="POST" action="{{ route('pracownik.reservations.complete', $r) }}" class="inline">
-                                        @csrf
-                                        <button type="submit" class="text-blue-500 hover:text-blue-400">Zakończ</button>
-                                    </form>
+                                    <a href="{{ route('pracownik.reservations.protokol', $r) }}" class="text-blue-500 hover:text-blue-400">Zakończ</a>
                                 </div>
+                            @elseif ($r->status === 'zakończona' && $r->mozeEdytowacProtokol($uzytkownik))
+                                <a href="{{ route('pracownik.reservations.protokol', $r) }}" class="text-zinc-300 hover:text-white">Popraw protokół</a>
                             @endif
                             @if ($czyAdmin)
                                 <form method="POST" action="{{ route('admin.reservations.destroy', $r) }}" class="inline ml-3"

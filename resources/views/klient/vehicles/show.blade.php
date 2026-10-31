@@ -64,10 +64,15 @@
                             ];
                         @endphp
                         <span class="text-xs font-mono px-2 py-1 {{ $kolory[$r->status] }}" style="border-radius: 2px;">
-                            {{ strtoupper($r->status) }}
+                            {{ mb_strtoupper($r->status, 'UTF-8') }}
                         </span>
                     </td>
                 </tr>
+                @if ($r->maProtokol())
+                    <tr class="border-b border-zinc-800/50">
+                        <td colspan="3" class="px-4 pb-3 pt-0">@include('partials.protokol', ['r' => $r])</td>
+                    </tr>
+                @endif
             @empty
                 <tr>
                     <td colspan="3" class="px-4 py-6 text-center text-zinc-500">Ten pojazd nie ma jeszcze żadnej historii rezerwacji.</td>

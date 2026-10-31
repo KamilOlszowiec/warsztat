@@ -89,7 +89,9 @@ Route::middleware(['auth', 'verified', 'role:pracownik,administrator'])->prefix(
     Route::get('/reservations', [PracownikRezerwacjaController::class, 'index'])->name('reservations.index');
     Route::post('/reservations/{reservation}/approve', [PracownikRezerwacjaController::class, 'approve'])->name('reservations.approve');
     Route::post('/reservations/{reservation}/reject', [PracownikRezerwacjaController::class, 'reject'])->name('reservations.reject');
-    Route::post('/reservations/{reservation}/complete', [PracownikRezerwacjaController::class, 'complete'])->name('reservations.complete');
+    // Zakończenie wizyty z protokołem i poprawa protokołu
+    Route::get('/reservations/{reservation}/protokol', [\App\Http\Controllers\Pracownik\ProtokolController::class, 'edit'])->name('reservations.protokol');
+    Route::put('/reservations/{reservation}/protokol', [\App\Http\Controllers\Pracownik\ProtokolController::class, 'update'])->name('reservations.protokol.update');
     Route::get('/reservations/{reservation}/edit-termin', [PracownikRezerwacjaController::class, 'editTermin'])->name('reservations.edit-termin');
     Route::put('/reservations/{reservation}/termin', [PracownikRezerwacjaController::class, 'updateTermin'])->name('reservations.update-termin');
 

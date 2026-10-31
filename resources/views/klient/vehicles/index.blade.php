@@ -127,11 +127,13 @@
                                             <p class="text-sm text-zinc-100">{{ $r->nazwy_uslug }}</p>
 
                                             <p class="text-xs text-zinc-500 mt-0.5">
-                                                {{ number_format($r->laczna_cena, 2, ',', ' ') }} zł
+                                                {{ number_format($r->kwota_koncowa, 2, ',', ' ') }} zł
                                                 @if ($r->mechanik)
                                                     · mechanik: {{ $r->mechanik->imie }} {{ $r->mechanik->nazwisko }}
                                                 @endif
                                             </p>
+
+                                            @include('partials.protokol', ['r' => $r])
 
                                             @if ($r->status === 'odrzucona' && $r->powod_odrzucenia)
                                                 <p class="text-xs text-red-400/80 mt-1">Powód odrzucenia: {{ $r->powod_odrzucenia }}</p>

@@ -53,12 +53,57 @@
                 </div>
             </td>
         </tr>
-        <tr>
-            <td style="padding: 14px 18px; font-size: 14px; color: #52525B;">Razem wg cennika</td>
-            <td align="right" style="padding: 14px 18px; font-size: 18px; font-weight: 700; color: #18181B; white-space: nowrap;">
-                {{ number_format($r->laczna_cena, 2, ',', ' ') }} zł
-            </td>
-        </tr>
+        @if ($r->maProtokol())
+            <tr>
+                <td colspan="2" style="padding: 14px 18px; border-bottom: 1px solid #E4E4E7;">
+                    <div style="{{ $etykieta }} margin-bottom: 3px;">PRZEBIEG</div>
+                    <div style="font-size: 14px; color: #27272A;">{{ number_format($r->przebieg, 0, ',', ' ') }} km</div>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" style="padding: 14px 18px; border-bottom: 1px solid #E4E4E7;">
+                    <div style="{{ $etykieta }} margin-bottom: 3px;">WYKONANE PRACE</div>
+                    <div style="font-size: 14px; line-height: 1.5; color: #27272A;">{!! nl2br(e($r->opis_prac)) !!}</div>
+                </td>
+            </tr>
+            @if ($r->zalecenia)
+                <tr>
+                    <td colspan="2" style="padding: 14px 18px; border-bottom: 1px solid #E4E4E7; background: #FFFBEB;">
+                        <div style="{{ $etykieta }} margin-bottom: 3px; color: #B45309;">ZALECENIA MECHANIKA</div>
+                        <div style="font-size: 14px; line-height: 1.5; color: #27272A;">{!! nl2br(e($r->zalecenia)) !!}</div>
+                    </td>
+                </tr>
+            @endif
+            @if ($r->data_nastepnej_wizyty)
+                <tr>
+                    <td colspan="2" style="padding: 14px 18px; border-bottom: 1px solid #E4E4E7;">
+                        <div style="{{ $etykieta }} margin-bottom: 3px;">ZALECANA KOLEJNA WIZYTA</div>
+                        <div style="font-size: 14px; color: #27272A;">{{ $r->data_nastepnej_wizyty->translatedFormat('j F Y') }}</div>
+                    </td>
+                </tr>
+            @endif
+        @endif
+        @if ($r->koszt_koncowy !== null)
+            <tr>
+                <td style="padding: 14px 18px 4px; font-size: 14px; color: #52525B;">Wg cennika</td>
+                <td align="right" style="padding: 14px 18px 4px; font-size: 14px; color: #52525B; white-space: nowrap;">
+                    {{ number_format($r->laczna_cena, 2, ',', ' ') }} zł
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 4px 18px 14px; font-size: 14px; color: #52525B;">Koszt końcowy</td>
+                <td align="right" style="padding: 4px 18px 14px; font-size: 18px; font-weight: 700; color: #18181B; white-space: nowrap;">
+                    {{ number_format($r->koszt_koncowy, 2, ',', ' ') }} zł
+                </td>
+            </tr>
+        @else
+            <tr>
+                <td style="padding: 14px 18px; font-size: 14px; color: #52525B;">Razem wg cennika</td>
+                <td align="right" style="padding: 14px 18px; font-size: 18px; font-weight: 700; color: #18181B; white-space: nowrap;">
+                    {{ number_format($r->laczna_cena, 2, ',', ' ') }} zł
+                </td>
+            </tr>
+        @endif
     </table>
 
     @include('emails.partials.przycisk', ['url' => $urlKolejna, 'tekst' => 'Umów kolejną wizytę'])
