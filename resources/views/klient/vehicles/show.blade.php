@@ -39,8 +39,8 @@
 
 <p class="text-sm font-mono text-orange-500 mb-3">HISTORIA REZERWACJI</p>
 
-<div class="bg-[#1F2128] border border-zinc-800 overflow-hidden" style="border-radius: 2px;">
-    <table class="w-full text-sm">
+<div class="relative bg-[#1F2128] border border-zinc-800 overflow-x-auto" style="border-radius: 2px;">
+    <table class="w-full min-w-[480px] text-sm">
         <thead>
             <tr class="border-b border-zinc-800 text-left">
                 <th class="px-4 py-3 font-mono text-xs text-zinc-500">USŁUGA</th>

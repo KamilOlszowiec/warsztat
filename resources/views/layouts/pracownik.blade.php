@@ -9,6 +9,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background: #15161A; }
+        /* Na telefonie strona nie przewija się w poziomie – szerokie tabele przewijają się we własnych kontenerach */
+        @media (max-width: 1023px) {
+            html { overflow-x: hidden; }
+        }
         .nav-link { border-radius: 2px; color: #D4D4D8; }
         .nav-link svg { color: #A1A1AA; }
         .nav-link:not(.active):hover { background: #ffffff08; color: #FAFAFA; }
@@ -16,7 +20,7 @@
         .nav-link.active svg { color: #F97316; }
     </style>
 </head>
-<body class="min-h-screen text-zinc-100 flex">
+<body class="min-h-screen text-zinc-100 lg:flex">
 
     @php
         $uzytkownik = auth()->user();
@@ -29,7 +33,38 @@
             ->count();
     @endphp
 
-    <aside class="w-64 bg-[#1F2128] border-r border-zinc-800 flex flex-col shrink-0 min-h-screen">
+    {{-- Górny pasek na telefonie: logo i przycisk menu --}}
+    <header class="lg:hidden sticky top-0 z-30 flex items-center justify-between h-14 px-4 bg-[#1F2128] border-b border-zinc-800">
+        <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 flex items-center justify-center bg-orange-600" style="border-radius: 2px;">
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"></path>
+                </svg>
+            </div>
+            <p class="font-bold text-[15px] text-zinc-50">Warsztat</p>
+        </div>
+        <button type="button" id="menu-otworz" aria-controls="menu-boczne" aria-expanded="false" aria-label="Otwórz menu"
+                class="w-11 h-11 flex items-center justify-center text-zinc-200 border border-zinc-700" style="border-radius: 2px;">
+            <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+        </button>
+    </header>
+
+    {{-- Przyciemnienie tła pod otwartym menu --}}
+    <div id="menu-tlo" class="hidden lg:hidden fixed inset-0 z-40 bg-black/60"></div>
+
+    <aside id="menu-boczne" class="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] overflow-y-auto -translate-x-full transition-transform duration-200
+                  lg:static lg:z-auto lg:w-64 lg:max-w-none lg:translate-x-0 lg:overflow-visible lg:transition-none
+                  bg-[#1F2128] border-r border-zinc-800 flex flex-col shrink-0 min-h-screen">
+        {{-- Zamknięcie menu na telefonie --}}
+        <button type="button" id="menu-zamknij" aria-label="Zamknij menu"
+                class="lg:hidden absolute top-3 right-3 w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-white">
+            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M6 6l12 12M18 6L6 18"></path>
+            </svg>
+        </button>
+
 
         {{-- Logo --}}
         <div class="flex items-center gap-3 px-5 py-5">
@@ -112,7 +147,7 @@
         </div>
     </aside>
 
-    <main class="flex-1 min-w-0 px-8 py-8">
+    <main class="flex-1 min-w-0 overflow-x-clip px-4 pt-5 pb-8 sm:px-6 lg:px-8 lg:py-8">
         @if (session('status'))
             <div class="mb-6 bg-green-900/30 border border-green-700 text-green-300 px-4 py-3 text-sm" style="border-radius: 2px;">
                 {{ session('status') }}
@@ -122,5 +157,29 @@
         @yield('content')
     </main>
 
+
+    {{-- Otwieranie i zamykanie menu na telefonie --}}
+    <script>
+    (function () {
+        const menu = document.getElementById('menu-boczne');
+        const tlo = document.getElementById('menu-tlo');
+        const otworz = document.getElementById('menu-otworz');
+        const zamknij = document.getElementById('menu-zamknij');
+
+        function ustaw(otwarte) {
+            menu.classList.toggle('-translate-x-full', !otwarte);
+            tlo.classList.toggle('hidden', !otwarte);
+            otworz.setAttribute('aria-expanded', otwarte ? 'true' : 'false');
+            document.body.classList.toggle('overflow-hidden', otwarte);
+        }
+
+        otworz.addEventListener('click', () => ustaw(true));
+        zamknij.addEventListener('click', () => ustaw(false));
+        tlo.addEventListener('click', () => ustaw(false));
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') ustaw(false); });
+        // Po przejściu na szeroki ekran menu nie może zostać „otwarte” z zablokowanym przewijaniem
+        window.matchMedia('(min-width: 1024px)').addEventListener('change', e => { if (e.matches) ustaw(false); });
+    })();
+    </script>
 </body>
 </html>

@@ -32,11 +32,11 @@
 
     {{-- Zakładki i wyszukiwarka --}}
     <div class="flex flex-wrap items-end justify-between gap-3 border-b border-zinc-800">
-        <nav class="flex gap-1" aria-label="Filtr ról">
+        <nav class="flex gap-1 max-w-full overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Filtr ról">
             @foreach ($zakladki as $klucz => $nazwa)
                 <a href="{{ route('admin.users.index', array_filter(['rola' => $klucz === 'wszyscy' ? null : $klucz, 'q' => $q])) }}"
                    @if ($filtr === $klucz) aria-current="page" @endif
-                   class="inline-flex items-center gap-1.5 min-h-[44px] px-3.5 -mb-px border-b-2 text-sm transition
+                   class="inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 min-h-[44px] px-3.5 -mb-px border-b-2 text-sm transition
                           {{ $filtr === $klucz ? 'border-orange-600 text-zinc-50 font-semibold' : 'border-transparent text-zinc-400 hover:text-zinc-200 font-medium' }}">
                     {{ $nazwa }}
                     <span class="px-1.5 min-w-[20px] text-center text-[11px] {{ $filtr === $klucz ? 'bg-zinc-700 text-zinc-50' : 'bg-zinc-800 text-zinc-300' }}" style="border-radius: 10px;">{{ $liczba($klucz) }}</span>
@@ -53,7 +53,7 @@
     </div>
 
     {{-- Tabela --}}
-    <div class="bg-[#1F2128] border border-zinc-800 overflow-x-auto" style="border-radius: 2px;">
+    <div class="relative bg-[#1F2128] border border-zinc-800 overflow-x-auto" style="border-radius: 2px;">
         <table class="w-full text-sm">
             <thead>
                 <tr class="border-b border-zinc-800 text-left">

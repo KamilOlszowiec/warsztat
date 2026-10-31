@@ -37,7 +37,7 @@
         </p>
     @endif
 
-    <div class="bg-[#1F2128] border border-zinc-800 overflow-x-auto" style="border-radius: 2px;">
+    <div class="relative bg-[#1F2128] border border-zinc-800 overflow-x-auto" style="border-radius: 2px;">
         <table class="w-full text-sm">
             <thead>
                 <tr class="border-b border-zinc-800 text-left">

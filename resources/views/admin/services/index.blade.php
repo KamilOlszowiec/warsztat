@@ -29,7 +29,7 @@
     @enderror
 
     {{-- Zakładki --}}
-    <nav class="flex gap-1 border-b border-zinc-800" aria-label="Widoczność usług">
+    <nav class="flex gap-1 border-b border-zinc-800 max-w-full overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>a]:shrink-0 [&>a]:whitespace-nowrap" aria-label="Widoczność usług">
         @foreach (['aktywne' => 'Aktywne', 'ukryte' => 'Ukryte'] as $klucz => $nazwa)
             <a href="{{ route('admin.services.index', $klucz === 'ukryte' ? ['widok' => 'ukryte'] : []) }}"
                @if ($widok === $klucz) aria-current="page" @endif
@@ -42,7 +42,7 @@
     </nav>
 
     {{-- Tabela --}}
-    <div class="bg-[#1F2128] border border-zinc-800 overflow-x-auto" style="border-radius: 2px;">
+    <div class="relative bg-[#1F2128] border border-zinc-800 overflow-x-auto" style="border-radius: 2px;">
         <table class="w-full text-sm">
             <thead>
                 <tr class="border-b border-zinc-800 text-left">

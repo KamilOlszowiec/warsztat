@@ -50,7 +50,7 @@
     @enderror
 
     {{-- Zakładki --}}
-    <nav class="flex gap-1 border-b border-zinc-800 mb-5" aria-label="Rodzaj rezerwacji">
+    <nav class="flex gap-1 border-b border-zinc-800 mb-5 max-w-full overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>a]:shrink-0 [&>a]:whitespace-nowrap" aria-label="Rodzaj rezerwacji">
         @foreach ($zakladki as $klucz => [$nazwa, $liczba])
             <a href="{{ route('klient.reservations.index', ['zakladka' => $klucz]) }}"
                @if ($zakladka === $klucz) aria-current="page" @endif
