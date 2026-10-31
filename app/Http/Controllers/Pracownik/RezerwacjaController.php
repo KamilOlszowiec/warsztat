@@ -253,7 +253,7 @@ class RezerwacjaController extends Controller
 
         $reservation->load(['klient', 'uslugi']);
 
-        return view('pracownik.reservations.edit-termin', ['rezerwacja' => $reservation]);
+        return view('pracownik.reservations.edit-termin', ['rezerwacja' => $reservation] + $this->dostepnosc->daneKalendarza());
     }
 
     /**

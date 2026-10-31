@@ -22,29 +22,22 @@
     @endif
 </p>
 
-<form id="formularz-terminu" method="POST" action="{{ route('pracownik.reservations.update-termin', $rezerwacja) }}"
-      class="bg-[#1F2128] border border-zinc-800 p-6 max-w-md space-y-4" style="border-radius: 2px;">
+<form id="formularz-terminu" method="POST" action="{{ route('pracownik.reservations.update-termin', $rezerwacja) }}" class="space-y-6 max-w-4xl">
     @csrf
     @method('PUT')
+    <input type="hidden" name="data" id="pole-data" value="{{ old('data', $rezerwacja->termin_rozpoczecia->toDateString()) }}">
 
     @error('error') <p class="text-sm text-red-500">{{ $message }}</p> @enderror
 
-    <div>
-        <label class="block text-xs font-mono text-zinc-400 mb-1.5">DATA</label>
-        <input type="date" id="pole-data" name="data" min="{{ now()->format('Y-m-d') }}"
-            value="{{ old('data', $rezerwacja->termin_rozpoczecia->format('Y-m-d')) }}"
-            class="w-full bg-[#15161A] border border-zinc-700 text-zinc-100 px-3 py-2.5 focus:outline-none focus:border-orange-600" style="border-radius: 2px;">
-        @error('data') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
+    <div class="grid grid-cols-1 md:grid-cols-[minmax(0,300px)_1fr] gap-6">
+        <x-kalendarz id="kalendarz" />
+        <div>
+            <x-siatka-godzin id="godziny" />
+            @error('data') <p class="text-sm text-red-500 mt-3">{{ $message }}</p> @enderror
+        </div>
     </div>
 
-    <div>
-        <label class="block text-xs font-mono text-zinc-400 mb-2">DOSTĘPNE GODZINY</label>
-        <p id="sloty-komunikat" class="text-zinc-500 text-sm">Wybierz datę, aby zobaczyć wolne terminy.</p>
-        <div id="sloty" class="grid grid-cols-4 gap-2"></div>
-        @error('godzina') <p class="text-sm text-red-500 mt-2">{{ $message }}</p> @enderror
-    </div>
-
-    <div class="flex gap-3">
+    <div class="flex gap-3 max-w-md">
         <button type="submit" id="przycisk-zapisz" disabled
             class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-orange-600" style="border-radius: 2px;">
             Zapisz nowy termin
@@ -56,104 +49,33 @@
     </div>
 </form>
 
-<script>
-(function () {
-    const poleData = document.getElementById('pole-data');
-    const kontener = document.getElementById('sloty');
-    const komunikat = document.getElementById('sloty-komunikat');
-    const przycisk = document.getElementById('przycisk-zapisz');
+@vite('resources/js/rezerwacje.js')
+<script type="module">
+const { format, kalendarz, siatkaGodzin } = window.Rezerwacje;
 
-    const url = @json(route('pracownik.reservations.availability', $rezerwacja));
-    const obecnaData = @json($rezerwacja->termin_rozpoczecia->format('Y-m-d'));
-    const obecnaGodzina = @json($rezerwacja->termin_rozpoczecia->format('H:i'));
-    let zaznaczGodzine = @json(old('godzina', $rezerwacja->termin_rozpoczecia->format('H:i')));
-    let numerZapytania = 0;
+const poleData = document.getElementById('pole-data');
+const przycisk = document.getElementById('przycisk-zapisz');
+const obecnaData = @json($rezerwacja->termin_rozpoczecia->toDateString());
+const obecnaGodzina = @json($rezerwacja->termin_rozpoczecia->format('H:i'));
 
-    function pokazKomunikat(tekst) {
-        kontener.innerHTML = '';
-        komunikat.textContent = tekst;
-        komunikat.classList.remove('hidden');
-        przycisk.disabled = true;
-    }
+const godziny = siatkaGodzin(document.getElementById('godziny'), {
+    url: @json(route('pracownik.reservations.availability', $rezerwacja)),
+    zaznacz: @json(old('godzina')),
+    opis: () => (poleData.value ? format.data(poleData.value) + ' · czas wizyty: ' + format.czas(@json($rezerwacja->laczny_czas)) : ''),
+    parametry: () => (poleData.value ? new URLSearchParams({ data: poleData.value }) : 'Wybierz dzień w kalendarzu.'),
+    // Obecny termin wizyty oznaczony kropką
+    dopisek: g => (poleData.value === obecnaData && g === obecnaGodzina ? ' •' : ''),
+    poZmianie: () => { przycisk.disabled = !godziny.wybrana(); },
+});
 
-    function renderujGodziny(godziny) {
-        kontener.innerHTML = '';
-        komunikat.classList.add('hidden');
+kalendarz(document.getElementById('kalendarz'), poleData, {
+    dzisiaj: @json(now()->toDateString()),
+    maksData: @json($maksData),
+    dniZamkniete: @json($dniZamkniete),
+    dniWolne: @json($dniWolne),
+    poWyborze: () => godziny.pobierz(),
+});
 
-        godziny.forEach(function (godzina) {
-            const label = document.createElement('label');
-            label.className = 'cursor-pointer';
-
-            const input = document.createElement('input');
-            input.type = 'radio';
-            input.name = 'godzina';
-            input.value = godzina;
-            input.required = true;
-            input.className = 'peer sr-only';
-            if (godzina === zaznaczGodzine) input.checked = true;
-
-            const kafelek = document.createElement('div');
-            kafelek.className = 'text-center text-sm py-2 border border-zinc-700 text-zinc-300 peer-checked:bg-orange-600 peer-checked:border-orange-600 peer-checked:text-white transition';
-            kafelek.style.borderRadius = '2px';
-            kafelek.textContent = godzina;
-
-            // Obecna godzina rezerwacji oznaczona kropką
-            if (poleData.value === obecnaData && godzina === obecnaGodzina) {
-                kafelek.textContent = godzina + ' •';
-                kafelek.title = 'Obecny termin';
-            }
-
-            label.appendChild(input);
-            label.appendChild(kafelek);
-            kontener.appendChild(label);
-        });
-
-        zaznaczGodzine = null;
-        przycisk.disabled = !kontener.querySelector('input[name="godzina"]:checked');
-    }
-
-    async function pobierzGodziny() {
-        if (!poleData.value) {
-            pokazKomunikat('Wybierz datę, aby zobaczyć wolne terminy.');
-            return;
-        }
-
-        const numer = ++numerZapytania;
-        pokazKomunikat('Szukam wolnych terminów…');
-
-        try {
-            const odp = await fetch(url + '?data=' + encodeURIComponent(poleData.value), {
-                headers: { 'Accept': 'application/json' }
-            });
-            const dane = await odp.json();
-
-            if (numer !== numerZapytania) return;
-
-            if (!odp.ok) {
-                const bledy = dane.errors ? Object.values(dane.errors).flat() : [];
-                pokazKomunikat(bledy[0] || 'Nie udało się pobrać terminów. Spróbuj ponownie.');
-                return;
-            }
-
-            if (dane.godziny.length === 0) {
-                pokazKomunikat(dane.komunikat || 'Brak wolnych terminów w wybranym dniu.');
-                return;
-            }
-
-            renderujGodziny(dane.godziny);
-        } catch (e) {
-            if (numer === numerZapytania) {
-                pokazKomunikat('Nie udało się pobrać terminów. Sprawdź połączenie i spróbuj ponownie.');
-            }
-        }
-    }
-
-    poleData.addEventListener('change', pobierzGodziny);
-    kontener.addEventListener('change', function () {
-        przycisk.disabled = !kontener.querySelector('input[name="godzina"]:checked');
-    });
-
-    pobierzGodziny();
-})();
+godziny.pobierz();
 </script>
 @endsection

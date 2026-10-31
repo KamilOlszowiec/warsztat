@@ -14,21 +14,7 @@
     </div>
 @else
 
-{{-- Pasek kroków --}}
-<div class="max-w-4xl mb-8">
-    <p id="krok-licznik" class="text-xs font-mono text-zinc-500 text-center mb-3">KROK 1 Z 4</p>
-    <div class="flex items-center">
-        @foreach ([1 => 'Usługi', 2 => 'Termin', 3 => 'Pojazd', 4 => 'Potwierdzenie'] as $nr => $nazwa)
-            <button type="button" data-krok-wskaznik="{{ $nr }}" class="flex flex-col items-center gap-1.5 shrink-0 disabled:cursor-not-allowed">
-                <span class="krok-kolko w-9 h-9 flex items-center justify-center text-sm font-semibold border bg-[#1F2128] border-zinc-700 text-zinc-500" style="border-radius: 50%;">{{ $nr }}</span>
-                <span class="krok-nazwa text-xs text-zinc-500">{{ $nazwa }}</span>
-            </button>
-            @if ($nr < 4)
-                <div data-krok-linia="{{ $nr }}" class="flex-1 h-0.5 mx-2 mb-5 bg-zinc-800"></div>
-            @endif
-        @endforeach
-    </div>
-</div>
+<x-kroki :nazwy="['Usługi', 'Termin', 'Pojazd', 'Potwierdzenie']" />
 
 <form id="formularz-rezerwacji" method="POST" action="{{ route('klient.reservations.store') }}"
       class="max-w-4xl grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6 items-start">
@@ -89,29 +75,11 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-[minmax(0,300px)_1fr] gap-6">
-                {{-- Kalendarz --}}
-                <div class="bg-[#1F2128] border border-zinc-800 p-4" style="border-radius: 2px;">
-                    <div class="flex items-center justify-between mb-3">
-                        <button type="button" id="kal-poprzedni" class="w-8 h-8 text-lg text-zinc-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed">‹</button>
-                        <p id="kal-miesiac" class="text-sm font-medium text-zinc-200 capitalize"></p>
-                        <button type="button" id="kal-nastepny" class="w-8 h-8 text-lg text-zinc-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed">›</button>
-                    </div>
-                    <div class="grid grid-cols-7 gap-1 text-center text-[11px] font-mono text-zinc-500 mb-1">
-                        @foreach (['PN', 'WT', 'ŚR', 'CZ', 'PT', 'SO', 'ND'] as $dzien)
-                            <span>{{ $dzien }}</span>
-                        @endforeach
-                    </div>
-                    <div id="kal-dni" class="grid grid-cols-7 gap-1"></div>
-                </div>
+                <x-kalendarz id="kalendarz" />
 
-                {{-- Godziny --}}
                 <div>
-                    <p class="text-xs font-mono text-zinc-400 mb-1">DOSTĘPNE GODZINY</p>
-                    <p id="wybrana-data-opis" class="text-sm text-zinc-300 mb-3"></p>
-                    <p id="sloty-komunikat" class="text-zinc-500 text-sm">Wybierz dzień w kalendarzu.</p>
-                    <div id="sloty" class="grid grid-cols-3 sm:grid-cols-4 gap-2"></div>
+                    <x-siatka-godzin id="godziny" />
                     @error('data') <p class="text-sm text-red-500 mt-3">{{ $message }}</p> @enderror
-                    @error('godzina') <p class="text-sm text-red-500 mt-3">{{ $message }}</p> @enderror
                 </div>
             </div>
         </section>
@@ -197,482 +165,168 @@
     </aside>
 </form>
 
-<script>
-(function () {
-    const form = document.getElementById('formularz-rezerwacji');
-    const checkboxy = Array.from(form.querySelectorAll('input[name="uslugi[]"]'));
-    const radiaPojazdu = Array.from(form.querySelectorAll('input[name="pojazd_id"]'));
-    const poleData = document.getElementById('pole-data');
-    const poleUwagi = form.querySelector('textarea[name="uwagi"]');
-    const kontenerSlotow = document.getElementById('sloty');
-    const komunikatSlotow = document.getElementById('sloty-komunikat');
-    const opisDaty = document.getElementById('wybrana-data-opis');
-    const btnWstecz = document.getElementById('btn-wstecz');
-    const btnDalej = document.getElementById('btn-dalej');
-    const btnPotwierdz = document.getElementById('btn-potwierdz');
+@vite('resources/js/rezerwacje.js')
+<script type="module">
+const { format, kalendarz, siatkaGodzin, listaMechanikow, kroki } = window.Rezerwacje;
 
-    const url = @json(route('klient.reservations.availability'));
-    const urlMechanicy = @json(route('klient.reservations.mechanicy'));
-    const poleMechanik = document.getElementById('pole-mechanik');
-    let poprzedniMechanik = @json(old('id_mechanika'));
-    let numerZapytaniaMechanikow = 0;
-    const dniZamkniete = @json($dniZamkniete);
-    const dniWolne = @json($dniWolne);
-    const dzisiaj = @json(now()->toDateString());
-    const maksData = @json($maksData);
-    const bledy = @json($errors->keys());
+const form = document.getElementById('formularz-rezerwacji');
+const checkboxy = Array.from(form.querySelectorAll('input[name="uslugi[]"]'));
+const radiaPojazdu = Array.from(form.querySelectorAll('input[name="pojazd_id"]'));
+const poleData = document.getElementById('pole-data');
+const poleUwagi = form.querySelector('textarea[name="uwagi"]');
 
-    const NAZWY_DNI = ['niedziela', 'poniedziałek', 'wtorek', 'środa', 'czwartek', 'piątek', 'sobota'];
+const zaznaczone = () => checkboxy.filter(c => c.checked);
+const lacznyCzas = () => zaznaczone().reduce((s, c) => s + Number(c.dataset.czas), 0);
+const lacznaCena = () => zaznaczone().reduce((s, c) => s + parseFloat(c.dataset.cena), 0);
+const wybranyPojazd = () => radiaPojazdu.find(r => r.checked) || null;
 
-    let krok = 1;
-    let poprzedniaGodzina = @json(old('godzina'));
-    let numerZapytania = 0;
+function paramsUslug() {
+    const p = new URLSearchParams();
+    zaznaczone().forEach(c => p.append('uslugi[]', c.value));
+    return p;
+}
 
-    // ---------- Pomocnicze ----------
+// ---------- Elementy wspólne ----------
 
-    function pad(n) { return String(n).padStart(2, '0'); }
-    function naTekst(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
-    function zTekstu(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
-    function poczatekMiesiaca(s) { const d = zTekstu(s); return new Date(d.getFullYear(), d.getMonth(), 1); }
+const mechanicy = listaMechanikow(document.getElementById('pole-mechanik'), {
+    url: @json(route('klient.reservations.mechanicy')),
+    parametry: () => (zaznaczone().length ? paramsUslug() : null),
+    poZmianieWyboru: () => (poleData.value ? godziny.pobierz() : odswiez()),
+    poczatkowy: @json(old('id_mechanika')),
+});
 
-    function formatCzas(minuty) {
-        if (minuty < 60) return minuty + ' min';
-        const h = Math.floor(minuty / 60);
-        const m = minuty % 60;
-        return h + ' h' + (m ? ' ' + m + ' min' : '');
+const godziny = siatkaGodzin(document.getElementById('godziny'), {
+    url: @json(route('klient.reservations.availability')),
+    zaznacz: @json(old('godzina')),
+    opis: () => (poleData.value ? format.data(poleData.value) + ' · łączny czas: ' + format.czas(lacznyCzas()) : ''),
+    parametry: () => {
+        if (!poleData.value) return 'Wybierz dzień w kalendarzu.';
+        if (!zaznaczone().length) return 'Najpierw wybierz usługi w kroku 1.';
+        const p = paramsUslug();
+        p.append('data', poleData.value);
+        const mechanik = document.getElementById('pole-mechanik').value;
+        if (mechanik) p.append('mechanik', mechanik);
+        return p;
+    },
+    poZmianie: () => odswiez(),
+});
+
+kalendarz(document.getElementById('kalendarz'), poleData, {
+    dzisiaj: @json(now()->toDateString()),
+    maksData: @json($maksData),
+    dniZamkniete: @json($dniZamkniete),
+    dniWolne: @json($dniWolne),
+    poWyborze: () => godziny.pobierz(),
+});
+
+const kreator = kroki(form, {
+    liczba: 4,
+    gotowy: n => n === 1 ? zaznaczone().length > 0
+        : n === 2 ? !!poleData.value && !!godziny.wybrana()
+        : n === 3 ? !!wybranyPojazd()
+        : true,
+    poWejsciu: n => { if (n === 4) renderujPotwierdzenie(); },
+    wstecz: document.getElementById('btn-wstecz'),
+    dalej: document.getElementById('btn-dalej'),
+    zatwierdz: document.getElementById('btn-potwierdz'),
+});
+
+// ---------- Podsumowanie ----------
+
+function odswiezPodsumowanie() {
+    const wybrane = zaznaczone();
+    const lista = document.getElementById('pods-uslugi');
+    lista.innerHTML = '';
+    document.getElementById('pods-liczba').textContent = wybrane.length;
+
+    if (!wybrane.length) {
+        const p = document.createElement('p');
+        p.className = 'text-zinc-600';
+        p.textContent = 'Nie wybrano usług.';
+        lista.appendChild(p);
     }
 
-    function formatData(s) {
-        const d = zTekstu(s);
-        return NAZWY_DNI[d.getDay()] + ', ' + pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear();
-    }
-
-    function dodajMinuty(godzina, minuty) {
-        const [h, m] = godzina.split(':').map(Number);
-        const suma = h * 60 + m + minuty;
-        return pad(Math.floor(suma / 60)) + ':' + pad(suma % 60);
-    }
-
-    function zaznaczoneUslugi() { return checkboxy.filter(c => c.checked); }
-    function lacznyCzas() { return zaznaczoneUslugi().reduce((s, c) => s + parseInt(c.dataset.czas, 10), 0); }
-    function lacznaCena() { return zaznaczoneUslugi().reduce((s, c) => s + parseFloat(c.dataset.cena), 0); }
-    function wybranaGodzina() {
-        const r = kontenerSlotow.querySelector('input[name="godzina"]:checked');
-        return r ? r.value : null;
-    }
-    function wybranyPojazd() { return radiaPojazdu.find(r => r.checked) || null; }
-
-    let miesiac = poczatekMiesiaca(poleData.value || dzisiaj);
-
-    // ---------- Kroki ----------
-
-    function krokGotowy(n) {
-        if (n === 1) return zaznaczoneUslugi().length > 0;
-        if (n === 2) return !!poleData.value && !!wybranaGodzina();
-        if (n === 3) return !!wybranyPojazd();
-        return true;
-    }
-
-    function moznaWejsc(n) {
-        for (let i = 1; i < n; i++) {
-            if (!krokGotowy(i)) return false;
-        }
-        return true;
-    }
-
-    function odswiezKroki() {
-        document.getElementById('krok-licznik').textContent = 'KROK ' + krok + ' Z 4';
-
-        document.querySelectorAll('section[data-krok]').forEach(s => {
-            s.classList.toggle('hidden', parseInt(s.dataset.krok, 10) !== krok);
-        });
-
-        document.querySelectorAll('[data-krok-wskaznik]').forEach(b => {
-            const n = parseInt(b.dataset.krokWskaznik, 10);
-            const kolko = b.querySelector('.krok-kolko');
-            const nazwa = b.querySelector('.krok-nazwa');
-
-            kolko.className = 'krok-kolko w-9 h-9 flex items-center justify-center text-sm font-semibold border transition '
-                + (n <= krok ? 'bg-orange-600 border-orange-600 text-white' : 'bg-[#1F2128] border-zinc-700 text-zinc-500');
-            nazwa.className = 'krok-nazwa text-xs ' + (n === krok ? 'text-zinc-100 font-medium' : 'text-zinc-500');
-            b.disabled = !moznaWejsc(n);
-        });
-
-        document.querySelectorAll('[data-krok-linia]').forEach(l => {
-            l.className = 'flex-1 h-0.5 mx-2 mb-5 transition '
-                + (parseInt(l.dataset.krokLinia, 10) < krok ? 'bg-orange-600' : 'bg-zinc-800');
-        });
-
-        btnWstecz.classList.toggle('invisible', krok === 1);
-        btnDalej.classList.toggle('hidden', krok === 4);
-        btnPotwierdz.classList.toggle('hidden', krok !== 4);
-        btnDalej.disabled = !krokGotowy(krok);
-    }
-
-    function przejdzDo(n) {
-        if (n < 1 || n > 4 || !moznaWejsc(n)) return;
-        krok = n;
-        if (krok === 4) renderujPotwierdzenie();
-        odswiezKroki();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    // ---------- Podsumowanie ----------
-
-    function odswiezPodsumowanie() {
-        const wybrane = zaznaczoneUslugi();
-        const lista = document.getElementById('pods-uslugi');
-        lista.innerHTML = '';
-        document.getElementById('pods-liczba').textContent = wybrane.length;
-
-        if (wybrane.length === 0) {
-            const p = document.createElement('p');
-            p.className = 'text-zinc-600';
-            p.textContent = 'Nie wybrano usług.';
-            lista.appendChild(p);
-        }
-
-        wybrane.forEach(c => {
-            const wiersz = document.createElement('div');
-            wiersz.className = 'flex justify-between gap-3';
-            const nazwa = document.createElement('span');
-            nazwa.className = 'text-zinc-300';
-            nazwa.textContent = c.dataset.nazwa;
-            const czas = document.createElement('span');
-            czas.className = 'text-xs font-mono text-zinc-500 whitespace-nowrap';
-            czas.textContent = formatCzas(parseInt(c.dataset.czas, 10));
-            wiersz.append(nazwa, czas);
-            lista.appendChild(wiersz);
-        });
-
-        document.getElementById('pods-czas').textContent = wybrane.length ? formatCzas(lacznyCzas()) : '—';
-        document.getElementById('pods-cena').textContent = wybrane.length ? lacznaCena().toFixed(2) + ' zł' : '—';
-
-        const g = wybranaGodzina();
-        document.getElementById('pods-termin').textContent = poleData.value
-            ? formatData(poleData.value) + (g ? ', ' + g : '')
-            : '—';
-
-        const p = wybranyPojazd();
-        document.getElementById('pods-pojazd').textContent = p ? p.dataset.opis : '—';
-    }
-
-    function odswiez() {
-        odswiezPodsumowanie();
-        odswiezKroki();
-    }
-
-    // ---------- Kalendarz ----------
-
-    function renderujKalendarz() {
-        const kontener = document.getElementById('kal-dni');
-        kontener.innerHTML = '';
-
-        document.getElementById('kal-miesiac').textContent =
-            miesiac.toLocaleDateString('pl-PL', { month: 'long', year: 'numeric' });
-
-        // Pusta przestrzeń przed 1. dniem miesiąca (tydzień od poniedziałku)
-        const przesuniecie = (miesiac.getDay() + 6) % 7;
-        for (let i = 0; i < przesuniecie; i++) {
-            kontener.appendChild(document.createElement('span'));
-        }
-
-        const ileDni = new Date(miesiac.getFullYear(), miesiac.getMonth() + 1, 0).getDate();
-
-        for (let d = 1; d <= ileDni; d++) {
-            const data = new Date(miesiac.getFullYear(), miesiac.getMonth(), d);
-            const tekst = naTekst(data);
-            const iso = data.getDay() === 0 ? 7 : data.getDay();
-            const dzienWolny = dniWolne.includes(tekst);
-            const niedostepny = tekst < dzisiaj || tekst > maksData || dniZamkniete.includes(iso) || dzienWolny;
-
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.textContent = d;
-            btn.dataset.data = tekst;
-            btn.disabled = niedostepny;
-            if (dzienWolny) btn.title = 'Dzień wolny warsztatu';
-
-            let klasy = 'h-9 text-sm transition ';
-            if (tekst === poleData.value) {
-                klasy += 'bg-orange-600 text-white font-semibold';
-            } else if (niedostepny) {
-                klasy += 'text-zinc-700 cursor-not-allowed' + (dzienWolny ? ' line-through' : '');
-            } else {
-                klasy += 'text-zinc-200 hover:bg-white/10';
-            }
-            if (tekst === dzisiaj && tekst !== poleData.value) {
-                klasy += ' ring-1 ring-inset ring-zinc-600';
-            }
-
-            btn.className = klasy;
-            btn.style.borderRadius = '2px';
-            kontener.appendChild(btn);
-        }
-
-        document.getElementById('kal-poprzedni').disabled = miesiac <= poczatekMiesiaca(dzisiaj);
-        document.getElementById('kal-nastepny').disabled = miesiac >= poczatekMiesiaca(maksData);
-    }
-
-    function wybierzDate(tekst) {
-        poleData.value = tekst;
-        poprzedniaGodzina = null;
-        renderujKalendarz();
-        pobierzGodziny();
-    }
-
-    // ---------- Godziny ----------
-
-    function pokazKomunikat(tekst) {
-        kontenerSlotow.innerHTML = '';
-        komunikatSlotow.textContent = tekst;
-        komunikatSlotow.classList.remove('hidden');
-        odswiez();
-    }
-
-    function renderujGodziny(godziny) {
-        kontenerSlotow.innerHTML = '';
-        komunikatSlotow.classList.add('hidden');
-
-        godziny.forEach(godzina => {
-            const label = document.createElement('label');
-            label.className = 'cursor-pointer';
-
-            const input = document.createElement('input');
-            input.type = 'radio';
-            input.name = 'godzina';
-            input.value = godzina;
-            input.className = 'peer sr-only';
-            if (godzina === poprzedniaGodzina) input.checked = true;
-
-            const kafelek = document.createElement('div');
-            kafelek.className = 'text-center text-sm py-2 border border-zinc-700 text-zinc-300 hover:border-zinc-500 peer-checked:bg-orange-600 peer-checked:border-orange-600 peer-checked:text-white transition';
-            kafelek.style.borderRadius = '2px';
-            kafelek.textContent = godzina;
-
-            label.append(input, kafelek);
-            kontenerSlotow.appendChild(label);
-        });
-
-        poprzedniaGodzina = null;
-        odswiez();
-    }
-
-    async function pobierzGodziny() {
-        const wybrane = zaznaczoneUslugi();
-
-        if (!poleData.value) {
-            opisDaty.textContent = '';
-            pokazKomunikat('Wybierz dzień w kalendarzu.');
-            return;
-        }
-
-        opisDaty.textContent = formatData(poleData.value) + ' · łączny czas: ' + formatCzas(lacznyCzas());
-
-        if (wybrane.length === 0) {
-            pokazKomunikat('Najpierw wybierz usługi w kroku 1.');
-            return;
-        }
-
-        const params = new URLSearchParams();
-        wybrane.forEach(c => params.append('uslugi[]', c.value));
-        params.append('data', poleData.value);
-        if (poleMechanik.value) params.append('mechanik', poleMechanik.value);
-
-        const numer = ++numerZapytania;
-        pokazKomunikat('Szukam wolnych terminów…');
-
-        try {
-            const odp = await fetch(url + '?' + params.toString(), { headers: { 'Accept': 'application/json' } });
-            const dane = await odp.json();
-
-            // Ignorujemy odpowiedź, jeśli w międzyczasie wybór się zmienił
-            if (numer !== numerZapytania) return;
-
-            if (!odp.ok) {
-                const komunikaty = dane.errors ? Object.values(dane.errors).flat() : [];
-                pokazKomunikat(komunikaty[0] || 'Nie udało się pobrać terminów. Spróbuj ponownie.');
-                return;
-            }
-
-            if (dane.godziny.length === 0) {
-                pokazKomunikat(dane.komunikat || 'Brak wolnych terminów w wybranym dniu.');
-                return;
-            }
-
-            renderujGodziny(dane.godziny);
-        } catch (e) {
-            if (numer === numerZapytania) {
-                pokazKomunikat('Nie udało się pobrać terminów. Sprawdź połączenie i spróbuj ponownie.');
-            }
-        }
-    }
-
-    // ---------- Mechanicy ----------
-
-    async function pobierzMechanikow() {
-        const wybrane = zaznaczoneUslugi();
-        const przed = poleMechanik.value;
-        const obecny = przed || poprzedniMechanik || '';
-        const numer = ++numerZapytaniaMechanikow;
-
-        // Bez usług zostaje tylko opcja „dowolny”
-        poleMechanik.querySelectorAll('option:not([value=""])').forEach(o => o.remove());
-        if (wybrane.length === 0) {
-            poleMechanik.value = '';
-            return;
-        }
-
-        const params = new URLSearchParams();
-        wybrane.forEach(c => params.append('uslugi[]', c.value));
-
-        try {
-            const odp = await fetch(urlMechanicy + '?' + params.toString(), { headers: { 'Accept': 'application/json' } });
-            const dane = await odp.json();
-            if (numer !== numerZapytaniaMechanikow || !odp.ok) return;
-
-            dane.mechanicy.forEach(m => {
-                const opcja = document.createElement('option');
-                opcja.value = m.id;
-                opcja.textContent = m.nazwa;
-                poleMechanik.appendChild(opcja);
-            });
-
-            // Zachowujemy wybór, jeśli mechanik nadal wykonuje wszystkie usługi
-            const nadal = dane.mechanicy.some(m => String(m.id) === String(obecny));
-            poleMechanik.value = nadal ? String(obecny) : '';
-            poprzedniMechanik = null;
-
-            // Jeśli wybór mechanika się zmienił, wolne godziny trzeba pobrać ponownie
-            if (poleMechanik.value !== przed && poleData.value) pobierzGodziny();
-        } catch (e) {
-            // Brak listy nie blokuje rezerwacji – zostaje „dowolny mechanik”
-        }
-    }
-
-    // ---------- Potwierdzenie ----------
-
-    function wiersz(etykieta, wartosc, wyroznij = false) {
-        const div = document.createElement('div');
-        div.className = 'flex justify-between gap-6 px-5 py-3 text-sm';
-        const e = document.createElement('span');
-        e.className = 'text-zinc-400';
-        e.textContent = etykieta;
-        const w = document.createElement('span');
-        w.className = 'text-right ' + (wyroznij ? 'text-zinc-50 font-semibold' : 'text-zinc-200');
-        w.style.whiteSpace = 'pre-line';
-        w.textContent = wartosc;
-        div.append(e, w);
-        return div;
-    }
-
-    function renderujPotwierdzenie() {
-        const kontener = document.getElementById('potwierdzenie');
-        kontener.innerHTML = '';
-
-        const uslugi = zaznaczoneUslugi()
-            .map(c => c.dataset.nazwa + ' – ' + parseFloat(c.dataset.cena).toFixed(2) + ' zł')
-            .join('\n');
-        const g = wybranaGodzina();
-        const czas = lacznyCzas();
-
-        kontener.append(
-            wiersz('Usługi', uslugi),
-            wiersz('Termin', formatData(poleData.value) + '\n' + g + '–' + dodajMinuty(g, czas)),
-            wiersz('Czas trwania', formatCzas(czas)),
-            wiersz('Mechanik', poleMechanik.value ? poleMechanik.options[poleMechanik.selectedIndex].textContent : 'Dowolny'),
-            wiersz('Pojazd', wybranyPojazd().dataset.opis)
-        );
-
-        if (poleUwagi.value.trim()) {
-            kontener.append(wiersz('Uwagi', poleUwagi.value.trim()));
-        }
-
-        kontener.append(wiersz('Szacowana kwota', lacznaCena().toFixed(2) + ' zł', true));
-    }
-
-    // ---------- Zdarzenia ----------
-
-    checkboxy.forEach(c => c.addEventListener('change', () => {
-        odswiezPodsumowanie();
-        pobierzMechanikow();
-        if (poleData.value) {
-            // Zmiana usług zmienia czas wizyty – godziny trzeba pobrać ponownie
-            poprzedniaGodzina = wybranaGodzina();
-            pobierzGodziny();
-        } else {
-            odswiezKroki();
-        }
-    }));
-
-    kontenerSlotow.addEventListener('change', odswiez);
-    poleMechanik.addEventListener('change', () => {
-        poprzedniaGodzina = wybranaGodzina();
-        if (poleData.value) pobierzGodziny();
-    });
-    radiaPojazdu.forEach(r => r.addEventListener('change', odswiez));
-
-    document.getElementById('kal-dni').addEventListener('click', e => {
-        const btn = e.target.closest('button[data-data]');
-        if (btn && !btn.disabled) wybierzDate(btn.dataset.data);
-    });
-    document.getElementById('kal-poprzedni').addEventListener('click', () => {
-        miesiac = new Date(miesiac.getFullYear(), miesiac.getMonth() - 1, 1);
-        renderujKalendarz();
-    });
-    document.getElementById('kal-nastepny').addEventListener('click', () => {
-        miesiac = new Date(miesiac.getFullYear(), miesiac.getMonth() + 1, 1);
-        renderujKalendarz();
+    wybrane.forEach(c => {
+        const wiersz = document.createElement('div');
+        wiersz.className = 'flex justify-between gap-3';
+        const nazwa = document.createElement('span');
+        nazwa.className = 'text-zinc-300';
+        nazwa.textContent = c.dataset.nazwa;
+        const czas = document.createElement('span');
+        czas.className = 'text-xs font-mono text-zinc-500 whitespace-nowrap';
+        czas.textContent = format.czas(Number(c.dataset.czas));
+        wiersz.append(nazwa, czas);
+        lista.appendChild(wiersz);
     });
 
-    btnDalej.addEventListener('click', () => {
-        if (krokGotowy(krok)) przejdzDo(krok + 1);
-    });
-    btnWstecz.addEventListener('click', () => przejdzDo(krok - 1));
-    document.querySelectorAll('[data-krok-wskaznik]').forEach(b => {
-        b.addEventListener('click', () => przejdzDo(parseInt(b.dataset.krokWskaznik, 10)));
-    });
+    document.getElementById('pods-czas').textContent = wybrane.length ? format.czas(lacznyCzas()) : '—';
+    document.getElementById('pods-cena').textContent = wybrane.length ? format.kwota(lacznaCena()) : '—';
 
-    form.addEventListener('submit', e => {
-        if (krok !== 4 || !moznaWejsc(4)) {
-            e.preventDefault();
-            return;
-        }
-        // Ochrona przed podwójnym wysłaniem
-        btnPotwierdz.disabled = true;
-        btnPotwierdz.textContent = 'Wysyłanie…';
-    });
+    const g = godziny.wybrana();
+    document.getElementById('pods-termin').textContent = poleData.value ? format.data(poleData.value) + (g ? ', ' + g : '') : '—';
+    document.getElementById('pods-pojazd').textContent = wybranyPojazd()?.dataset.opis ?? '—';
+}
 
-    // Enter w polach (poza uwagami) nie wysyła formularza przedwcześnie
-    form.addEventListener('keydown', e => {
-        if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') e.preventDefault();
-    });
-
-    // ---------- Start ----------
-
-    if (!wybranyPojazd() && radiaPojazdu.length) {
-        radiaPojazdu[0].checked = true;
-    }
-
-    renderujKalendarz();
+function odswiez() {
     odswiezPodsumowanie();
-    pobierzMechanikow();
+    kreator.odswiez();
+}
 
-    if (poleData.value && zaznaczoneUslugi().length) {
-        pobierzGodziny();
-    }
+// ---------- Potwierdzenie ----------
 
-    // Po błędzie walidacji otwieramy krok, którego błąd dotyczy
-    if (bledy.some(k => k.startsWith('uslugi'))) {
-        krok = 1;
-    } else if (bledy.some(k => k === 'data' || k === 'godzina')) {
-        krok = 2;
-    } else if (bledy.some(k => k === 'pojazd_id' || k === 'uwagi')) {
-        krok = 3;
-    }
+function wiersz(etykieta, wartosc, wyroznij = false) {
+    const div = document.createElement('div');
+    div.className = 'flex justify-between gap-6 px-5 py-3 text-sm';
+    const e = document.createElement('span');
+    e.className = 'text-zinc-400';
+    e.textContent = etykieta;
+    const w = document.createElement('span');
+    w.className = 'text-right ' + (wyroznij ? 'text-zinc-50 font-semibold' : 'text-zinc-200');
+    w.style.whiteSpace = 'pre-line';
+    w.textContent = wartosc;
+    div.append(e, w);
+    return div;
+}
 
-    odswiezKroki();
-})();
+function renderujPotwierdzenie() {
+    const kontener = document.getElementById('potwierdzenie');
+    kontener.innerHTML = '';
+    const g = godziny.wybrana();
+
+    kontener.append(
+        wiersz('Usługi', zaznaczone().map(c => c.dataset.nazwa + ' – ' + format.kwota(parseFloat(c.dataset.cena))).join('\n')),
+        wiersz('Termin', format.data(poleData.value) + '\n' + g + '–' + format.dodajMinuty(g, lacznyCzas())),
+        wiersz('Czas trwania', format.czas(lacznyCzas())),
+        wiersz('Mechanik', mechanicy.opis()),
+        wiersz('Pojazd', wybranyPojazd().dataset.opis)
+    );
+    if (poleUwagi.value.trim()) kontener.append(wiersz('Uwagi', poleUwagi.value.trim()));
+    kontener.append(wiersz('Szacowana kwota', format.kwota(lacznaCena()), true));
+}
+
+// ---------- Zdarzenia i start ----------
+
+checkboxy.forEach(c => c.addEventListener('change', () => {
+    mechanicy.pobierz();
+    // Zmiana usług zmienia czas wizyty – godziny trzeba pobrać ponownie
+    if (poleData.value) godziny.pobierz(); else odswiez();
+}));
+radiaPojazdu.forEach(r => r.addEventListener('change', odswiez));
+
+if (!wybranyPojazd() && radiaPojazdu.length) radiaPojazdu[0].checked = true;
+
+mechanicy.pobierz();
+if (poleData.value && zaznaczone().length) godziny.pobierz();
+
+// Po błędzie walidacji otwieramy krok, którego błąd dotyczy
+const bledy = @json($errors->keys());
+kreator.otworz(
+    bledy.some(k => k.startsWith('uslugi')) ? 1
+    : bledy.some(k => ['data', 'godzina', 'id_mechanika'].includes(k)) ? 2
+    : bledy.some(k => ['pojazd_id', 'uwagi'].includes(k)) ? 3
+    : 1
+);
+odswiezPodsumowanie();
 </script>
 
 @endif
