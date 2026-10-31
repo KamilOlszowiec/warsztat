@@ -3,6 +3,7 @@
 
 namespace App\Http\Controllers\Pracownik;
 
+use App\Enums\StatusRezerwacji;
 use App\Http\Controllers\Controller;
 use App\Models\Rezerwacja;
 use App\Services\DostepnoscRezerwacjiService;
@@ -73,7 +74,7 @@ class PrzydzialController extends Controller
 
     private function moznaZmienic(Rezerwacja $rezerwacja): bool
     {
-        return in_array($rezerwacja->status, ['oczekująca', 'zatwierdzona'])
+        return in_array($rezerwacja->status, StatusRezerwacji::aktywne())
             && $rezerwacja->termin_rozpoczecia->isFuture();
     }
 }

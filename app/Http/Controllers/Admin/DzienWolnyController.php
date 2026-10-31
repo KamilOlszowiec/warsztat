@@ -3,6 +3,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\StatusRezerwacji;
 use App\Http\Controllers\Controller;
 use App\Models\DzienWolny;
 use App\Models\Rezerwacja;
@@ -19,7 +20,7 @@ class DzienWolnyController extends Controller
             ->each(fn ($d) => $d->liczba_rezerwacji = $this->aktywneRezerwacjeDnia($d->data->toDateString()));
 
         // Liczba umówionych wizyt w każdym nadchodzącym dniu – do ostrzeżenia przed dodaniem dnia wolnego
-        $wizytyWgDni = Rezerwacja::whereIn('status', ['oczekująca', 'zatwierdzona'])
+        $wizytyWgDni = Rezerwacja::whereIn('status', StatusRezerwacji::aktywne())
             ->where('termin_rozpoczecia', '>=', today())
             ->selectRaw('DATE(termin_rozpoczecia) as dzien, COUNT(*) as liczba')
             ->groupBy('dzien')
@@ -60,7 +61,7 @@ class DzienWolnyController extends Controller
     private function aktywneRezerwacjeDnia(string $data): int
     {
         return Rezerwacja::whereDate('termin_rozpoczecia', $data)
-            ->whereIn('status', ['oczekująca', 'zatwierdzona'])
+            ->whereIn('status', StatusRezerwacji::aktywne())
             ->count();
     }
 }

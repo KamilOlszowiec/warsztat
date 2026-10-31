@@ -76,18 +76,7 @@
                             </p>
                         </td>
                         <td class="px-4 py-3">
-                            @php
-                                $kolory = [
-                                    'oczekująca' => 'bg-yellow-900/30 text-yellow-400',
-                                    'zatwierdzona' => 'bg-green-900/30 text-green-400',
-                                    'odrzucona' => 'bg-red-900/30 text-red-400',
-                                    'anulowana' => 'bg-zinc-800 text-zinc-500',
-                                    'zakończona' => 'bg-blue-900/30 text-blue-400',
-                                ];
-                            @endphp
-                            <span class="text-xs font-mono px-2 py-1 {{ $kolory[$r->status] }}" style="border-radius: 2px;">
-                                {{ mb_strtoupper($r->status, 'UTF-8') }}
-                            </span>
+                            <x-status :status="$r->status" rozmiar="duzy" />
                         </td>
                         <td class="px-4 py-3 text-right whitespace-nowrap">
                             @if (!$r->mozeZarzadzac($uzytkownik) && in_array($r->status, ['oczekująca', 'zatwierdzona']))

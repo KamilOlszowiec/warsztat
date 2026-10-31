@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\StatusRezerwacji;
 use App\Http\Controllers\Controller;
 use App\Models\GrafikPracownika;
 use App\Models\Specjalizacja;
@@ -93,11 +94,11 @@ class UserController extends Controller
         return view('admin.users.show', [
             'user'          => $user,
             'liczbaWizyt'   => $wszystkie->count(),
-            'zaplanowane'   => $wszystkie->filter(fn ($r) => in_array($r->status, ['oczekująca', 'zatwierdzona']) && $r->termin_rozpoczecia->isFuture())->count(),
+            'zaplanowane'   => $wszystkie->filter(fn ($r) => in_array($r->status, StatusRezerwacji::aktywne()) && $r->termin_rozpoczecia->isFuture())->count(),
             'anulowane'     => $wszystkie->where('status', 'anulowana')->count(),
             'wydal'         => $wszystkie->where('status', 'zakończona')->sum(fn ($r) => $r->laczna_cena),
             'najblizsza'    => $wszystkie
-                ->filter(fn ($r) => in_array($r->status, ['oczekująca', 'zatwierdzona']) && $r->termin_rozpoczecia->isFuture())
+                ->filter(fn ($r) => in_array($r->status, StatusRezerwacji::aktywne()) && $r->termin_rozpoczecia->isFuture())
                 ->sortBy('termin_rozpoczecia')
                 ->first(),
             'moznaUsunac'   => $wszystkie->isEmpty(),

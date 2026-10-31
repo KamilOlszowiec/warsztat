@@ -2,15 +2,6 @@
 @section('title', 'Panel klienta')
 
 @section('content')
-@php
-    $kolory = [
-        'oczekująca'   => 'bg-yellow-900/40 text-yellow-400',
-        'zatwierdzona' => 'bg-green-900/40 text-green-400',
-        'odrzucona'    => 'bg-red-900/40 text-red-400',
-        'anulowana'    => 'bg-zinc-800 text-zinc-400',
-        'zakończona'   => 'bg-blue-900/40 text-blue-400',
-    ];
-@endphp
 
 <div class="max-w-5xl space-y-6">
 
@@ -33,9 +24,7 @@
             <div class="flex-1 min-w-0 basis-[520px] space-y-3.5">
                 <div class="flex flex-wrap items-center gap-2.5">
                     <span class="text-xs font-mono text-orange-400">NAJBLIŻSZA WIZYTA</span>
-                    <span class="text-[11px] font-mono px-2 py-0.5 {{ $kolory[$najblizsza->status] }}" style="border-radius: 2px;">
-                        {{ mb_strtoupper($najblizsza->status, 'UTF-8') }}
-                    </span>
+                    <x-status :status="$najblizsza->status" rozmiar="sredni" />
                     <span class="text-sm text-zinc-400">{{ $kiedy }}</span>
                 </div>
 
@@ -164,9 +153,7 @@
                     </div>
                     <div class="shrink-0 flex flex-col items-end gap-1.5">
                         <span class="text-sm font-semibold {{ $przeszla ? 'text-zinc-300' : 'text-zinc-50' }}">{{ number_format($r->laczna_cena, 2, ',', ' ') }} zł</span>
-                        <span class="text-[10px] font-mono px-1.5 py-0.5 {{ $kolory[$r->status] ?? '' }}" style="border-radius: 2px;">
-                            {{ mb_strtoupper($r->status, 'UTF-8') }}
-                        </span>
+                        <x-status :status="$r->status" rozmiar="maly" />
                     </div>
                 </a>
             @empty

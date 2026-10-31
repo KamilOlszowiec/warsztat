@@ -1,9 +1,8 @@
 <?php
 namespace App\Http\Controllers\Klient;
 
+use App\Enums\StatusRezerwacji;
 use App\Http\Controllers\Controller;
-use App\Models\DzienWolny;
-use App\Models\GodzinyPracy;
 use App\Models\Pojazd;
 use App\Models\Rezerwacja;
 use App\Models\Usluga;
@@ -17,7 +16,6 @@ class RezerwacjaController extends Controller
     private const KOMUNIKAT_NIEZGODNE = 'Żaden mechanik nie wykona wszystkich wybranych usług podczas jednej wizyty – umów je osobno.';
 
     // Jak daleko w przód klient może rezerwować
-    private const DNI_NAPRZOD = 60;
 
     public function __construct(private DostepnoscRezerwacjiService $dostepnosc)
     {
@@ -28,7 +26,7 @@ class RezerwacjaController extends Controller
         $zakladka = $request->get('zakladka') === 'historia' ? 'historia' : 'nadchodzace';
 
         $relacje = ['pojazd', 'uslugi', 'mechanik'];
-        $aktywne = ['oczekująca', 'zatwierdzona'];
+        $aktywne = StatusRezerwacji::aktywne();
 
         // Nadchodzące: aktywne i jeszcze się nie zaczęły – od najbliższej
         $nadchodzace = Rezerwacja::where('id_klienta', auth()->id())
@@ -67,21 +65,10 @@ class RezerwacjaController extends Controller
         $uslugi = Usluga::aktywne()->orderBy('nazwa')->get();
         $pojazdy = auth()->user()->pojazdy()->orderBy('marka')->get();
 
-        // Dni tygodnia (ISO 1–7), w które warsztat jest zamknięty
-        $czynne = GodzinyPracy::where('czy_czynne', true)
-            ->pluck('dzien_tygodnia')
-            ->map(fn ($d) => (int) $d)
-            ->all();
-        $dniZamkniete = array_values(array_diff(range(1, 7), $czynne));
-
-        $maksData = today()->addDays(self::DNI_NAPRZOD)->toDateString();
-
-        $dniWolne = DzienWolny::whereBetween('data', [today()->toDateString(), $maksData])
-            ->get()
-            ->map(fn ($d) => $d->data->toDateString())
-            ->all();
-
-        return view('klient.reservations.create', compact('uslugi', 'pojazdy', 'dniZamkniete', 'dniWolne', 'maksData'));
+        return view('klient.reservations.create', [
+            'uslugi'  => $uslugi,
+            'pojazdy' => $pojazdy,
+        ] + $this->dostepnosc->daneKalendarza());
     }
 
     /**
@@ -97,7 +84,7 @@ class RezerwacjaController extends Controller
         $uslugi = Usluga::aktywne()->whereIn('id_uslugi', $dane['uslugi'])->get();
 
         return response()->json([
-            'mechanicy' => $this->listaMechanikow($uslugi),
+            'mechanicy' => $this->dostepnosc->listaMechanikow($uslugi),
         ]);
     }
 
@@ -110,7 +97,7 @@ class RezerwacjaController extends Controller
         $dane = $request->validate([
             'uslugi'   => ['required', 'array', 'min:1'],
             'uslugi.*' => ['integer', 'distinct', Rule::exists('uslugi', 'id_uslugi')->where('czy_aktywna', true)],
-            'data'     => ['required', 'date', 'after_or_equal:today', 'before_or_equal:' . $this->maksData()],
+            'data'     => ['required', 'date', 'after_or_equal:today', 'before_or_equal:' . $this->dostepnosc->maksData()],
             'mechanik' => ['nullable', 'integer'],
         ]);
 
@@ -144,14 +131,14 @@ class RezerwacjaController extends Controller
             'uslugi'    => ['required', 'array', 'min:1'],
             'uslugi.*'  => ['integer', 'distinct', Rule::exists('uslugi', 'id_uslugi')->where('czy_aktywna', true)],
             'pojazd_id' => ['required', 'exists:pojazdy,id_pojazdu'],
-            'data'      => ['required', 'date', 'after_or_equal:today', 'before_or_equal:' . $this->maksData()],
+            'data'      => ['required', 'date', 'after_or_equal:today', 'before_or_equal:' . $this->dostepnosc->maksData()],
             'godzina'   => ['required', 'date_format:H:i'],
             'uwagi'     => ['nullable', 'string', 'max:500'],
             'id_mechanika' => ['nullable', 'integer'],
         ], [
             'uslugi.required'      => 'Wybierz co najmniej jedną usługę.',
             'data.required'        => 'Wybierz dzień wizyty.',
-            'data.before_or_equal' => 'Wizytę można zarezerwować najwyżej ' . self::DNI_NAPRZOD . ' dni naprzód.',
+            'data.before_or_equal' => 'Wizytę można zarezerwować najwyżej ' . config('warsztat.dni_naprzod') . ' dni naprzód.',
             'godzina.required'     => 'Wybierz godzinę wizyty.',
             'pojazd_id.required'   => 'Wybierz pojazd.',
         ]);
@@ -193,7 +180,7 @@ class RezerwacjaController extends Controller
             abort(403);
         }
 
-        if (!in_array($reservation->status, ['oczekująca', 'zatwierdzona'])) {
+        if (!in_array($reservation->status, StatusRezerwacji::aktywne())) {
             return back()->withErrors(['error' => 'Tej rezerwacji nie można już anulować.']);
         }
 
@@ -215,20 +202,7 @@ class RezerwacjaController extends Controller
 
         $reservation->load(['uslugi', 'pojazd', 'mechanik']);
 
-        $czynne = GodzinyPracy::where('czy_czynne', true)
-            ->pluck('dzien_tygodnia')
-            ->map(fn ($d) => (int) $d)
-            ->all();
-        $dniZamkniete = array_values(array_diff(range(1, 7), $czynne));
-
-        $maksData = $this->maksData();
-
-        $dniWolne = DzienWolny::whereBetween('data', [today()->toDateString(), $maksData])
-            ->get()
-            ->map(fn ($d) => $d->data->toDateString())
-            ->all();
-
-        $mechanicy = $this->listaMechanikow($reservation->uslugi);
+        $mechanicy = $this->dostepnosc->listaMechanikow($reservation->uslugi);
 
         // Domyślnie obecny mechanik wizyty, jeśli nadal może ją wykonać
         $domyslnyMechanik = collect($mechanicy)->contains('id', (int) $reservation->id_mechanika)
@@ -237,12 +211,9 @@ class RezerwacjaController extends Controller
 
         return view('klient.reservations.edit-termin', [
             'rezerwacja'       => $reservation,
-            'dniZamkniete'     => $dniZamkniete,
-            'dniWolne'         => $dniWolne,
-            'maksData'         => $maksData,
             'mechanicy'        => $mechanicy,
             'domyslnyMechanik' => $domyslnyMechanik,
-        ]);
+        ] + $this->dostepnosc->daneKalendarza());
     }
 
     /**
@@ -254,7 +225,7 @@ class RezerwacjaController extends Controller
         $this->sprawdzMozliwoscZmiany($reservation);
 
         $dane = $request->validate([
-            'data'     => ['required', 'date', 'after_or_equal:today', 'before_or_equal:' . $this->maksData()],
+            'data'     => ['required', 'date', 'after_or_equal:today', 'before_or_equal:' . $this->dostepnosc->maksData()],
             'mechanik' => ['nullable', 'integer'],
         ]);
 
@@ -284,12 +255,12 @@ class RezerwacjaController extends Controller
         $this->sprawdzMozliwoscZmiany($reservation);
 
         $dane = $request->validate([
-            'data'    => ['required', 'date', 'after_or_equal:today', 'before_or_equal:' . $this->maksData()],
+            'data'    => ['required', 'date', 'after_or_equal:today', 'before_or_equal:' . $this->dostepnosc->maksData()],
             'godzina' => ['required', 'date_format:H:i'],
             'id_mechanika' => ['nullable', 'integer'],
         ], [
             'data.required'        => 'Wybierz dzień wizyty.',
-            'data.before_or_equal' => 'Wizytę można zarezerwować najwyżej ' . self::DNI_NAPRZOD . ' dni naprzód.',
+            'data.before_or_equal' => 'Wizytę można zarezerwować najwyżej ' . config('warsztat.dni_naprzod') . ' dni naprzód.',
             'godzina.required'     => 'Wybierz godzinę wizyty.',
         ]);
 
@@ -318,25 +289,9 @@ class RezerwacjaController extends Controller
             abort(403);
         }
 
-        if (!in_array($reservation->status, ['oczekująca', 'zatwierdzona'])
+        if (!in_array($reservation->status, StatusRezerwacji::aktywne())
             || !$reservation->termin_rozpoczecia->isFuture()) {
             abort(403, 'Terminu tej rezerwacji nie można już zmienić.');
         }
-    }
-
-    /**
-     * Lista mechaników do pola wyboru: [{id, nazwa}].
-     */
-    private function listaMechanikow($uslugi): array
-    {
-        return $this->dostepnosc->mechanicyDoWyboru($uslugi)
-            ->map(fn ($m) => ['id' => (int) $m->id_uzytkownika, 'nazwa' => $m->imie . ' ' . $m->nazwisko])
-            ->values()
-            ->all();
-    }
-
-    private function maksData(): string
-    {
-        return today()->addDays(self::DNI_NAPRZOD)->toDateString();
     }
 }

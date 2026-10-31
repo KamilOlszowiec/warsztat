@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers\Pracownik;
 
+use App\Enums\StatusRezerwacji;
 use App\Http\Controllers\Controller;
 use App\Models\Rezerwacja;
 use App\Models\DzienWolny;
@@ -17,7 +18,6 @@ use Illuminate\Support\Facades\Log;
 
 class RezerwacjaController extends Controller
 {
-    private const AKTYWNE = ['oczekująca', 'zatwierdzona'];
 
     private const FILTRY = ['moje', 'zalegle', 'dzisiaj', 'oczekująca', 'zatwierdzona', 'zakończona', 'wszystkie'];
 
@@ -41,7 +41,7 @@ class RezerwacjaController extends Controller
 
         if ($status === 'moje') {
             $query->where('id_mechanika', $uzytkownik->id_uzytkownika)
-                ->whereIn('status', self::AKTYWNE)
+                ->whereIn('status', StatusRezerwacji::aktywne())
                 ->where('termin_rozpoczecia', '>=', today());
         } elseif ($status === 'zalegle') {
             $this->zalegle($query, $uzytkownik);
@@ -66,7 +66,7 @@ class RezerwacjaController extends Controller
      */
     private function zalegle($query, Uzytkownik $uzytkownik)
     {
-        return $query->whereIn('status', self::AKTYWNE)
+        return $query->whereIn('status', StatusRezerwacji::aktywne())
             ->where('termin_zakonczenia', '<', now())
             ->when($uzytkownik->rola !== 'administrator',
                 fn ($q) => $q->where('id_mechanika', $uzytkownik->id_uzytkownika));
@@ -288,7 +288,7 @@ class RezerwacjaController extends Controller
     {
         $this->wymagajUprawnien($reservation);
 
-        if (!in_array($reservation->status, ['oczekująca', 'zatwierdzona'])) {
+        if (!in_array($reservation->status, StatusRezerwacji::aktywne())) {
             return back()->withErrors(['error' => 'Można zmienić termin tylko oczekującej lub zatwierdzonej rezerwacji.']);
         }
 

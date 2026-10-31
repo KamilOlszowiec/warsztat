@@ -3,6 +3,7 @@
 
 namespace App\Models;
 
+use App\Enums\StatusRezerwacji;
 use Illuminate\Database\Eloquent\Model;
 
 class Rezerwacja extends Model
@@ -82,6 +83,11 @@ class Rezerwacja extends Model
 
         return $uzytkownik->rola === 'administrator'
             || (int) $this->id_mechanika === (int) $uzytkownik->id_uzytkownika;
+    }
+
+    public function statusEnum(): StatusRezerwacji
+    {
+        return StatusRezerwacji::from($this->status);
     }
 
     // ---------- Protokół z wizyty ----------

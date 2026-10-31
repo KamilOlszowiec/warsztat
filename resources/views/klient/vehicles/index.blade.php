@@ -2,22 +2,6 @@
 @section('title', 'Moje pojazdy')
 
 @section('content')
-@php
-    $kolory = [
-        'oczekująca'   => 'bg-yellow-900/30 text-yellow-400',
-        'zatwierdzona' => 'bg-green-900/30 text-green-400',
-        'odrzucona'    => 'bg-red-900/30 text-red-400',
-        'anulowana'    => 'bg-zinc-800 text-zinc-500',
-        'zakończona'   => 'bg-blue-900/30 text-blue-400',
-    ];
-    $kropki = [
-        'oczekująca'   => 'bg-yellow-400',
-        'zatwierdzona' => 'bg-green-400',
-        'odrzucona'    => 'bg-red-400',
-        'anulowana'    => 'bg-zinc-600',
-        'zakończona'   => 'bg-blue-400',
-    ];
-@endphp
 
 <div class="max-w-5xl">
 
@@ -113,15 +97,13 @@
                                 <ol class="relative border-l border-zinc-800 ml-1.5">
                                     @foreach ($historia as $r)
                                         <li class="relative pl-5 {{ $loop->last ? '' : 'pb-4' }}">
-                                            <span class="absolute -left-[5px] top-1.5 w-2.5 h-2.5 {{ $kropki[$r->status] ?? 'bg-zinc-600' }}" style="border-radius: 50%;"></span>
+                                            <span class="absolute -left-[5px] top-1.5 w-2.5 h-2.5 {{ $r->statusEnum()->kropka() }}" style="border-radius: 50%;"></span>
 
                                             <div class="flex items-center justify-between gap-3 mb-1">
                                                 <a href="{{ route('klient.reservations.show', $r) }}" class="text-sm font-mono text-zinc-300 hover:text-orange-400">
                                                     {{ $r->termin_rozpoczecia->format('d.m.Y H:i') }}
                                                 </a>
-                                                <span class="text-[10px] font-mono px-1.5 py-0.5 {{ $kolory[$r->status] ?? '' }}" style="border-radius: 2px;">
-                                                    {{ mb_strtoupper($r->status, 'UTF-8') }}
-                                                </span>
+                                                <x-status :status="$r->status" rozmiar="maly" />
                                             </div>
 
                                             <p class="text-sm text-zinc-100">{{ $r->nazwy_uslug }}</p>

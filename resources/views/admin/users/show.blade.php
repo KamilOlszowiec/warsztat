@@ -4,14 +4,6 @@
 @section('content')
 @php
     $inicjaly = mb_strtoupper(mb_substr($user->imie, 0, 1) . mb_substr($user->nazwisko, 0, 1), 'UTF-8');
-    $kolory = [
-        'oczekująca' => 'bg-yellow-900/40 text-yellow-400', 'zatwierdzona' => 'bg-green-900/40 text-green-400',
-        'odrzucona' => 'bg-red-900/40 text-red-400', 'anulowana' => 'bg-zinc-800 text-zinc-400', 'zakończona' => 'bg-blue-900/40 text-blue-400',
-    ];
-    $kropki = [
-        'oczekująca' => 'bg-yellow-400', 'zatwierdzona' => 'bg-green-400', 'odrzucona' => 'bg-red-400',
-        'anulowana' => 'bg-zinc-500', 'zakończona' => 'bg-blue-400',
-    ];
     $jedenPojazd = $user->pojazdy->count() === 1;
 @endphp
 
@@ -111,10 +103,10 @@
                             <ol class="relative border-l border-zinc-700 ml-1.5">
                                 @foreach ($historia as $r)
                                     <li class="relative pl-5 {{ $loop->last ? '' : 'pb-4' }}">
-                                        <span class="absolute -left-[5px] top-1.5 w-2.5 h-2.5 {{ $kropki[$r->status] ?? 'bg-zinc-500' }}" style="border-radius: 50%;"></span>
+                                        <span class="absolute -left-[5px] top-1.5 w-2.5 h-2.5 {{ $r->statusEnum()->kropka() }}" style="border-radius: 50%;"></span>
                                         <div class="flex flex-wrap items-center justify-between gap-2">
                                             <span class="text-xs font-mono text-zinc-300">{{ $r->termin_rozpoczecia->format('d.m.Y H:i') }}</span>
-                                            <span class="text-[10px] font-mono px-1.5 py-0.5 {{ $kolory[$r->status] ?? '' }}" style="border-radius: 2px;">{{ mb_strtoupper($r->status, 'UTF-8') }}</span>
+                                            <x-status :status="$r->status" rozmiar="maly" />
                                         </div>
                                         <p class="text-sm text-zinc-100 mt-1">{{ $r->nazwy_uslug }}</p>
                                         <p class="text-xs text-zinc-400 mt-0.5">

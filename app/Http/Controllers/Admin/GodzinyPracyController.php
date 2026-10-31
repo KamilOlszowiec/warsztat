@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\StatusRezerwacji;
 use App\Http\Controllers\Controller;
 use App\Models\GodzinyPracy;
 use App\Models\Rezerwacja;
@@ -86,7 +87,7 @@ class GodzinyPracyController extends Controller
     {
         $godziny = GodzinyPracy::all()->keyBy('dzien_tygodnia');
 
-        return Rezerwacja::whereIn('status', ['oczekująca', 'zatwierdzona'])
+        return Rezerwacja::whereIn('status', StatusRezerwacji::aktywne())
             ->where('termin_rozpoczecia', '>', now())
             ->get(['termin_rozpoczecia', 'termin_zakonczenia'])
             ->filter(function ($r) use ($godziny) {

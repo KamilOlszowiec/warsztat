@@ -3,12 +3,12 @@
 
 namespace App\Http\Controllers\Klient;
 
+use App\Enums\StatusRezerwacji;
 use App\Http\Controllers\Controller;
 use App\Models\Rezerwacja;
 
 class DashboardController extends Controller
 {
-    private const AKTYWNE = ['oczekująca', 'zatwierdzona'];
 
     public function __invoke()
     {
@@ -17,7 +17,7 @@ class DashboardController extends Controller
 
         // Nadchodzące wizyty (od najbliższej)
         $nadchodzace = Rezerwacja::where('id_klienta', $user->id_uzytkownika)
-            ->whereIn('status', self::AKTYWNE)
+            ->whereIn('status', StatusRezerwacji::aktywne())
             ->where('termin_rozpoczecia', '>', now())
             ->with($relacje)
             ->orderBy('termin_rozpoczecia')
@@ -40,7 +40,7 @@ class DashboardController extends Controller
         $ostatnie = Rezerwacja::where('id_klienta', $user->id_uzytkownika)
             ->where(function ($q) {
                 $q->where('termin_rozpoczecia', '<=', now())
-                  ->orWhereNotIn('status', self::AKTYWNE);
+                  ->orWhereNotIn('status', StatusRezerwacji::aktywne());
             })
             ->with($relacje)
             ->orderByDesc('termin_rozpoczecia')

@@ -20,21 +20,10 @@
         </div>
 
         <div class="bg-[#1F2128] border-l-4 border-orange-600 p-6 md:p-8" style="border-radius: 2px;">
-            @php
-                $kolory = [
-                    'oczekująca' => 'bg-yellow-900/30 text-yellow-400',
-                    'zatwierdzona' => 'bg-green-900/30 text-green-400',
-                    'odrzucona' => 'bg-red-900/30 text-red-400',
-                    'anulowana' => 'bg-zinc-800 text-zinc-500',
-                    'zakończona' => 'bg-blue-900/30 text-blue-400',
-                ];
-            @endphp
 
             <div class="flex items-center justify-between mb-6">
                 <p class="text-zinc-400 text-sm">Rezerwacja #{{ $rezerwacja->id_rezerwacji }}</p>
-                <span class="text-xs font-mono px-2 py-1 {{ $kolory[$rezerwacja->status] }}" style="border-radius: 2px;">
-                    {{ mb_strtoupper($rezerwacja->status, 'UTF-8') }}
-                </span>
+                <x-status :status="$rezerwacja->status" rozmiar="duzy" />
             </div>
 
             <dl class="space-y-4">

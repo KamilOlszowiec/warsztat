@@ -72,6 +72,63 @@ class DostepnoscRezerwacjiService
         return !empty($this->uprawnieniMechanicy($uslugi));
     }
 
+    // ---------- Dane do kalendarza (wspólne dla wszystkich kreatorów) ----------
+
+    /**
+     * Ostatni dzień, na który można zarezerwować wizytę.
+     */
+    public function maksData(): string
+    {
+        return today()->addDays(config('warsztat.dni_naprzod'))->toDateString();
+    }
+
+    /**
+     * Dni tygodnia (ISO 1–7), w które warsztat jest zamknięty.
+     */
+    public function dniZamkniete(): array
+    {
+        $czynne = GodzinyPracy::where('czy_czynne', true)
+            ->pluck('dzien_tygodnia')
+            ->map(fn ($d) => (int) $d)
+            ->all();
+
+        return array_values(array_diff(range(1, 7), $czynne));
+    }
+
+    /**
+     * Dni wolne warsztatu od dziś do ostatniego dnia rezerwacji (Y-m-d).
+     */
+    public function dniWolne(): array
+    {
+        return DzienWolny::whereBetween('data', [today()->toDateString(), $this->maksData()])
+            ->pluck('data')
+            ->map(fn ($d) => Carbon::parse($d)->toDateString())
+            ->all();
+    }
+
+    /**
+     * Komplet danych kalendarza przekazywany do widoków.
+     */
+    public function daneKalendarza(): array
+    {
+        return [
+            'dniZamkniete' => $this->dniZamkniete(),
+            'dniWolne'     => $this->dniWolne(),
+            'maksData'     => $this->maksData(),
+        ];
+    }
+
+    /**
+     * Mechanicy do pola wyboru w formacie [{id, nazwa}].
+     */
+    public function listaMechanikow(Collection $uslugi): array
+    {
+        return $this->mechanicyDoWyboru($uslugi)
+            ->map(fn ($m) => ['id' => (int) $m->id_uzytkownika, 'nazwa' => $m->imie . ' ' . $m->nazwisko])
+            ->values()
+            ->all();
+    }
+
     /**
      * Mechanicy, których klient może wybrać dla danych usług (mają wszystkie specjalizacje).
      */

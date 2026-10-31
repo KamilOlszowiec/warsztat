@@ -3,13 +3,6 @@
 
 @section('content')
 @php
-    $kolory = [
-        'oczekująca'   => 'bg-yellow-900/40 text-yellow-400',
-        'zatwierdzona' => 'bg-green-900/40 text-green-400',
-        'odrzucona'    => 'bg-red-900/40 text-red-400',
-        'anulowana'    => 'bg-zinc-800 text-zinc-400',
-        'zakończona'   => 'bg-blue-900/40 text-blue-400',
-    ];
 
     // "dziś", "jutro", "za X dni"
     $kiedy = function ($termin) {
@@ -85,9 +78,7 @@
 
                             <div class="flex-1 min-w-0 basis-[300px]">
                                 <div class="flex flex-wrap items-center gap-2.5 mb-1.5">
-                                    <span class="text-[10px] font-mono px-1.5 py-0.5 {{ $kolory[$r->status] ?? '' }}" style="border-radius: 2px;">
-                                        {{ mb_strtoupper($r->status, 'UTF-8') }}
-                                    </span>
+                                    <x-status :status="$r->status" rozmiar="maly" />
                                     <span class="text-sm text-zinc-400">{{ $kiedy($r->termin_rozpoczecia) }}</span>
                                 </div>
                                 <h2 class="text-[17px] font-semibold text-zinc-50">{{ $r->nazwy_uslug }}</h2>
@@ -158,9 +149,7 @@
                     </div>
                     <div class="shrink-0 flex flex-col items-end gap-1.5">
                         <span class="text-sm font-semibold text-zinc-300">{{ number_format($r->laczna_cena, 2, ',', ' ') }} zł</span>
-                        <span class="text-[10px] font-mono px-1.5 py-0.5 {{ $kolory[$r->status] ?? '' }}" style="border-radius: 2px;">
-                            {{ mb_strtoupper($r->status, 'UTF-8') }}
-                        </span>
+                        <x-status :status="$r->status" rozmiar="maly" />
                     </div>
                 </a>
             @empty

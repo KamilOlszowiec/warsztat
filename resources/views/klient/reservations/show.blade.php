@@ -3,13 +3,6 @@
 
 @section('content')
 @php
-    $kolory = [
-        'oczekująca'   => 'bg-yellow-900/40 text-yellow-400',
-        'zatwierdzona' => 'bg-green-900/40 text-green-400',
-        'odrzucona'    => 'bg-red-900/40 text-red-400',
-        'anulowana'    => 'bg-zinc-800 text-zinc-400',
-        'zakończona'   => 'bg-blue-900/40 text-blue-400',
-    ];
     $opisyStatusow = [
         'oczekująca'   => 'Warsztat jeszcze nie potwierdził wizyty. Dostaniesz e-mail, gdy to zrobi.',
         'zatwierdzona' => 'Wizyta jest potwierdzona. Do zobaczenia w warsztacie!',
@@ -36,9 +29,7 @@
             <p class="text-sm font-mono text-orange-500 mb-1">REZERWACJA #{{ $r->id_rezerwacji }}</p>
             <h1 class="text-2xl font-bold text-zinc-50">{{ $r->nazwy_uslug }}</h1>
             <div class="flex flex-wrap items-center gap-2.5 mt-2">
-                <span class="text-[11px] font-mono px-2 py-0.5 {{ $kolory[$r->status] ?? '' }}" style="border-radius: 2px;">
-                    {{ mb_strtoupper($r->status, 'UTF-8') }}
-                </span>
+                <x-status :status="$r->status" rozmiar="sredni" />
                 <span class="text-sm text-zinc-400">{{ $opisyStatusow[$r->status] ?? '' }}</span>
             </div>
         </div>

@@ -2,8 +2,6 @@
 namespace App\Http\Controllers\Pracownik;
 
 use App\Http\Controllers\Controller;
-use App\Models\DzienWolny;
-use App\Models\GodzinyPracy;
 use App\Models\Pojazd;
 use App\Models\Usluga;
 use App\Models\Uzytkownik;
@@ -26,8 +24,6 @@ use RuntimeException;
  */
 class NowaWizytaController extends Controller
 {
-    private const DNI_NAPRZOD = 60;
-
     public function __construct(private DostepnoscRezerwacjiService $dostepnosc)
     {
     }
@@ -43,26 +39,11 @@ class NowaWizytaController extends Controller
             }
         }
 
-        // Dni tygodnia (ISO 1–7), w które warsztat jest zamknięty, i dni wolne – do wyszarzenia w kalendarzu
-        $czynne = GodzinyPracy::where('czy_czynne', true)
-            ->pluck('dzien_tygodnia')
-            ->map(fn ($d) => (int) $d)
-            ->all();
-        $dniZamkniete = array_values(array_diff(range(1, 7), $czynne));
-
-        $dniWolne = DzienWolny::whereBetween('data', [today()->toDateString(), $this->maksData()])
-            ->get()
-            ->map(fn ($d) => $d->data->toDateString())
-            ->all();
-
         return view('pracownik.reservations.nowa', [
             'uslugi'        => Usluga::aktywne()->orderBy('nazwa')->get(),
             'czyAdmin'      => auth()->user()->rola === 'administrator',
-            'maksData'      => $this->maksData(),
-            'dniZamkniete'  => $dniZamkniete,
-            'dniWolne'      => $dniWolne,
             'wybranyKlient' => $wybranyKlient,
-        ]);
+        ] + $this->dostepnosc->daneKalendarza());
     }
 
     /**
@@ -73,9 +54,7 @@ class NowaWizytaController extends Controller
         $uslugi = $this->uslugiZZapytania($request);
 
         return response()->json([
-            'mechanicy' => $this->dostepnosc->mechanicyDoWyboru($uslugi)
-                ->map(fn ($m) => ['id' => (int) $m->id_uzytkownika, 'nazwa' => $m->imie . ' ' . $m->nazwisko])
-                ->values(),
+            'mechanicy' => $this->dostepnosc->listaMechanikow($uslugi),
         ]);
     }
 
@@ -87,7 +66,7 @@ class NowaWizytaController extends Controller
         $uslugi = $this->uslugiZZapytania($request);
 
         $dane = $request->validate([
-            'data'     => ['required', 'date', 'after_or_equal:today', 'before_or_equal:' . $this->maksData()],
+            'data'     => ['required', 'date', 'after_or_equal:today', 'before_or_equal:' . $this->dostepnosc->maksData()],
             'mechanik' => ['nullable', 'integer'],
         ]);
 
@@ -143,7 +122,7 @@ class NowaWizytaController extends Controller
         $dane = $request->validate([
             'uslugi'       => ['required', 'array', 'min:1'],
             'uslugi.*'     => ['integer', 'distinct', Rule::exists('uslugi', 'id_uslugi')->where('czy_aktywna', true)],
-            'data'         => ['required', 'date', 'after_or_equal:today', 'before_or_equal:' . $this->maksData()],
+            'data'         => ['required', 'date', 'after_or_equal:today', 'before_or_equal:' . $this->dostepnosc->maksData()],
             'godzina'      => ['required', 'date_format:H:i'],
             'id_mechanika' => ['nullable', 'integer'],
 
@@ -314,8 +293,4 @@ class NowaWizytaController extends Controller
         ];
     }
 
-    private function maksData(): string
-    {
-        return today()->addDays(self::DNI_NAPRZOD)->toDateString();
-    }
 }

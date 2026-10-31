@@ -3,6 +3,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\StatusRezerwacji;
 use App\Http\Controllers\Controller;
 use App\Models\DzienWolny;
 use App\Models\GrafikPracownika;
@@ -15,7 +16,6 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    private const AKTYWNE = ['oczekująca', 'zatwierdzona'];
     private const NIEBLOKUJACE = ['odrzucona', 'anulowana'];
 
     public function __invoke(DostepnoscRezerwacjiService $dostepnosc)
@@ -59,7 +59,7 @@ class DashboardController extends Controller
             ->map(fn ($d) => $d->data->toDateString())
             ->all();
         if (!empty($dniWolne)) {
-            $wDniWolne = Rezerwacja::whereIn('status', self::AKTYWNE)
+            $wDniWolne = Rezerwacja::whereIn('status', StatusRezerwacji::aktywne())
                 ->whereIn(DB::raw('DATE(termin_rozpoczecia)'), $dniWolne)
                 ->count();
             if ($wDniWolne > 0) {
@@ -113,7 +113,7 @@ class DashboardController extends Controller
         }
 
         // 5. Zaległe wizyty: minęły, a nadal oczekują albo nie zostały zakończone
-        $zalegle = Rezerwacja::whereIn('status', self::AKTYWNE)
+        $zalegle = Rezerwacja::whereIn('status', StatusRezerwacji::aktywne())
             ->where('termin_zakonczenia', '<', now())
             ->count();
         if ($zalegle > 0) {
@@ -127,7 +127,7 @@ class DashboardController extends Controller
         }
 
         // 6. Przyszłe wizyty bez przydzielonego mechanika
-        $bezPrzydzialu = Rezerwacja::whereIn('status', self::AKTYWNE)
+        $bezPrzydzialu = Rezerwacja::whereIn('status', StatusRezerwacji::aktywne())
             ->whereNull('id_mechanika')
             ->where('termin_rozpoczecia', '>', now())
             ->count();

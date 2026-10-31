@@ -4,7 +4,9 @@ namespace App\Providers;
 
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -22,6 +24,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Wykrywanie problemu N+1: poza produkcją każde leniwe doładowanie relacji
+        // (osobne zapytanie dla każdego rekordu na liście) trafia do dziennika aplikacji.
+        Model::preventLazyLoading(!$this->app->isProduction());
+        Model::handleLazyLoadingViolationUsing(function ($model, string $relacja) {
+            Log::warning('Leniwe ładowanie relacji ' . get_class($model) . '::' . $relacja . ' – rozważ with() w zapytaniu.');
+        });
+
         // Mail z linkiem weryfikacyjnym po rejestracji i po zmianie adresu e-mail
         VerifyEmail::toMailUsing(function ($notifiable, string $url) {
             return (new MailMessage)

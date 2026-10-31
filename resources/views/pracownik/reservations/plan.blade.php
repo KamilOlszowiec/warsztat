@@ -3,11 +3,6 @@
 
 @section('content')
 @php
-    $etykiety = [
-        'oczekująca'   => 'bg-yellow-900/40 text-yellow-400',
-        'zatwierdzona' => 'bg-green-900/40 text-green-400',
-        'zakończona'   => 'bg-blue-900/40 text-blue-400',
-    ];
     $bloki = [
         'oczekująca'   => 'bg-yellow-900/40 border border-dashed border-yellow-400',
         'zatwierdzona' => 'bg-green-900/50 border-l-[3px] border-green-400',
@@ -144,9 +139,7 @@
                     $przyszla = $r->termin_rozpoczecia->isFuture();
                 @endphp
                 <div class="px-5 py-4 border-b border-zinc-800">
-                    <span class="text-[11px] font-mono px-2 py-0.5 {{ $etykiety[$r->status] ?? 'bg-zinc-800 text-zinc-400' }}" style="border-radius: 2px;">
-                        {{ mb_strtoupper($r->status, 'UTF-8') }}
-                    </span>
+                    <x-status :status="$r->status" rozmiar="sredni" />
                     <h2 class="text-[17px] font-bold text-zinc-50 mt-2.5 mb-1">{{ $r->nazwy_uslug }}</h2>
                     <p class="text-sm font-mono text-zinc-300">
                         {{ $r->termin_rozpoczecia->format('H:i') }} – {{ $r->termin_zakonczenia->format('H:i') }} · {{ $r->laczny_czas }} min
