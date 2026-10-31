@@ -79,7 +79,7 @@
                 Klienci i pojazdy
             </a>
 
-            @if ($uzytkownik->rola === 'pracownik')
+            @if ($uzytkownik->czyPracownik())
                 <a href="{{ route('pracownik.schedule.index') }}"
                    class="nav-link flex items-center gap-3 min-h-[40px] px-3 text-sm font-medium {{ request()->routeIs('pracownik.schedule.*') ? 'active' : '' }}">
                     <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

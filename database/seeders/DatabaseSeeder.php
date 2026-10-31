@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -11,11 +10,10 @@ class DatabaseSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Seed the application's database.
+     * Godziny pracy warsztatu oraz dane demonstracyjne (konta wszystkich ról, usługi, grafik, wizyty).
      */
     public function run(): void
     {
-        // User::factory(10)->create();
         $this->call([
             GodzinyPracySeeder::class,
             DemoDataSeeder::class,

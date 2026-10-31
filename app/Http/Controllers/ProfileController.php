@@ -18,7 +18,7 @@ class ProfileController extends Controller
         $user = auth()->user();
 
         // Dane konta służbowego zmienia administrator – pracownik może zmienić tylko hasło
-        if ($user->rola === 'pracownik') {
+        if ($user->czyPracownik()) {
             return back()->withErrors([
                 'error' => 'Dane konta służbowego może zmienić tylko administrator.',
             ]);

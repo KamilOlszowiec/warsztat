@@ -1,4 +1,4 @@
-@extends(auth()->user()->rola === 'administrator' ? 'layouts.admin' : 'layouts.pracownik')
+@extends(auth()->user()->czyAdministrator() ? 'layouts.admin' : 'layouts.pracownik')
 @section('title', 'Zmiana mechanika')
 
 @section('content')

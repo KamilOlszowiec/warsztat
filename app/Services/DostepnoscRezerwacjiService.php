@@ -29,7 +29,7 @@ class DostepnoscRezerwacjiService
     /**
      * Id specjalizacji wymaganych przez wybrane usługi (bez powtórzeń).
      */
-    public function wymaganeSpecjalizacje(Collection $uslugi): array
+    private function wymaganeSpecjalizacje(Collection $uslugi): array
     {
         return $uslugi->pluck('id_specjalizacji')
             ->filter()
@@ -42,7 +42,7 @@ class DostepnoscRezerwacjiService
     /**
      * Id pracowników, którzy mają WSZYSTKIE specjalizacje wymagane przez usługi.
      */
-    public function uprawnieniMechanicy(Collection $uslugi): array
+    private function uprawnieniMechanicy(Collection $uslugi): array
     {
         $wymagane = $this->wymaganeSpecjalizacje($uslugi);
 
@@ -132,7 +132,7 @@ class DostepnoscRezerwacjiService
     /**
      * Mechanicy, których klient może wybrać dla danych usług (mają wszystkie specjalizacje).
      */
-    public function mechanicyDoWyboru(Collection $uslugi): Collection
+    private function mechanicyDoWyboru(Collection $uslugi): Collection
     {
         return Uzytkownik::whereIn('id_uzytkownika', $this->uprawnieniMechanicy($uslugi))
             ->orderBy('nazwisko')
@@ -199,7 +199,7 @@ class DostepnoscRezerwacjiService
      * Sprawdza pojedynczy termin i zwraca id mechanika do przydzielenia
      * albo null, jeśli termin jest niedostępny.
      */
-    public function znajdzMechanika(Collection $uslugi, Carbon $start, ?int $pomijanaRezerwacjaId = null, ?int $czas = null, ?int $idMechanika = null): ?int
+    private function znajdzMechanika(Collection $uslugi, Carbon $start, ?int $pomijanaRezerwacjaId = null, ?int $czas = null, ?int $idMechanika = null): ?int
     {
         $czas ??= $this->lacznyCzas($uslugi);
         $uprawnieni = $this->ograniczDoMechanika($this->uprawnieniMechanicy($uslugi), $idMechanika);

@@ -140,6 +140,8 @@ Route::middleware(['auth', 'verified', 'role:administrator'])->prefix('admin')->
         ->only(['index', 'store', 'destroy'])
         ->parameters(['days-off' => 'dzien']);
 });
+// Podgląd szablonów wiadomości e-mail w przeglądarce, np. /podglad-maila/zatwierdzona.
+// Dostępny wyłącznie w środowisku lokalnym (APP_ENV=local) – na serwerze produkcyjnym ta trasa nie istnieje.
 if (app()->isLocal()) {
     Route::get('/podglad-maila/{rodzaj}', function (string $rodzaj) {
         $klient = \App\Models\Uzytkownik::where('rola', 'klient')->first();
@@ -164,7 +166,7 @@ if (app()->isLocal()) {
                     ?? \App\Models\Rezerwacja::latest('id_rezerwacji')->firstOrFail();
 
                 return (new \App\Notifications\RezerwacjaOdrzucona($rezerwacja))->toMail($rezerwacja->klient);
-            })(),            
+            })(),
             default => abort(404),
         };
     });

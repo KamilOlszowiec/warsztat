@@ -1,4 +1,4 @@
-@extends(auth()->user()->rola === 'administrator' ? 'layouts.admin' : 'layouts.pracownik')
+@extends(auth()->user()->czyAdministrator() ? 'layouts.admin' : 'layouts.pracownik')
 @section('title', 'Zmień termin')
 
 @section('content')
@@ -15,7 +15,7 @@
     · Czas: <span class="text-zinc-200 font-mono">{{ $rezerwacja->laczny_czas }} min</span>
 </p>
 <p class="text-sm text-zinc-500 -mt-4 mb-6">
-    @if (auth()->user()->rola === 'administrator')
+    @if (auth()->user()->czyAdministrator())
         Pokazane są wolne terminy wszystkich mechaników z wymaganymi specjalizacjami. Klient otrzyma e-mail z nowym terminem.
     @else
         Pokazane są tylko terminy, w których masz zmianę i jesteś wolny – wizyta pozostanie przypisana do Ciebie. Klient otrzyma e-mail z nowym terminem.

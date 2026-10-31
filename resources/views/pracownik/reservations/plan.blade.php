@@ -1,4 +1,4 @@
-@extends(auth()->user()->rola === 'administrator' ? 'layouts.admin' : 'layouts.pracownik')
+@extends(auth()->user()->czyAdministrator() ? 'layouts.admin' : 'layouts.pracownik')
 @section('title', 'Plan dnia')
 
 @section('content')
@@ -198,7 +198,7 @@
 
                     @if (in_array($r->status, ['oczekująca', 'zatwierdzona']) && $r->mozeZarzadzac(auth()->user()) && $przyszla)
                         <div class="flex gap-2">
-                            @if ($przyszla && auth()->user()->rola === 'administrator')
+                            @if ($przyszla && auth()->user()->czyAdministrator())
                                 <a href="{{ route('pracownik.reservations.przydzial', $r) }}"
                                    class="flex-1 min-h-[40px] inline-flex items-center justify-center border border-zinc-700 text-zinc-300 hover:text-white text-[13px]" style="border-radius: 2px;">Mechanik</a>
                             @endif

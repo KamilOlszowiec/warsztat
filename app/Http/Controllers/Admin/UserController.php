@@ -3,7 +3,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\StatusRezerwacji;
 use App\Http\Controllers\Controller;
-use App\Models\GrafikPracownika;
 use App\Models\Specjalizacja;
 use App\Models\Usluga;
 use App\Models\Uzytkownik;
@@ -69,7 +68,7 @@ class UserController extends Controller
             'email_verified_at' => now(), // konta tworzone przez admina od razu aktywne
         ]);
 
-        $user->specjalizacje()->sync($user->rola === 'pracownik' ? ($data['specjalizacje'] ?? []) : []);
+        $user->specjalizacje()->sync($user->czyPracownik() ? ($data['specjalizacje'] ?? []) : []);
 
         return redirect()->route('admin.users.edit', $user)
             ->with('status', "Konto {$user->imie} {$user->nazwisko} zostało utworzone. Przekaż hasło startowe i poproś o zmianę po pierwszym logowaniu.");
@@ -80,7 +79,7 @@ class UserController extends Controller
      */
     public function show(Uzytkownik $user)
     {
-        if ($user->rola !== 'klient') {
+        if (!$user->czyKlient()) {
             return redirect()->route('admin.users.edit', $user);
         }
 
@@ -107,7 +106,7 @@ class UserController extends Controller
 
     public function edit(Uzytkownik $user)
     {
-        if ($user->rola === 'klient') {
+        if ($user->czyKlient()) {
             return redirect()->route('admin.users.show', $user);
         }
 
@@ -115,14 +114,14 @@ class UserController extends Controller
 
         return view('admin.users.edit', $this->daneFormularza() + [
             'user'        => $user,
-            'statystyki'  => $user->rola === 'pracownik' ? $this->statystykiPracownika($user) : null,
+            'statystyki'  => $user->czyPracownik() ? $this->statystykiPracownika($user) : null,
             'moznaUsunac' => $this->moznaUsunac($user),
         ]);
     }
 
     public function update(Request $request, Uzytkownik $user)
     {
-        if ($user->rola === 'klient') {
+        if ($user->czyKlient()) {
             return redirect()->route('admin.users.show', $user)
                 ->withErrors(['error' => 'Dane klienta zmienia klient w swoim panelu.']);
         }
@@ -144,7 +143,7 @@ class UserController extends Controller
         ]);
 
         // Specjalizacje mają znaczenie tylko dla mechaników
-        $user->specjalizacje()->sync($user->rola === 'pracownik' ? ($data['specjalizacje'] ?? []) : []);
+        $user->specjalizacje()->sync($user->czyPracownik() ? ($data['specjalizacje'] ?? []) : []);
 
         return redirect()->route('admin.users.edit', $user)->with('status', 'Zmiany zostały zapisane.');
     }
@@ -156,7 +155,7 @@ class UserController extends Controller
         }
 
         if (!$this->moznaUsunac($user)) {
-            $komunikat = $user->rola === 'klient'
+            $komunikat = $user->czyKlient()
                 ? 'Nie można usunąć klienta z historią wizyt – historia napraw musi zostać w systemie.'
                 : 'Nie można usunąć pracownika, który obsługiwał lub wykonywał wizyty.';
 
@@ -237,7 +236,7 @@ class UserController extends Controller
 
     private function moznaUsunac(Uzytkownik $user): bool
     {
-        if ($user->rola === 'klient') {
+        if ($user->czyKlient()) {
             return !$user->rezerwacjeKlienta()->exists();
         }
 

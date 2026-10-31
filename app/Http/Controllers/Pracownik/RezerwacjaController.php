@@ -28,7 +28,7 @@ class RezerwacjaController extends Controller
     public function index(Request $request)
     {
         $uzytkownik = auth()->user();
-        $czyAdmin = $uzytkownik->rola === 'administrator';
+        $czyAdmin = $uzytkownik->czyAdministrator();
 
         // Pracownik domyślnie widzi swoje wizyty, administrator – oczekujące na zatwierdzenie
         $status = $request->get('status', $czyAdmin ? 'oczekująca' : 'moje');
@@ -68,7 +68,7 @@ class RezerwacjaController extends Controller
     {
         return $query->whereIn('status', StatusRezerwacji::aktywne())
             ->where('termin_zakonczenia', '<', now())
-            ->when($uzytkownik->rola !== 'administrator',
+            ->when(!$uzytkownik->czyAdministrator(),
                 fn ($q) => $q->where('id_mechanika', $uzytkownik->id_uzytkownika));
     }
 
@@ -88,7 +88,7 @@ class RezerwacjaController extends Controller
      */
     private function mechanikPrzyZmianieTerminu(): ?int
     {
-        return auth()->user()->rola === 'administrator' ? null : (int) auth()->id();
+        return auth()->user()->czyAdministrator() ? null : (int) auth()->id();
     }
     /**
      * Plan dnia: kolumny mechaników, wizyty jako bloki na osi czasu.

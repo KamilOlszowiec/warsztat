@@ -67,7 +67,7 @@ class PrzydzialController extends Controller
      */
     private function tylkoAdministrator(): void
     {
-        if (auth()->user()->rola !== 'administrator') {
+        if (!auth()->user()->czyAdministrator()) {
             abort(403, 'Mechanika może zmienić tylko administrator.');
         }
     }

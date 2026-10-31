@@ -16,12 +16,12 @@
     {{-- Nagłówek --}}
     <div class="flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-center gap-3.5">
-            <div class="w-[52px] h-[52px] flex items-center justify-center {{ $user->rola === 'administrator' ? 'bg-orange-600' : 'bg-zinc-600' }} text-zinc-50 text-lg font-bold" style="border-radius: 50%;">{{ $inicjaly }}</div>
+            <div class="w-[52px] h-[52px] flex items-center justify-center {{ $user->czyAdministrator() ? 'bg-orange-600' : 'bg-zinc-600' }} text-zinc-50 text-lg font-bold" style="border-radius: 50%;">{{ $inicjaly }}</div>
             <div>
                 <div class="flex flex-wrap items-center gap-2.5">
                     <h1 class="text-2xl font-bold text-zinc-50">{{ $user->imie }} {{ $user->nazwisko }}</h1>
-                    <span class="text-[10px] font-mono px-2 py-0.5 {{ $user->rola === 'administrator' ? 'bg-orange-600/20 text-orange-300' : 'bg-zinc-800 text-zinc-200' }}" style="border-radius: 2px;">
-                        {{ $user->rola === 'administrator' ? 'ADMINISTRATOR' : 'MECHANIK' }}
+                    <span class="text-[10px] font-mono px-2 py-0.5 {{ $user->czyAdministrator() ? 'bg-orange-600/20 text-orange-300' : 'bg-zinc-800 text-zinc-200' }}" style="border-radius: 2px;">
+                        {{ $user->czyAdministrator() ? 'ADMINISTRATOR' : 'MECHANIK' }}
                     </span>
                 </div>
                 <p class="text-[13px] text-zinc-400 mt-1">{{ $user->email }} · konto od {{ $user->created_at?->format('d.m.Y') ?? '—' }}</p>

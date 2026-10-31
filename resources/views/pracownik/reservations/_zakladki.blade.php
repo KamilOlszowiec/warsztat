@@ -2,7 +2,7 @@
     // Pracownik widzi licznik swoich oczekujących wizyt, administrator – wszystkich
     $liczbaOczekujacychZakladka = \App\Models\Rezerwacja::where('status', 'oczekująca')
         ->where('termin_rozpoczecia', '>', now())
-        ->when(auth()->user()->rola !== 'administrator', fn ($q) => $q->where('id_mechanika', auth()->id()))
+        ->when(!auth()->user()->czyAdministrator(), fn ($q) => $q->where('id_mechanika', auth()->id()))
         ->count();
 @endphp
 

@@ -81,7 +81,7 @@ class Rezerwacja extends Model
             return false;
         }
 
-        return $uzytkownik->rola === 'administrator'
+        return $uzytkownik->czyAdministrator()
             || (int) $this->id_mechanika === (int) $uzytkownik->id_uzytkownika;
     }
 
@@ -112,7 +112,7 @@ class Rezerwacja extends Model
             return false;
         }
 
-        if ($uzytkownik->rola === 'administrator') {
+        if ($uzytkownik->czyAdministrator()) {
             return true;
         }
 

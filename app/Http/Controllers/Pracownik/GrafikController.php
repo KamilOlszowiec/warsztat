@@ -19,7 +19,7 @@ class GrafikController extends Controller
         $user = auth()->user();
 
         // Grafik dotyczy tylko mechaników (admin też ma dostęp do tego panelu)
-        if ($user->rola !== 'pracownik') {
+        if (!$user->czyPracownik()) {
             abort(403, 'Grafik jest dostępny tylko dla pracowników.');
         }
 

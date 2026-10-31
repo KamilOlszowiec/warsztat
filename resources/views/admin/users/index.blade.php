@@ -84,13 +84,13 @@
                             <span class="text-[10px] font-mono px-2 py-0.5 {{ $rolaStyl }}" style="border-radius: 2px;">{{ $rolaNazwa }}</span>
                         </td>
                         <td class="px-4 py-3">
-                            @if ($u->rola === 'pracownik')
+                            @if ($u->czyPracownik())
                                 @forelse ($u->specjalizacje as $s)
                                     <span class="inline-block mr-1 mb-1 text-[11px] px-2 py-0.5 border border-zinc-700 text-zinc-300" style="border-radius: 2px;">{{ $s->nazwa }}</span>
                                 @empty
                                     <span class="text-xs text-red-400">Brak specjalizacji – nie dostanie żadnej wizyty</span>
                                 @endforelse
-                            @elseif ($u->rola === 'klient')
+                            @elseif ($u->czyKlient())
                                 <span class="text-xs text-zinc-400">
                                     {{ $u->pojazdy_count }} {{ $odmiana($u->pojazdy_count, 'pojazd', 'pojazdy', 'pojazdów') }}
                                     · {{ $u->rezerwacje_klienta_count }} {{ $odmiana($u->rezerwacje_klienta_count, 'wizyta', 'wizyty', 'wizyt') }}
@@ -109,7 +109,7 @@
                             @endif
                         </td>
                         <td class="px-4 py-3 text-right whitespace-nowrap">
-                            @if ($u->rola === 'klient')
+                            @if ($u->czyKlient())
                                 <a href="{{ route('admin.users.show', $u) }}" class="text-[13px] font-medium text-orange-500 hover:text-orange-400">Karta klienta →</a>
                             @else
                                 <a href="{{ route('admin.users.edit', $u) }}" class="text-[13px] font-medium text-orange-500 hover:text-orange-400">Edytuj</a>

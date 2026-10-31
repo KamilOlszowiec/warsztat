@@ -41,7 +41,7 @@ class NowaWizytaController extends Controller
 
         return view('pracownik.reservations.nowa', [
             'uslugi'        => Usluga::aktywne()->orderBy('nazwa')->get(),
-            'czyAdmin'      => auth()->user()->rola === 'administrator',
+            'czyAdmin'      => auth()->user()->czyAdministrator(),
             'wybranyKlient' => $wybranyKlient,
         ] + $this->dostepnosc->daneKalendarza());
     }
@@ -266,7 +266,7 @@ class NowaWizytaController extends Controller
      */
     private function mechanikDlaTerminu(?int $wybrany): ?int
     {
-        return auth()->user()->rola === 'administrator' ? $wybrany : (int) auth()->id();
+        return auth()->user()->czyAdministrator() ? $wybrany : (int) auth()->id();
     }
 
     private function uslugiZZapytania(Request $request)

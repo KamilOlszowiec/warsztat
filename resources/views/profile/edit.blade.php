@@ -13,10 +13,10 @@
 @php
     $inicjaly = mb_strtoupper(mb_substr($user->imie, 0, 1) . mb_substr($user->nazwisko, 0, 1), 'UTF-8');
     $nazwyRol = ['klient' => 'Klient', 'pracownik' => 'Mechanik', 'administrator' => 'Administrator'];
-    $tylkoPodglad = $user->rola === 'pracownik';
+    $tylkoPodglad = $user->czyPracownik();
 
     // Statystyki do karty – zależne od roli
-    if ($user->rola === 'klient') {
+    if ($user->czyKlient()) {
         $liczbaPojazdow = $user->pojazdy()->count();
         $liczbaWizyt = \App\Models\Rezerwacja::where('id_klienta', $user->id_uzytkownika)
             ->where('status', 'zakończona')
@@ -26,7 +26,7 @@
             ->where('termin_rozpoczecia', '>', now())
             ->orderBy('termin_rozpoczecia')
             ->first();
-    } elseif ($user->rola === 'pracownik') {
+    } elseif ($user->czyPracownik()) {
         $specjalizacje = \App\Models\Specjalizacja::whereHas('pracownicy', fn ($q) => $q->where('id_uzytkownika', $user->id_uzytkownika))
             ->orderBy('nazwa')
             ->pluck('nazwa');
@@ -82,7 +82,7 @@
             </div>
         @endif
 
-        @if ($user->rola === 'klient')
+        @if ($user->czyKlient())
             <div class="grid grid-cols-2 divide-x divide-zinc-800 border-b border-zinc-800">
                 <a href="{{ route('klient.vehicles.index') }}" class="p-4 text-center hover:bg-white/[0.02]">
                     <p class="text-xl font-bold text-zinc-50">{{ $liczbaPojazdow }}</p>
@@ -101,7 +101,7 @@
                     <a href="{{ route('klient.reservations.create') }}" class="text-orange-500 hover:text-orange-400">Umów wizytę →</a>
                 @endif
             </div>
-        @elseif ($user->rola === 'pracownik')
+        @elseif ($user->czyPracownik())
             <div class="p-5 space-y-3 text-sm">
                 <div>
                     <p class="text-xs font-mono text-zinc-500 mb-1">SPECJALIZACJE</p>
