@@ -24,7 +24,7 @@ PHP 8.2, Laravel 12, MySQL / MariaDB, Blade, Tailwind CSS 4 (Vite), JavaScript, 
 Wymagania: PHP 8.2+, Composer, Node.js 20.19+, serwer MySQL lub MariaDB.
 
 ```bash
-git clone https://github.com/DemoneuszSosik/warsztat.git
+git clone https://github.com/KamilOlszowiec/warsztat.git
 cd warsztat
 composer install
 npm install

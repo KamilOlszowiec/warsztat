@@ -138,18 +138,21 @@ class DemoDataSeeder extends Seeder
             'status' => 'oczekująca',
         ], [$hamulce]); // ta sama godzina: obaj mechanicy ogólni zajęci
 
-        $this->rezerwacja([
+        $zakonczona = $this->rezerwacja([
             'id_klienta' => $klient1->id_uzytkownika, 'id_pojazdu' => $pojazd1->id_pojazdu,
             'id_mechanika' => $pracownik2->id_uzytkownika,
             'termin_rozpoczecia' => $this->dzienRoboczy(-10)->setTime(9, 0),
             'status' => 'zakończona',
-            // Przykładowy protokół z wizyty
+        ], [$diagnostykaKomp]);
+
+        // Przykładowy protokół z wizyty
+        $protokol = $zakonczona->protokol()->create([
             'przebieg' => 184250,
             'opis_prac' => 'Diagnostyka komputerowa: odczyt błędów silnika, błąd P0171 (zbyt uboga mieszanka). Oczyszczenie przepływomierza, skasowanie błędów, jazda próbna bez usterek.',
             'zalecenia' => 'Przy następnej wizycie sprawdzić szczelność układu dolotowego.',
             'data_nastepnej_wizyty' => $this->dzienRoboczy(-10)->addMonths(6)->toDateString(),
-            'data_zakonczenia' => $this->dzienRoboczy(-10)->setTime(10, 0),
-        ], [$diagnostykaKomp]);
+        ]);
+        $protokol->forceFill(['created_at' => $this->dzienRoboczy(-10)->setTime(10, 0)])->save();
 
         $this->rezerwacja([
             'id_klienta' => $klient2->id_uzytkownika, 'id_pojazdu' => $pojazd2->id_pojazdu,

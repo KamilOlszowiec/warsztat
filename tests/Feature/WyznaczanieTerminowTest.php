@@ -120,7 +120,7 @@ class WyznaczanieTerminowTest extends TestCase
 
     public function test_bez_mechanika_z_wymagana_specjalizacja_nie_ma_terminow(): void
     {
-        $this->mechanik([$this->specjalizacja('Mechanika ogólna')]);
+        $this->mechanik();
         $usluga = $this->usluga($this->specjalizacja('Diagnostyka'));
 
         $this->assertFalse($this->dostepnosc->czyKtosMozeWykonac(collect([$usluga])));

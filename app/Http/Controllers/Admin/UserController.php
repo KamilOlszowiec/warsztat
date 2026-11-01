@@ -85,7 +85,7 @@ class UserController extends Controller
 
         $user->load([
             'pojazdy' => fn ($p) => $p->orderBy('marka')->orderBy('model'),
-            'pojazdy.rezerwacje' => fn ($r) => $r->with(['uslugi', 'mechanik'])->orderByDesc('termin_rozpoczecia'),
+            'pojazdy.rezerwacje' => fn ($r) => $r->with(['uslugi', 'mechanik', 'protokol'])->orderByDesc('termin_rozpoczecia'),
         ]);
 
         $wszystkie = $user->pojazdy->flatMap->rezerwacje;
@@ -95,7 +95,7 @@ class UserController extends Controller
             'liczbaWizyt'   => $wszystkie->count(),
             'zaplanowane'   => $wszystkie->filter(fn ($r) => in_array($r->status, StatusRezerwacji::aktywne()) && $r->termin_rozpoczecia->isFuture())->count(),
             'anulowane'     => $wszystkie->where('status', 'anulowana')->count(),
-            'wydal'         => $wszystkie->where('status', 'zakończona')->sum(fn ($r) => $r->laczna_cena),
+            'wydal'         => $wszystkie->where('status', 'zakończona')->sum(fn ($r) => $r->kwota_koncowa),
             'najblizsza'    => $wszystkie
                 ->filter(fn ($r) => in_array($r->status, StatusRezerwacji::aktywne()) && $r->termin_rozpoczecia->isFuture())
                 ->sortBy('termin_rozpoczecia')

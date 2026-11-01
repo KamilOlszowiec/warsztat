@@ -22,6 +22,14 @@ trait TworzyDaneWarsztatu
 {
     protected string $dzien = '2026-11-17';
 
+    // Każda usługa wymaga specjalizacji – usługi „ogólne” w testach dostają tę domyślną
+    private ?Specjalizacja $specjalizacjaOgolna = null;
+
+    protected function specjalizacjaOgolna(): Specjalizacja
+    {
+        return $this->specjalizacjaOgolna ??= $this->specjalizacja('Mechanika ogólna');
+    }
+
     protected function przygotujWarsztat(): void
     {
         $this->travelTo(Carbon::parse('2026-11-16 07:00'));
@@ -59,12 +67,14 @@ trait TworzyDaneWarsztatu
     }
 
     /**
-     * Mechanik z podanymi specjalizacjami i zmianą we wtorek (domyślnie 8:00–16:00).
+     * Mechanik z podanymi specjalizacjami (zawsze także ogólną) i zmianą we wtorek (domyślnie 8:00–16:00).
      */
     protected function mechanik(array $specjalizacje = [], string $od = '08:00', string $do = '16:00'): Uzytkownik
     {
         $mechanik = $this->uzytkownik('pracownik');
-        $mechanik->specjalizacje()->attach(collect($specjalizacje)->pluck('id_specjalizacji'));
+        $mechanik->specjalizacje()->attach(
+            collect($specjalizacje)->push($this->specjalizacjaOgolna())->pluck('id_specjalizacji')->unique()
+        );
 
         GrafikPracownika::create([
             'id_pracownika' => $mechanik->id_uzytkownika,
@@ -82,7 +92,7 @@ trait TworzyDaneWarsztatu
             'nazwa'            => 'Usługa ' . ($specjalizacja?->nazwa ?? 'ogólna') . ' ' . $czas,
             'cena'             => $cena,
             'czas_trwania'     => $czas,
-            'id_specjalizacji' => $specjalizacja?->id_specjalizacji,
+            'id_specjalizacji' => ($specjalizacja ?? $this->specjalizacjaOgolna())->id_specjalizacji,
             'czy_aktywna'      => true,
         ]);
     }

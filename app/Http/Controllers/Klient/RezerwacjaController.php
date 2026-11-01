@@ -55,7 +55,7 @@ class RezerwacjaController extends Controller
             abort(403);
         }
 
-        $reservation->load(['uslugi', 'pojazd', 'mechanik']);
+        $reservation->load(['uslugi', 'pojazd', 'mechanik', 'protokol']);
 
         return view('klient.reservations.show', ['rezerwacja' => $reservation]);
     }
@@ -200,7 +200,7 @@ class RezerwacjaController extends Controller
     {
         $this->sprawdzMozliwoscZmiany($reservation);
 
-        $reservation->load(['uslugi', 'pojazd', 'mechanik']);
+        $reservation->load(['uslugi', 'pojazd', 'mechanik', 'protokol']);
 
         $mechanicy = $this->dostepnosc->listaMechanikow($reservation->uslugi);
 

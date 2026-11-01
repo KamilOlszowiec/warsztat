@@ -31,7 +31,7 @@ class GodzinyPracyController extends Controller
 
         $data = $request->validate([
             'dni'                      => ['required', 'array'],
-            'dni.*.id'                 => ['required', 'exists:godziny_pracy,id'],
+            'dni.*.id_dnia'            => ['required', 'exists:godziny_pracy,id_dnia'],
             'dni.*.czy_czynne'         => ['nullable', 'boolean'],
             'dni.*.godzina_otwarcia'   => ['nullable', $polGodziny],
             'dni.*.godzina_zamkniecia' => ['nullable', $polGodziny],
@@ -40,7 +40,7 @@ class GodzinyPracyController extends Controller
             'dni.*.godzina_zamkniecia.regex' => 'Godziny muszą być pełne lub połówkowe (np. 08:00, 08:30).',
         ]);
 
-        $wpisy = GodzinyPracy::whereIn('id', array_column($data['dni'], 'id'))->get()->keyBy('id');
+        $wpisy = GodzinyPracy::whereIn('id_dnia', array_column($data['dni'], 'id_dnia'))->get()->keyBy('id_dnia');
 
         // Sprawdzenie par otwarcie–zamknięcie z nazwą dnia w komunikacie
         foreach ($data['dni'] as $dzien) {
@@ -48,7 +48,7 @@ class GodzinyPracyController extends Controller
                 continue;
             }
 
-            $nazwa = self::NAZWY_DNI[$wpisy[$dzien['id']]->dzien_tygodnia] ?? 'Dzień';
+            $nazwa = self::NAZWY_DNI[$wpisy[$dzien['id_dnia']]->dzien_tygodnia] ?? 'Dzień';
 
             if (empty($dzien['godzina_otwarcia']) || empty($dzien['godzina_zamkniecia'])) {
                 return back()->withErrors(['godziny' => "{$nazwa}: podaj godzinę otwarcia i zamknięcia albo oznacz dzień jako zamknięty."])->withInput();
@@ -63,7 +63,7 @@ class GodzinyPracyController extends Controller
             foreach ($data['dni'] as $dzien) {
                 $czynne = !empty($dzien['czy_czynne']);
 
-                GodzinyPracy::where('id', $dzien['id'])->update([
+                GodzinyPracy::where('id_dnia', $dzien['id_dnia'])->update([
                     'czy_czynne'         => $czynne,
                     'godzina_otwarcia'   => $czynne ? $dzien['godzina_otwarcia'] : null,
                     'godzina_zamkniecia' => $czynne ? $dzien['godzina_zamkniecia'] : null,

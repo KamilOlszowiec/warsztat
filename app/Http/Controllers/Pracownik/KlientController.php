@@ -56,7 +56,7 @@ class KlientController extends Controller
             ? Uzytkownik::where('rola', 'klient')
                 ->with([
                     'pojazdy' => fn ($p) => $p->orderBy('marka')->orderBy('model'),
-                    'pojazdy.rezerwacje' => fn ($r) => $r->with(['uslugi', 'mechanik'])->orderByDesc('termin_rozpoczecia'),
+                    'pojazdy.rezerwacje' => fn ($r) => $r->with(['uslugi', 'mechanik', 'protokol'])->orderByDesc('termin_rozpoczecia'),
                 ])
                 ->find($idWybranego)
             : null;

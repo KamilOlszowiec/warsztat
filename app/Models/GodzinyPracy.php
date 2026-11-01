@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 class GodzinyPracy extends Model
 {
     protected $table = 'godziny_pracy';
+    protected $primaryKey = 'id_dnia';
 
     protected $fillable = ['dzien_tygodnia', 'godzina_otwarcia', 'godzina_zamkniecia', 'czy_czynne'];
     protected $casts = ['czy_czynne' => 'boolean'];

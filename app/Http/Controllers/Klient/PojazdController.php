@@ -13,7 +13,7 @@ class PojazdController extends Controller
         // Pojazdy z pełną historią wizyt – jedno zapytanie na relację, nie na kafelek
         $pojazdy = auth()->user()->pojazdy()
             ->with(['rezerwacje' => function ($q) {
-                $q->with(['uslugi', 'mechanik'])->orderByDesc('termin_rozpoczecia');
+                $q->with(['uslugi', 'mechanik', 'protokol'])->orderByDesc('termin_rozpoczecia');
             }])
             ->orderBy('marka')
             ->orderBy('model')
@@ -34,7 +34,7 @@ class PojazdController extends Controller
             'model' => ['required', 'string', 'max:50'],
             'rok_produkcji' => ['nullable', 'digits:4', 'integer', 'min:1950', 'max:' . (date('Y') + 1)],
             'numer_rejestracyjny' => ['required', 'string', 'max:15', 'unique:pojazdy,numer_rejestracyjny'],
-            'vin' => ['nullable', 'string', 'size:17'],
+            'vin' => ['nullable', 'string', 'size:17', 'unique:pojazdy,vin'],
         ]);
 
         $data['id_uzytkownika'] = auth()->id();
@@ -49,7 +49,7 @@ class PojazdController extends Controller
         $this->authorizeOwnership($vehicle);
 
         $rezerwacje = $vehicle->rezerwacje()
-            ->with('uslugi')
+            ->with(['uslugi', 'protokol'])
             ->orderByDesc('termin_rozpoczecia')
             ->get();
 
@@ -71,7 +71,7 @@ class PojazdController extends Controller
             'model' => ['required', 'string', 'max:50'],
             'rok_produkcji' => ['nullable', 'digits:4', 'integer', 'min:1950', 'max:' . (date('Y') + 1)],
             'numer_rejestracyjny' => ['required', 'string', 'max:15', Rule::unique('pojazdy', 'numer_rejestracyjny')->ignore($vehicle->id_pojazdu, 'id_pojazdu')],
-            'vin' => ['nullable', 'string', 'size:17'],
+            'vin' => ['nullable', 'string', 'size:17', Rule::unique('pojazdy', 'vin')->ignore($vehicle->id_pojazdu, 'id_pojazdu')],
         ]);
 
         $vehicle->update($data);

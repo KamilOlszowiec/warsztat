@@ -52,7 +52,7 @@
                     $do = old("dni.$i.godzina_zamkniecia", $g->godzina_zamkniecia ? substr($g->godzina_zamkniecia, 0, 5) : '16:00');
                 @endphp
                 <div class="wiersz-dnia grid grid-cols-1 md:grid-cols-[170px_220px_1fr] items-center gap-3 md:gap-0 px-5 py-3 border-b border-zinc-800 last:border-b-0">
-                    <input type="hidden" name="dni[{{ $i }}][id]" value="{{ $g->id }}">
+                    <input type="hidden" name="dni[{{ $i }}][id_dnia]" value="{{ $g->id_dnia }}">
 
                     {{-- Przełącznik --}}
                     <label class="flex items-center gap-3 cursor-pointer">

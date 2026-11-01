@@ -14,16 +14,11 @@ class Rezerwacja extends Model
     protected $fillable = [
         'id_klienta', 'id_pojazdu', 'id_mechanika',
         'termin_rozpoczecia', 'termin_zakonczenia', 'status', 'uwagi', 'powod_odrzucenia',
-        // Protokół z wizyty
-        'przebieg', 'opis_prac', 'zalecenia', 'data_nastepnej_wizyty', 'koszt_koncowy', 'data_zakonczenia',
     ];
 
     protected $casts = [
-        'termin_rozpoczecia'    => 'datetime',
-        'termin_zakonczenia'    => 'datetime',
-        'data_nastepnej_wizyty' => 'date',
-        'data_zakonczenia'      => 'datetime',
-        'koszt_koncowy'         => 'decimal:2',
+        'termin_rozpoczecia' => 'datetime',
+        'termin_zakonczenia' => 'datetime',
     ];
 
     public function getRouteKeyName(): string
@@ -51,6 +46,12 @@ class Rezerwacja extends Model
     public function mechanik()
     {
         return $this->belongsTo(Uzytkownik::class, 'id_mechanika', 'id_uzytkownika');
+    }
+
+    // Protokół z zakończonej wizyty (relacja 1:1)
+    public function protokol()
+    {
+        return $this->hasOne(Protokol::class, 'id_rezerwacji', 'id_rezerwacji');
     }
 
     // Suma cen z chwili rezerwacji (z tabeli przestawnej)
@@ -94,21 +95,23 @@ class Rezerwacja extends Model
 
     public function maProtokol(): bool
     {
-        return $this->status === 'zakończona' && $this->opis_prac !== null;
+        return $this->status === 'zakończona' && $this->protokol !== null;
     }
 
     // Kwota do zapłaty: koszt końcowy z protokołu, a bez niego suma wg cennika z chwili rezerwacji
     public function getKwotaKoncowaAttribute(): float
     {
-        return $this->koszt_koncowy !== null ? (float) $this->koszt_koncowy : $this->laczna_cena;
+        $koszt = $this->protokol?->koszt_koncowy;
+
+        return $koszt !== null ? (float) $koszt : $this->laczna_cena;
     }
 
     /**
-     * Protokół może poprawić administrator zawsze, a mechanik wizyty – tylko w dniu jej zakończenia.
+     * Protokół może poprawić administrator zawsze, a mechanik wizyty – tylko w dniu zakończenia wizyty.
      */
     public function mozeEdytowacProtokol(?Uzytkownik $uzytkownik): bool
     {
-        if (!$uzytkownik || $this->status !== 'zakończona') {
+        if (!$uzytkownik || !$this->maProtokol()) {
             return false;
         }
 
@@ -117,19 +120,21 @@ class Rezerwacja extends Model
         }
 
         return (int) $this->id_mechanika === (int) $uzytkownik->id_uzytkownika
-            && $this->data_zakonczenia?->isToday();
+            && $this->protokol->created_at->isToday();
     }
 
     /**
-     * Ostatnia wcześniejsza zakończona wizyta tego samego pojazdu z wpisanym przebiegiem.
+     * Ostatnia wcześniejsza zakończona wizyta tego samego pojazdu z protokołem.
+     * Z parametrem $zPrzebiegiem – tylko taka, w której protokole wpisano przebieg.
      */
-    public function poprzedniaWizytaPojazdu(): ?self
+    public function poprzedniaWizytaPojazdu(bool $zPrzebiegiem = false): ?self
     {
         return self::where('id_pojazdu', $this->id_pojazdu)
             ->where('id_rezerwacji', '!=', $this->id_rezerwacji)
             ->where('status', 'zakończona')
-            ->whereNotNull('przebieg')
             ->where('termin_rozpoczecia', '<', $this->termin_rozpoczecia)
+            ->whereHas('protokol', fn ($q) => $zPrzebiegiem ? $q->whereNotNull('przebieg') : $q)
+            ->with('protokol')
             ->orderByDesc('termin_rozpoczecia')
             ->first();
     }

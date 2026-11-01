@@ -36,7 +36,7 @@ class RezerwacjaController extends Controller
             $status = $czyAdmin ? 'oczekująca' : 'moje';
         }
 
-        $query = Rezerwacja::with(['klient', 'pojazd', 'uslugi', 'mechanik'])
+        $query = Rezerwacja::with(['klient', 'pojazd', 'uslugi', 'mechanik', 'protokol'])
             ->orderBy('termin_rozpoczecia');
 
         if ($status === 'moje') {
@@ -112,7 +112,7 @@ class RezerwacjaController extends Controller
 
         $rezerwacje = Rezerwacja::whereDate('termin_rozpoczecia', $data)
             ->whereNotIn('status', ['odrzucona', 'anulowana'])
-            ->with(['klient', 'pojazd', 'uslugi', 'mechanik'])
+            ->with(['klient', 'pojazd', 'uslugi', 'mechanik', 'protokol'])
             ->orderBy('termin_rozpoczecia')
             ->get();
 

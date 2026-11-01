@@ -113,7 +113,7 @@
                                             @if ($r->status === 'odrzucona' && $r->powod_odrzucenia)
                                                 Powód: {{ $r->powod_odrzucenia }}
                                             @else
-                                                {{ number_format($r->laczna_cena, 2, ',', ' ') }} zł
+                                                {{ number_format($r->status === 'zakończona' ? $r->kwota_koncowa : $r->laczna_cena, 2, ',', ' ') }} zł
                                                 @if ($r->mechanik) · {{ $r->mechanik->imie }} {{ $r->mechanik->nazwisko }} @endif
                                             @endif
                                         </p>

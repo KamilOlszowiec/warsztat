@@ -42,12 +42,28 @@ class ProtokolTest extends TestCase
             ->put(route('pracownik.reservations.protokol.update', $rezerwacja), $this->protokol())
             ->assertRedirect();
 
-        $rezerwacja->refresh();
+        $rezerwacja->refresh()->load('protokol');
         $this->assertSame('zakończona', $rezerwacja->status);
-        $this->assertSame(150000, (int) $rezerwacja->przebieg);
+        $this->assertNotNull($rezerwacja->protokol, 'Protokół zapisuje się w tabeli protokoly.');
+        $this->assertSame(150000, $rezerwacja->protokol->przebieg);
         $this->assertEquals(180.00, $rezerwacja->kwota_koncowa);
-        $this->assertNotNull($rezerwacja->data_zakonczenia);
         Notification::assertSentTo($klient, RezerwacjaZakonczona::class);
+    }
+
+    public function test_przebieg_jest_opcjonalny(): void
+    {
+        $mechanik = $this->mechanik();
+        $klient = $this->uzytkownik('klient');
+        $rezerwacja = $this->rezerwacja($klient, $this->pojazd($klient), [$this->usluga(null)], '09:00', null, 'zatwierdzona');
+
+        $this->actingAs($mechanik)
+            ->put(route('pracownik.reservations.protokol.update', $rezerwacja), $this->protokol(['przebieg' => '', 'koszt_koncowy' => '']))
+            ->assertSessionHasNoErrors();
+
+        $rezerwacja->refresh()->load('protokol');
+        $this->assertSame('zakończona', $rezerwacja->status);
+        $this->assertNull($rezerwacja->protokol->przebieg);
+        $this->assertEquals($rezerwacja->laczna_cena, $rezerwacja->kwota_koncowa, 'Bez kosztu końcowego obowiązuje cennik.');
     }
 
     public function test_bez_opisu_prac_wizyta_nie_zostaje_zakonczona(): void
@@ -61,6 +77,7 @@ class ProtokolTest extends TestCase
             ->assertSessionHasErrors('opis_prac');
 
         $this->assertSame('zatwierdzona', $rezerwacja->fresh()->status);
+        $this->assertDatabaseCount('protokoly', 0);
     }
 
     public function test_przebieg_mniejszy_niz_poprzednio_wymaga_potwierdzenia(): void
@@ -71,7 +88,8 @@ class ProtokolTest extends TestCase
         $usluga = $this->usluga(null, 30);
 
         $poprzednia = $this->rezerwacja($klient, $pojazd, [$usluga], '08:00', null, 'zatwierdzona');
-        $poprzednia->update(['status' => 'zakończona', 'przebieg' => 200000, 'opis_prac' => 'Przegląd.', 'data_zakonczenia' => now()]);
+        $poprzednia->update(['status' => 'zakończona']);
+        $poprzednia->protokol()->create(['przebieg' => 200000, 'opis_prac' => 'Przegląd.']);
         $obecna = $this->rezerwacja($klient, $pojazd, [$usluga], '10:00', null, 'zatwierdzona');
 
         $this->actingAs($mechanik)

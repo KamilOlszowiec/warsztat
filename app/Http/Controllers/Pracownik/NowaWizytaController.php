@@ -39,9 +39,20 @@ class NowaWizytaController extends Controller
             }
         }
 
+        $uslugi = Usluga::aktywne()->with('specjalizacja')->orderBy('nazwa')->get();
+        $czyAdmin = auth()->user()->czyAdministrator();
+
+        // Pracownik zapisuje wizytę na siebie, więc może wybrać tylko usługi ze swoimi specjalizacjami.
+        // Pozostałe widzi osobno, bez możliwości zaznaczenia. Administrator widzi wszystkie.
+        $mojeSpecjalizacje = $czyAdmin ? null : $this->mojeSpecjalizacje();
+        [$mojeUslugi, $inneUslugi] = $czyAdmin
+            ? [$uslugi, collect()]
+            : $uslugi->partition(fn ($u) => in_array($u->id_specjalizacji, $mojeSpecjalizacje, true));
+
         return view('pracownik.reservations.nowa', [
-            'uslugi'        => Usluga::aktywne()->orderBy('nazwa')->get(),
-            'czyAdmin'      => auth()->user()->czyAdministrator(),
+            'mojeUslugi'    => $mojeUslugi,
+            'inneUslugi'    => $inneUslugi,
+            'czyAdmin'      => $czyAdmin,
             'wybranyKlient' => $wybranyKlient,
         ] + $this->dostepnosc->daneKalendarza());
     }
@@ -141,7 +152,7 @@ class NowaWizytaController extends Controller
             'model'               => ['required_if:pojazd_tryb,nowy', 'nullable', 'string', 'max:50'],
             'numer_rejestracyjny' => ['required_if:pojazd_tryb,nowy', 'nullable', 'string', 'max:15', 'unique:pojazdy,numer_rejestracyjny'],
             'rok_produkcji'       => ['nullable', 'digits:4', 'integer', 'min:1950', 'max:' . (date('Y') + 1)],
-            'vin'                 => ['nullable', 'string', 'size:17'],
+            'vin'                 => ['nullable', 'string', 'size:17', 'unique:pojazdy,vin'],
 
             'uwagi'        => ['nullable', 'string', 'max:500'],
         ], [
@@ -152,6 +163,7 @@ class NowaWizytaController extends Controller
             'email.unique'           => 'Ten adres e-mail jest już przypisany do innego konta.',
             'id_pojazdu.required_if' => 'Wybierz pojazd klienta albo dodaj nowy.',
             'numer_rejestracyjny.unique' => 'Pojazd z tym numerem rejestracyjnym jest już w systemie – wyszukaj klienta po numerze.',
+            'vin.unique'             => 'Pojazd z tym numerem VIN jest już w systemie – wyszukaj klienta po numerze rejestracyjnym.',
         ], [
             'imie' => 'imię', 'telefon' => 'telefon', 'marka' => 'marka', 'model' => 'model',
             'numer_rejestracyjny' => 'numer rejestracyjny', 'rok_produkcji' => 'rok produkcji',
@@ -162,7 +174,19 @@ class NowaWizytaController extends Controller
             return back()->withErrors(['id_pojazdu' => 'Dla nowego klienta dodaj nowy pojazd.'])->withInput();
         }
 
-        $uslugi = Usluga::aktywne()->whereIn('id_uslugi', $dane['uslugi'])->get();
+        $uslugi = Usluga::aktywne()->with('specjalizacja')->whereIn('id_uslugi', $dane['uslugi'])->get();
+
+        // Pracownik nie może zapisać na siebie usługi, do której nie ma specjalizacji
+        if (!auth()->user()->czyAdministrator()) {
+            $mojeSpecjalizacje = $this->mojeSpecjalizacje();
+            $niedozwolone = $uslugi->reject(fn ($u) => in_array($u->id_specjalizacji, $mojeSpecjalizacje, true));
+
+            if ($niedozwolone->isNotEmpty()) {
+                return back()
+                    ->withErrors(['uslugi' => 'Nie masz specjalizacji wymaganej do usług: ' . $niedozwolone->pluck('nazwa')->implode(', ') . '.'])
+                    ->withInput();
+            }
+        }
         $start = Carbon::parse($dane['data'] . ' ' . $dane['godzina']);
         $mechanik = $this->mechanikDlaTerminu($dane['id_mechanika'] ?? null);
 
@@ -277,6 +301,17 @@ class NowaWizytaController extends Controller
         ]);
 
         return Usluga::aktywne()->whereIn('id_uslugi', $dane['uslugi'])->get();
+    }
+
+    /**
+     * Identyfikatory specjalizacji zalogowanego pracownika.
+     */
+    private function mojeSpecjalizacje(): array
+    {
+        return auth()->user()->specjalizacje()
+            ->pluck('specjalizacje.id_specjalizacji')
+            ->map(fn ($id) => (int) $id)
+            ->all();
     }
 
     private function klientJson(Uzytkownik $k): array

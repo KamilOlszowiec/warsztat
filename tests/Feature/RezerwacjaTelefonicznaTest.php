@@ -84,4 +84,23 @@ class RezerwacjaTelefonicznaTest extends TestCase
             ->post(route('pracownik.reservations.nowa.store'), $this->daneNowegoKlienta($this->usluga(null)->id_uslugi, '10:00'))
             ->assertSessionHasErrors('telefon');
     }
+
+    public function test_pracownik_nie_zapisze_uslugi_spoza_swoich_specjalizacji(): void
+    {
+        $pracownik = $this->mechanik();
+        $klimatyzacja = $this->usluga($this->specjalizacja('Klimatyzacja'));
+
+        // Na liście usług pracownik widzi ją jako niedostępną
+        $this->actingAs($pracownik)
+            ->get(route('pracownik.reservations.nowa'))
+            ->assertOk()
+            ->assertSee('wymaga: Klimatyzacja');
+
+        // Zapis takiej wizyty jest odrzucany
+        $this->actingAs($pracownik)
+            ->post(route('pracownik.reservations.nowa.store'), $this->daneNowegoKlienta($klimatyzacja->id_uslugi, '10:00'))
+            ->assertSessionHasErrors('uslugi');
+
+        $this->assertDatabaseMissing('uzytkownicy', ['telefon' => '511222333']);
+    }
 }

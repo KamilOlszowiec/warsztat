@@ -36,8 +36,20 @@
             <h2 class="text-lg font-semibold text-zinc-50 mb-1">Wybierz usługi</h2>
             <p class="text-sm text-zinc-500 mb-5">Zaznacz wszystko, czego potrzebuje klient – usługi zostaną wykonane podczas jednej wizyty.</p>
 
+            @error('uslugi') <p class="text-sm text-red-500 mb-3">{{ $message }}</p> @enderror
+
+            @unless ($czyAdmin)
+                <p class="text-xs font-mono text-zinc-400 mb-2">TWOJE USŁUGI</p>
+            @endunless
+
+            @if ($mojeUslugi->isEmpty())
+                <p class="text-sm text-zinc-500 bg-[#1F2128] border border-zinc-800 px-4 py-3" style="border-radius: 2px;">
+                    Nie masz przypisanych specjalizacji, więc nie możesz przyjąć wizyty na siebie. Skontaktuj się z administratorem.
+                </p>
+            @endif
+
             <div class="space-y-1.5">
-                @foreach ($uslugi as $u)
+                @foreach ($mojeUslugi as $u)
                     @php
                         $h = intdiv($u->czas_trwania, 60);
                         $m = $u->czas_trwania % 60;
@@ -57,6 +69,30 @@
                     </label>
                 @endforeach
             </div>
+
+            {{-- Usługi, których pracownik nie wykona – tylko do wglądu --}}
+            @if ($inneUslugi->isNotEmpty())
+                <details class="mt-5 group">
+                    <summary class="cursor-pointer select-none text-sm text-zinc-400 hover:text-zinc-200 list-none [&::-webkit-details-marker]:hidden">
+                        <span class="inline-block transition group-open:rotate-90">›</span>
+                        Usługi innych mechaników ({{ $inneUslugi->count() }})
+                    </summary>
+                    <p class="text-xs text-zinc-500 mt-2 mb-2">
+                        Nie masz specjalizacji wymaganej do tych usług. Wizytę może przyjąć mechanik z odpowiednią specjalizacją albo administrator.
+                    </p>
+                    <div class="space-y-1.5">
+                        @foreach ($inneUslugi as $u)
+                            <div class="flex items-center justify-between gap-4 px-4 py-2.5 bg-[#1F2128]/50 border border-zinc-800/60 opacity-60 cursor-not-allowed" style="border-radius: 2px;" aria-disabled="true">
+                                <p class="text-sm text-zinc-300">
+                                    {{ $u->nazwa }}
+                                    <span class="ml-2 text-xs font-mono text-zinc-500">wymaga: {{ $u->specjalizacja?->nazwa ?? '—' }}</span>
+                                </p>
+                                <p class="text-sm text-zinc-400 whitespace-nowrap">{{ number_format($u->cena, 2) }} zł</p>
+                            </div>
+                        @endforeach
+                    </div>
+                </details>
+            @endif
         </section>
 
         {{-- KROK 2: Termin --}}
