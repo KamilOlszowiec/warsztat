@@ -1,6 +1,4 @@
 <?php
-// app/Services/DostepnoscRezerwacjiService.php
-
 namespace App\Services;
 
 use App\Models\DzienWolny;
@@ -15,20 +13,13 @@ use Illuminate\Support\Facades\DB;
 class DostepnoscRezerwacjiService
 {
     public const KROK_MINUT = 30;
-
     public const STATUSY_NIEBLOKUJACE = ['odrzucona', 'anulowana'];
 
-    /**
-     * Łączny czas wizyty = suma czasów wybranych usług (w minutach).
-     */
     public function lacznyCzas(Collection $uslugi): int
     {
         return (int) $uslugi->sum('czas_trwania');
     }
 
-    /**
-     * Id specjalizacji wymaganych przez wybrane usługi (bez powtórzeń).
-     */
     private function wymaganeSpecjalizacje(Collection $uslugi): array
     {
         return $uslugi->pluck('id_specjalizacji')
@@ -39,9 +30,6 @@ class DostepnoscRezerwacjiService
             ->all();
     }
 
-    /**
-     * Id pracowników, którzy mają WSZYSTKIE specjalizacje wymagane przez usługi.
-     */
     private function uprawnieniMechanicy(Collection $uslugi): array
     {
         $wymagane = $this->wymaganeSpecjalizacje($uslugi);
@@ -64,27 +52,17 @@ class DostepnoscRezerwacjiService
             ->all();
     }
 
-    /**
-     * Czy istnieje mechanik zdolny wykonać wszystkie usługi podczas jednej wizyty.
-     */
     public function czyKtosMozeWykonac(Collection $uslugi): bool
     {
         return !empty($this->uprawnieniMechanicy($uslugi));
     }
 
-    // ---------- Dane do kalendarza (wspólne dla wszystkich kreatorów) ----------
-
-    /**
-     * Ostatni dzień, na który można zarezerwować wizytę.
-     */
+    // dane do kalendarza
     public function maksData(): string
     {
         return today()->addDays(config('warsztat.dni_naprzod'))->toDateString();
     }
 
-    /**
-     * Dni tygodnia (ISO 1–7), w które warsztat jest zamknięty.
-     */
     public function dniZamkniete(): array
     {
         $czynne = GodzinyPracy::where('czy_czynne', true)
@@ -95,9 +73,6 @@ class DostepnoscRezerwacjiService
         return array_values(array_diff(range(1, 7), $czynne));
     }
 
-    /**
-     * Dni wolne warsztatu od dziś do ostatniego dnia rezerwacji (Y-m-d).
-     */
     public function dniWolne(): array
     {
         return DzienWolny::whereBetween('data', [today()->toDateString(), $this->maksData()])
@@ -106,9 +81,6 @@ class DostepnoscRezerwacjiService
             ->all();
     }
 
-    /**
-     * Komplet danych kalendarza przekazywany do widoków.
-     */
     public function daneKalendarza(): array
     {
         return [
@@ -118,9 +90,6 @@ class DostepnoscRezerwacjiService
         ];
     }
 
-    /**
-     * Mechanicy do pola wyboru w formacie [{id, nazwa}].
-     */
     public function listaMechanikow(Collection $uslugi): array
     {
         return $this->mechanicyDoWyboru($uslugi)
@@ -129,9 +98,6 @@ class DostepnoscRezerwacjiService
             ->all();
     }
 
-    /**
-     * Mechanicy, których klient może wybrać dla danych usług (mają wszystkie specjalizacje).
-     */
     private function mechanicyDoWyboru(Collection $uslugi): Collection
     {
         return Uzytkownik::whereIn('id_uzytkownika', $this->uprawnieniMechanicy($uslugi))
@@ -140,11 +106,6 @@ class DostepnoscRezerwacjiService
             ->get(['id_uzytkownika', 'imie', 'nazwisko']);
     }
 
-    /**
-     * Zawęża listę uprawnionych mechaników do jednego, wskazanego
-     * (wybór klienta albo pracownik przekładający własną wizytę).
-     * Null oznacza dowolnego mechanika.
-     */
     private function ograniczDoMechanika(array $uprawnieni, ?int $idMechanika): array
     {
         if ($idMechanika === null) {
@@ -154,12 +115,6 @@ class DostepnoscRezerwacjiService
         return in_array($idMechanika, $uprawnieni, true) ? [$idMechanika] : [];
     }
 
-    /**
-     * Lista wolnych godzin rozpoczęcia (np. ['08:00', '08:30']) dla danego dnia.
-     * $pomijanaRezerwacjaId – przy zmianie terminu rezerwacja nie koliduje sama ze sobą.
-     * $czas – jawnie podany czas wizyty (przy zmianie terminu: suma z tabeli przestawnej).
-     * $idMechanika – tylko terminy wskazanego mechanika (null = dowolny).
-     */
     public function dostepneGodziny(Collection $uslugi, string $data, ?int $pomijanaRezerwacjaId = null, ?int $czas = null, ?int $idMechanika = null): array
     {
         $czas ??= $this->lacznyCzas($uslugi);
@@ -172,7 +127,7 @@ class DostepnoscRezerwacjiService
 
         [$otwarcie, $zamkniecie] = $okno;
 
-        // Wszystkie dane dnia pobierane raz, dalej sprawdzanie w pamięci
+        // Wszystkie dane dnia pobierane raz dalej sprawdzanie w pamięci
         $kontekst = $this->kontekstDnia($otwarcie, $zamkniecie, $uprawnieni, $pomijanaRezerwacjaId);
 
         if ($kontekst['zmiany']->isEmpty()) {
@@ -195,10 +150,6 @@ class DostepnoscRezerwacjiService
         return $godziny;
     }
 
-    /**
-     * Sprawdza pojedynczy termin i zwraca id mechanika do przydzielenia
-     * albo null, jeśli termin jest niedostępny.
-     */
     private function znajdzMechanika(Collection $uslugi, Carbon $start, ?int $pomijanaRezerwacjaId = null, ?int $czas = null, ?int $idMechanika = null): ?int
     {
         $czas ??= $this->lacznyCzas($uslugi);
@@ -230,11 +181,6 @@ class DostepnoscRezerwacjiService
         return $this->wolniMechanicy($kontekst, $start, $koniec)[0] ?? null;
     }
 
-    /**
-     * Tworzy rezerwację w transakcji z blokadą, co eliminuje sytuację,
-     * w której dwóch klientów jednocześnie zajmuje tego samego mechanika.
-     * Zwraca null, jeśli termin został w międzyczasie zajęty.
-     */
     public function utworzRezerwacje(array $dane, Collection $uslugi, Carbon $start, ?int $wybranyMechanik = null): ?Rezerwacja
     {
         return DB::transaction(function () use ($dane, $uslugi, $start, $wybranyMechanik) {
@@ -263,11 +209,6 @@ class DostepnoscRezerwacjiService
         });
     }
 
-    /**
-     * Przenosi istniejącą rezerwację na nowy termin (zachowując jej czas trwania)
-     * i przydziela mechanika – dowolnego albo wskazanego.
-     * Zwraca false, jeśli termin jest niedostępny.
-     */
     public function zmienTermin(Rezerwacja $rezerwacja, Carbon $start, ?int $wybranyMechanik = null): bool
     {
         return DB::transaction(function () use ($rezerwacja, $start, $wybranyMechanik) {
@@ -291,10 +232,6 @@ class DostepnoscRezerwacjiService
         });
     }
 
-    /**
-     * Mechanicy, których można przypisać do rezerwacji w jej obecnym terminie
-     * (mają wymagane specjalizacje, zmianę obejmującą wizytę i są wolni).
-     */
     public function dostepniMechanicyDla(Rezerwacja $rezerwacja): Collection
     {
         $rezerwacja->loadMissing('uslugi');
@@ -314,10 +251,6 @@ class DostepnoscRezerwacjiService
             ->get();
     }
 
-    /**
-     * Ręczna zmiana mechanika rezerwacji. Zwraca false, jeśli wybrany
-     * mechanik nie jest dostępny w terminie wizyty.
-     */
     public function zmienMechanika(Rezerwacja $rezerwacja, int $idMechanika): bool
     {
         return DB::transaction(function () use ($rezerwacja, $idMechanika) {
@@ -333,10 +266,6 @@ class DostepnoscRezerwacjiService
         });
     }
 
-    /**
-     * Liczba przyszłych aktywnych rezerwacji w przedziale dat, których mechanik
-     * nie ma zmiany obejmującej całą wizytę (np. po zmianie grafiku lub urlopie).
-     */
     public function rezerwacjeBezObsady(Carbon $od, Carbon $do): int
     {
         $odKiedy = $od->gt(now()) ? $od : now();
@@ -361,19 +290,11 @@ class DostepnoscRezerwacjiService
         ))->count();
     }
 
-    /**
-     * Blokada wierszy pracowników – równoległe zapisy rezerwacji
-     * czekają na zakończenie bieżącej transakcji.
-     */
     private function zablokujMechanikow(): void
     {
         Uzytkownik::where('rola', 'pracownik')->lockForUpdate()->get(['id_uzytkownika']);
     }
 
-    /**
-     * Zwraca [otwarcie, zamkniecie] dla danego dnia albo null, jeśli warsztat
-     * jest nieczynny w ten dzień tygodnia lub dzień jest dniem wolnym.
-     */
     private function godzinyOtwarcia(string $data): ?array
     {
         $dzien = Carbon::parse($data);
@@ -394,10 +315,7 @@ class DostepnoscRezerwacjiService
         ];
     }
 
-    /**
-     * Dane potrzebne do sprawdzania terminów w danym dniu:
-     * zmiany uprawnionych mechaników i rezerwacje, które ich zajmują.
-     */
+    // Dane potrzebne do sprawdzania terminów w danym dniu:
     private function kontekstDnia(Carbon $od, Carbon $do, array $uprawnieni, ?int $pomijanaRezerwacjaId): array
     {
         return [
@@ -406,10 +324,6 @@ class DostepnoscRezerwacjiService
         ];
     }
 
-    /**
-     * Id mechaników, których zmiana obejmuje całą wizytę i którzy nie mają w tym czasie
-     * innej wizyty, posortowane od najmniej obciążonego w danym dniu.
-     */
     private function wolniMechanicy(array $kontekst, Carbon $start, Carbon $koniec): array
     {
         $zajete = $kontekst['zajete'];
@@ -428,9 +342,7 @@ class DostepnoscRezerwacjiService
             ->all();
     }
 
-    /**
-     * Zmiany uprawnionych mechaników w danym dniu jako obiekty {id_mechanika, od, do}.
-     */
+    // Zmiany uprawnionych mechaników w danym dniu jako obiekty {id_mechanika, od, do}.
     private function zmianyDnia(string $data, array $uprawnieni): Collection
     {
         if (empty($uprawnieni)) {
@@ -447,9 +359,7 @@ class DostepnoscRezerwacjiService
             ]);
     }
 
-    /**
-     * Rezerwacje zajmujące mechaników w podanym przedziale.
-     */
+    // Rezerwacje zajmujące mechaników w podanym przedziale.
     private function zajeteRezerwacje(Carbon $od, Carbon $do, ?int $pomijanaRezerwacjaId): Collection
     {
         return Rezerwacja::whereNotIn('status', self::STATUSY_NIEBLOKUJACE)
@@ -460,9 +370,7 @@ class DostepnoscRezerwacjiService
             ->get(['id_rezerwacji', 'id_mechanika', 'termin_rozpoczecia', 'termin_zakonczenia']);
     }
 
-    /**
-     * Czy mechanik ma rezerwację nachodzącą na [start, koniec).
-     */
+    // Czy mechanik ma rezerwację nachodzącą na [start, koniec).
     private function kolizja(Collection $zajete, int $idMechanika, Carbon $start, Carbon $koniec): bool
     {
         return $zajete->contains(fn ($r) =>

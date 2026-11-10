@@ -9,7 +9,6 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    // database/migrations/xxxx_create_pojazdy_table.php
     public function up(): void
     {
         Schema::create('pojazdy', function (Blueprint $table) {

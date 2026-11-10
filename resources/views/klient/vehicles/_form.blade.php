@@ -1,4 +1,3 @@
-{{-- resources/views/klient/vehicles/_form.blade.php --}}
 @php $p = $pojazd ?? null; @endphp
 
 <div class="grid grid-cols-2 gap-3">

@@ -1,5 +1,3 @@
-{{-- Wspólny układ stron błędów. Celowo bez @vite i bez bazy danych,
-     żeby strona wyświetliła się nawet przy awarii aplikacji. --}}
 <!DOCTYPE html>
 <html lang="pl">
 <head>

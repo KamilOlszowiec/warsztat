@@ -24,7 +24,6 @@
 
 <div class="max-w-4xl">
 
-    {{-- Nagłówek --}}
     <div class="flex flex-wrap items-end justify-between gap-4 mb-6">
         <div>
             <p class="text-sm font-mono text-orange-500 mb-1">REZERWACJE</p>
@@ -42,7 +41,6 @@
         </div>
     @enderror
 
-    {{-- Zakładki --}}
     <nav class="flex gap-1 border-b border-zinc-800 mb-5 max-w-full overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>a]:shrink-0 [&>a]:whitespace-nowrap" aria-label="Rodzaj rezerwacji">
         @foreach ($zakladki as $klucz => [$nazwa, $liczba])
             <a href="{{ route('klient.reservations.index', ['zakladka' => $klucz]) }}"
@@ -57,7 +55,6 @@
         @endforeach
     </nav>
 
-    {{-- NADCHODZĄCE --}}
     @if ($zakladka === 'nadchodzace')
         @forelse ($nadchodzaceWgMiesiecy as $miesiac => $rezerwacjeMiesiaca)
             <p class="text-[11px] font-mono tracking-widest text-zinc-400 mb-3 {{ $loop->first ? '' : 'mt-8' }}">
@@ -124,7 +121,6 @@
         @endforelse
     @endif
 
-    {{-- HISTORIA --}}
     @if ($zakladka === 'historia')
         <div class="bg-[#1F2128] border border-zinc-800" style="border-radius: 2px;">
             @forelse ($historia as $r)

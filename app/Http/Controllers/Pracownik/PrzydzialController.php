@@ -1,6 +1,4 @@
 <?php
-// app/Http/Controllers/Pracownik/PrzydzialController.php
-
 namespace App\Http\Controllers\Pracownik;
 
 use App\Enums\StatusRezerwacji;
@@ -62,9 +60,6 @@ class PrzydzialController extends Controller
             ->with('status', 'Mechanik został zmieniony.');
     }
 
-    /**
-     * Przydział mechaników to decyzja kierownicza – zmienia go tylko administrator.
-     */
     private function tylkoAdministrator(): void
     {
         if (!auth()->user()->czyAdministrator()) {

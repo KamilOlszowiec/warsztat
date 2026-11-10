@@ -9,9 +9,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\TworzyDaneWarsztatu;
 use Tests\TestCase;
 
-/**
- * Wyznaczanie wolnych terminów i ochrona przed podwójną rezerwacją.
- */
 class WyznaczanieTerminowTest extends TestCase
 {
     use RefreshDatabase, TworzyDaneWarsztatu;
@@ -32,7 +29,6 @@ class WyznaczanieTerminowTest extends TestCase
 
         $godziny = $this->dostepnosc->dostepneGodziny(collect([$usluga]), $this->dzien);
 
-        // Wizyta 60 min musi zmieścić się w zmianie 10:00–12:00
         $this->assertSame(['10:00', '10:30', '11:00'], $godziny);
     }
 
@@ -65,7 +61,6 @@ class WyznaczanieTerminowTest extends TestCase
 
         $godziny = $this->dostepnosc->dostepneGodziny(collect([$usluga]), $this->dzien);
 
-        // 8:30 i 9:30 nachodziłyby na wizytę 9:00–10:00
         $this->assertSame(['08:00', '10:00', '10:30', '11:00'], $godziny);
     }
 

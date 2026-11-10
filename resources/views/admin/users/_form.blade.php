@@ -11,7 +11,6 @@
     </div>
 @endif
 
-{{-- Dane konta --}}
 <section class="bg-[#1F2128] border border-zinc-800" style="border-radius: 2px;">
     <h2 class="px-5 py-4 border-b border-zinc-800 text-[15px] font-semibold text-zinc-50">Dane konta</h2>
     <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -41,7 +40,6 @@
     </div>
 </section>
 
-{{-- Hasło startowe (tylko przy zakładaniu konta) --}}
 @unless ($u)
     <section class="bg-[#1F2128] border border-zinc-800" style="border-radius: 2px;">
         <h2 class="px-5 py-4 border-b border-zinc-800 text-[15px] font-semibold text-zinc-50">Hasło startowe</h2>
@@ -59,7 +57,6 @@
     </section>
 @endunless
 
-{{-- Specjalizacje (tylko dla mechanika) --}}
 <section id="sekcja-specjalizacji" class="bg-[#1F2128] border border-zinc-800 {{ $rola === 'pracownik' ? '' : 'hidden' }}" style="border-radius: 2px;">
     <div class="flex items-baseline justify-between gap-3 px-5 py-4 border-b border-zinc-800">
         <h2 class="text-[15px] font-semibold text-zinc-50">Specjalizacje</h2>

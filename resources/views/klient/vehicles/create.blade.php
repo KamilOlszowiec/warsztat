@@ -1,4 +1,3 @@
-{{-- resources/views/klient/vehicles/create.blade.php --}}
 @extends('layouts.klient')
 @section('title', 'Dodaj pojazd')
 

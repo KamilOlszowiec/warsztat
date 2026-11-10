@@ -99,7 +99,6 @@
                                     @endif
                                 </div>
 
-                                {{-- Okienko odrzucenia z powodem --}}
                                 <div id="reject-modal-{{ $r->id_rezerwacji }}" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
                                     <div class="bg-[#1F2128] border border-zinc-800 p-6 max-w-sm w-full" style="border-radius: 2px;">
                                         <p class="text-zinc-200 font-semibold mb-3 text-left">Odrzuć rezerwację</p>

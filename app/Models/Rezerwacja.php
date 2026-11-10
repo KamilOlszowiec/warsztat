@@ -1,6 +1,4 @@
 <?php
-// app/Models/Rezerwacja.php
-
 namespace App\Models;
 
 use App\Enums\StatusRezerwacji;
@@ -42,40 +40,31 @@ class Rezerwacja extends Model
             ->withPivot('cena', 'czas_trwania');
     }
 
-    // Mechanik wykonujący wizytę
     public function mechanik()
     {
         return $this->belongsTo(Uzytkownik::class, 'id_mechanika', 'id_uzytkownika');
     }
 
-    // Protokół z zakończonej wizyty (relacja 1:1)
     public function protokol()
     {
         return $this->hasOne(Protokol::class, 'id_rezerwacji', 'id_rezerwacji');
     }
 
-    // Suma cen z chwili rezerwacji (z tabeli przestawnej)
     public function getLacznaCenaAttribute(): float
     {
         return (float) $this->uslugi->sum(fn ($u) => $u->pivot->cena);
     }
 
-    // Suma czasu w minutach
     public function getLacznyCzasAttribute(): int
     {
         return (int) $this->uslugi->sum(fn ($u) => $u->pivot->czas_trwania);
     }
 
-    // Np. "Wymiana oleju, Diagnostyka komputerowa" – wygodne w listach
     public function getNazwyUslugAttribute(): string
     {
         return $this->uslugi->pluck('nazwa')->implode(', ');
     }
 
-    /**
-     * Administrator zarządza wszystkimi wizytami,
-     * pracownik tylko tymi, w których jest przydzielonym mechanikiem.
-     */
     public function mozeZarzadzac(?Uzytkownik $uzytkownik): bool
     {
         if (!$uzytkownik) {
@@ -91,14 +80,11 @@ class Rezerwacja extends Model
         return StatusRezerwacji::from($this->status);
     }
 
-    // ---------- Protokół z wizyty ----------
-
     public function maProtokol(): bool
     {
         return $this->status === 'zakończona' && $this->protokol !== null;
     }
-
-    // Kwota do zapłaty: koszt końcowy z protokołu, a bez niego suma wg cennika z chwili rezerwacji
+    
     public function getKwotaKoncowaAttribute(): float
     {
         $koszt = $this->protokol?->koszt_koncowy;
@@ -106,9 +92,7 @@ class Rezerwacja extends Model
         return $koszt !== null ? (float) $koszt : $this->laczna_cena;
     }
 
-    /**
-     * Protokół może poprawić administrator zawsze, a mechanik wizyty – tylko w dniu zakończenia wizyty.
-     */
+    // Protokół może poprawić administrator zawsze, a mechanik wizyty tylko w dniu zakończenia wizyty.
     public function mozeEdytowacProtokol(?Uzytkownik $uzytkownik): bool
     {
         if (!$uzytkownik || !$this->maProtokol()) {
@@ -123,10 +107,6 @@ class Rezerwacja extends Model
             && $this->protokol->created_at->isToday();
     }
 
-    /**
-     * Ostatnia wcześniejsza zakończona wizyta tego samego pojazdu z protokołem.
-     * Z parametrem $zPrzebiegiem – tylko taka, w której protokole wpisano przebieg.
-     */
     public function poprzedniaWizytaPojazdu(bool $zPrzebiegiem = false): ?self
     {
         return self::where('id_pojazdu', $this->id_pojazdu)

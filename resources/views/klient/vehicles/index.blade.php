@@ -5,7 +5,6 @@
 
 <div class="max-w-5xl">
 
-    {{-- Nagłówek --}}
     <div class="flex flex-wrap items-end justify-between gap-4 mb-6">
         <div>
             <p class="text-sm font-mono text-orange-500 mb-1">POJAZDY</p>
@@ -44,7 +43,6 @@
 
                 <div class="bg-[#1F2128] border border-zinc-800 hover:border-zinc-700 transition" style="border-radius: 2px;">
                     <details class="group">
-                        {{-- Nagłówek kafelka (klikalny) --}}
                         <summary class="list-none cursor-pointer p-5 [&::-webkit-details-marker]:hidden">
                             <div class="flex items-start justify-between gap-4 mb-4">
                                 <div class="min-w-0">
@@ -54,7 +52,6 @@
                                         @if ($pojazd->vin) · VIN {{ $pojazd->vin }} @endif
                                     </p>
                                 </div>
-                                {{-- Tablica rejestracyjna --}}
                                 <div class="flex items-stretch shrink-0 border border-zinc-400 overflow-hidden" style="border-radius: 3px;">
                                     <span class="bg-blue-700 w-2.5"></span>
                                     <span class="bg-zinc-100 text-zinc-900 font-mono font-bold text-sm tracking-wider px-2 py-1">{{ $pojazd->numer_rejestracyjny }}</span>
@@ -86,7 +83,6 @@
                             </div>
                         </summary>
 
-                        {{-- Historia (po rozwinięciu) --}}
                         <div class="px-5 pb-5">
                             @if ($historia->isEmpty())
                                 <p class="text-sm text-zinc-500">
@@ -127,7 +123,6 @@
                         </div>
                     </details>
 
-                    {{-- Akcje (poza klikalnym nagłówkiem) --}}
                     <div class="flex items-center gap-4 px-5 py-3 border-t border-zinc-800 text-sm">
                         <a href="{{ route('klient.reservations.create', ['pojazd' => $pojazd->id_pojazdu]) }}" class="text-orange-500 hover:text-orange-400 font-medium">Umów wizytę</a>
                         <a href="{{ route('klient.vehicles.edit', $pojazd) }}" class="text-zinc-400 hover:text-zinc-200">Edytuj</a>

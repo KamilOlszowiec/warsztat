@@ -15,7 +15,6 @@
         <p class="text-sm text-zinc-400 mt-1.5">W te dni warsztat jest zamknięty – klienci nie zobaczą wolnych terminów, niezależnie od grafiku.</p>
     </div>
 
-    {{-- Dodawanie --}}
     <form id="form-dnia-wolnego" method="POST" action="{{ route('admin.days-off.store') }}"
           class="bg-[#1F2128] border border-zinc-800 p-5 flex flex-wrap items-end gap-3" style="border-radius: 2px;">
         @csrf
@@ -37,7 +36,6 @@
         @error('opis') <p class="w-full text-sm text-red-400">{{ $message }}</p> @enderror
     </form>
 
-    {{-- Zaplanowane --}}
     <section class="bg-[#1F2128] border border-zinc-800" style="border-radius: 2px;" aria-label="Zaplanowane dni wolne">
         <div class="flex items-baseline justify-between px-5 py-4 border-b border-zinc-800">
             <h2 class="text-[15px] font-semibold text-zinc-50">Zaplanowane</h2>
@@ -91,7 +89,6 @@
         return parseInt(wizyty[poleData.value] || 0, 10);
     }
 
-    // Ostrzeżenie od razu po wybraniu daty
     poleData.addEventListener('change', function () {
         const n = liczba();
         ostrzezenie.classList.toggle('hidden', n === 0);
@@ -100,7 +97,6 @@
             : '';
     });
 
-    // Potwierdzenie przed zapisem, gdy w tym dniu są wizyty
     form.addEventListener('submit', function (e) {
         const n = liczba();
         if (n > 0 && !confirm('W tym dniu jest ' + n + ' umówionych wizyt. Na pewno zamknąć warsztat? Wizyty nie zostaną odwołane automatycznie.')) {

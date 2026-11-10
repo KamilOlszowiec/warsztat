@@ -43,8 +43,6 @@ class PasswordResetController extends Controller
             function ($user, $password) {
                 $user->forceFill(['password' => Hash::make($password)])->save();
 
-                // Link przyszedł na adres e-mail użytkownika, więc adres jest potwierdzony
-                // (np. klient zapisany telefonicznie, który ustawia hasło po raz pierwszy).
                 if (!$user->hasVerifiedEmail()) {
                     $user->markEmailAsVerified();
                 }

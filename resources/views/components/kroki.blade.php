@@ -1,7 +1,3 @@
-{{--
-    Pasek kroków kreatora. Obsługa: Rezerwacje.kroki() z resources/js/rezerwacje.js.
-    Użycie: <x-kroki :nazwy="['Usługi', 'Termin', 'Pojazd', 'Potwierdzenie']" />
---}}
 @props(['nazwy'])
 
 <div {{ $attributes->merge(['class' => 'max-w-4xl mb-8']) }}>

@@ -6,10 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Usunięcie domyślnej tabeli users z instalacji Laravela.
-     * Aplikacja korzysta z tabeli uzytkownicy.
-     */
     public function up(): void
     {
         Schema::dropIfExists('users');

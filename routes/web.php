@@ -69,7 +69,6 @@ Route::middleware(['auth', 'verified', 'role:klient'])->prefix('klient')->name('
 
     Route::resource('vehicles', PojazdController::class)->parameters(['vehicles' => 'vehicle']);
 
-    // Kolejność ma znaczenie: stałe ścieżki przed {reservation}
     Route::get('/reservations/dostepne-terminy', [KlientRezerwacjaController::class, 'dostepneTerminy'])->name('reservations.availability');
     Route::get('/reservations/mechanicy', [KlientRezerwacjaController::class, 'mechanicy'])->name('reservations.mechanicy');
     Route::get('/reservations', [KlientRezerwacjaController::class, 'index'])->name('reservations.index');
@@ -89,13 +88,13 @@ Route::middleware(['auth', 'verified', 'role:pracownik,administrator'])->prefix(
     Route::get('/reservations', [PracownikRezerwacjaController::class, 'index'])->name('reservations.index');
     Route::post('/reservations/{reservation}/approve', [PracownikRezerwacjaController::class, 'approve'])->name('reservations.approve');
     Route::post('/reservations/{reservation}/reject', [PracownikRezerwacjaController::class, 'reject'])->name('reservations.reject');
-    // Zakończenie wizyty z protokołem i poprawa protokołu
+
     Route::get('/reservations/{reservation}/protokol', [\App\Http\Controllers\Pracownik\ProtokolController::class, 'edit'])->name('reservations.protokol');
     Route::put('/reservations/{reservation}/protokol', [\App\Http\Controllers\Pracownik\ProtokolController::class, 'update'])->name('reservations.protokol.update');
     Route::get('/reservations/{reservation}/edit-termin', [PracownikRezerwacjaController::class, 'editTermin'])->name('reservations.edit-termin');
     Route::put('/reservations/{reservation}/termin', [PracownikRezerwacjaController::class, 'updateTermin'])->name('reservations.update-termin');
 
-    // Nowa wizyta przyjmowana przez pracownika (np. telefonicznie)
+
     Route::get('/reservations/nowa', [NowaWizytaController::class, 'create'])->name('reservations.nowa');
     Route::get('/reservations/nowa/mechanicy', [NowaWizytaController::class, 'mechanicy'])->name('reservations.nowa.mechanicy');
     Route::get('/reservations/nowa/terminy', [NowaWizytaController::class, 'terminy'])->name('reservations.nowa.terminy');
@@ -104,7 +103,6 @@ Route::middleware(['auth', 'verified', 'role:pracownik,administrator'])->prefix(
 
     Route::get('/clients', [PracownikKlientController::class, 'index'])->name('clients.index');
 
-    // Ręczny przydział mechanika – tylko administrator
     Route::middleware('role:administrator')->group(function () {
         Route::get('reservations/{reservation}/przydzial', [\App\Http\Controllers\Pracownik\PrzydzialController::class, 'edit'])->name('reservations.przydzial');
         Route::put('reservations/{reservation}/przydzial', [\App\Http\Controllers\Pracownik\PrzydzialController::class, 'update'])->name('reservations.przydzial.update');
@@ -140,8 +138,7 @@ Route::middleware(['auth', 'verified', 'role:administrator'])->prefix('admin')->
         ->only(['index', 'store', 'destroy'])
         ->parameters(['days-off' => 'dzien']);
 });
-// Podgląd szablonów wiadomości e-mail w przeglądarce, np. /podglad-maila/zatwierdzona.
-// Dostępny wyłącznie w środowisku lokalnym (APP_ENV=local) – na serwerze produkcyjnym ta trasa nie istnieje.
+
 if (app()->isLocal()) {
     Route::get('/podglad-maila/{rodzaj}', function (string $rodzaj) {
         $klient = \App\Models\Uzytkownik::where('rola', 'klient')->first();

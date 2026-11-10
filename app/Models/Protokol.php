@@ -4,11 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-/**
- * Protokół z zakończonej wizyty, wypełniany przez mechanika.
- * Każda zakończona wizyta ma dokładnie jeden protokół (relacja 1:1 z rezerwacją).
- * Data utworzenia protokołu (created_at) jest jednocześnie chwilą zakończenia wizyty.
- */
 class Protokol extends Model
 {
     protected $table = 'protokoly';

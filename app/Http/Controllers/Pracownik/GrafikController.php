@@ -1,6 +1,4 @@
 <?php
-// app/Http/Controllers/Pracownik/GrafikController.php
-
 namespace App\Http\Controllers\Pracownik;
 
 use App\Http\Controllers\Controller;
@@ -18,7 +16,6 @@ class GrafikController extends Controller
     {
         $user = auth()->user();
 
-        // Grafik dotyczy tylko mechaników (admin też ma dostęp do tego panelu)
         if (!$user->czyPracownik()) {
             abort(403, 'Grafik jest dostępny tylko dla pracowników.');
         }
@@ -37,7 +34,7 @@ class GrafikController extends Controller
 
         $godzinyPracy = GodzinyPracy::all()->keyBy('dzien_tygodnia');
 
-        // Liczba moich wizyt w każdym dniu (bez odrzuconych i anulowanych)
+        // Liczba moich wizyt w każdym dniu 
         $wizyty = Rezerwacja::where('id_mechanika', $user->id_uzytkownika)
             ->whereNotIn('status', ['odrzucona', 'anulowana'])
             ->whereBetween('termin_rozpoczecia', [$od->copy()->startOfDay(), $do->copy()->endOfDay()])
@@ -45,7 +42,6 @@ class GrafikController extends Controller
             ->groupBy(fn ($r) => $r->termin_rozpoczecia->toDateString())
             ->map->count();
 
-        // Tygodnie z dniami
         $tygodnie = [];
         for ($t = 0; $t < self::TYGODNIE; $t++) {
             $poczatek = $od->copy()->addWeeks($t);

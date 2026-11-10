@@ -2,10 +2,6 @@
 
 namespace App\Enums;
 
-/**
- * Statusy rezerwacji wraz z ich opisem i kolorami w interfejsie.
- * Wartości odpowiadają typowi ENUM kolumny rezerwacje.status.
- */
 enum StatusRezerwacji: string
 {
     case Oczekujaca   = 'oczekująca';
@@ -14,9 +10,6 @@ enum StatusRezerwacji: string
     case Anulowana    = 'anulowana';
     case Zakonczona   = 'zakończona';
 
-    /**
-     * Statusy wizyt, które zajmują termin w grafiku mechanika.
-     */
     public static function aktywne(): array
     {
         return [self::Oczekujaca->value, self::Zatwierdzona->value];
@@ -33,7 +26,6 @@ enum StatusRezerwacji: string
         };
     }
 
-    // Tło i kolor tekstu etykiety statusu
     public function klasy(): string
     {
         return match ($this) {
@@ -45,7 +37,6 @@ enum StatusRezerwacji: string
         };
     }
 
-    // Kolor kropki na osi czasu w historii pojazdu
     public function kropka(): string
     {
         return match ($this) {

@@ -1,7 +1,3 @@
-{{--
-    Siatka wolnych godzin. Obsługa: Rezerwacje.siatkaGodzin() z resources/js/rezerwacje.js.
-    Użycie: <x-siatka-godzin id="godziny" komunikat="Wybierz dzień w kalendarzu." />
---}}
 @props(['komunikat' => 'Wybierz dzień w kalendarzu.', 'kolumny' => 'grid-cols-3 sm:grid-cols-4'])
 
 <div {{ $attributes }}>

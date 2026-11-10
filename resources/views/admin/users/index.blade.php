@@ -30,7 +30,6 @@
         <div class="bg-red-900/30 border border-red-700 text-red-300 px-4 py-3 text-sm" style="border-radius: 2px;">{{ $message }}</div>
     @enderror
 
-    {{-- Zakładki i wyszukiwarka --}}
     <div class="flex flex-wrap items-end justify-between gap-3 border-b border-zinc-800">
         <nav class="flex gap-1 max-w-full overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Filtr ról">
             @foreach ($zakladki as $klucz => $nazwa)
@@ -52,7 +51,6 @@
         </form>
     </div>
 
-    {{-- Tabela --}}
     <div class="relative bg-[#1F2128] border border-zinc-800 overflow-x-auto" style="border-radius: 2px;">
         <table class="w-full text-sm">
             <thead>

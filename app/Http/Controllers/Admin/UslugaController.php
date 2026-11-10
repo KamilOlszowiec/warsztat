@@ -71,9 +71,6 @@ class UslugaController extends Controller
             ->with('status', "Usługa „{$service->nazwa}” została zaktualizowana.");
     }
 
-    /**
-     * Ukrycie albo przywrócenie usługi w ofercie (bez usuwania historii).
-     */
     public function przelaczWidocznosc(Usluga $service)
     {
         $service->update(['czy_aktywna' => !$service->czy_aktywna]);
@@ -87,7 +84,6 @@ class UslugaController extends Controller
 
     public function destroy(Usluga $service)
     {
-        // Usługa z historią rezerwacji zostaje w bazie – można ją tylko ukryć
         if ($service->rezerwacje()->exists()) {
             return back()->withErrors([
                 'error' => "Usługi „{$service->nazwa}” nie można usunąć, bo była już rezerwowana. Ukryj ją, żeby zniknęła z oferty.",

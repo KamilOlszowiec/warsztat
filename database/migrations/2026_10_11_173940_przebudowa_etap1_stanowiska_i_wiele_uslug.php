@@ -10,7 +10,6 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // 1. Stanowiska warsztatowe
         Schema::create('stanowiska', function (Blueprint $table) {
             $table->id('id_stanowiska');
             $table->string('nazwa', 50);
@@ -19,7 +18,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // 2. Usługi: zamiast maks_jednoczesnie wymagany typ stanowiska
         Schema::table('uslugi', function (Blueprint $table) {
             $table->enum('wymagany_typ_stanowiska', ['dowolne', 'podnosnik', 'kanal', 'plaskie', 'diagnostyczne'])
                 ->default('dowolne')
@@ -30,7 +28,6 @@ return new class extends Migration
             $table->dropColumn('maks_jednoczesnie');
         });
 
-        // 3. Tabela przestawna rezerwacja <-> usługa (z kopią ceny i czasu)
         Schema::create('rezerwacja_usluga', function (Blueprint $table) {
             $table->foreignId('id_rezerwacji')
                 ->constrained('rezerwacje', 'id_rezerwacji')
@@ -43,7 +40,6 @@ return new class extends Migration
             $table->primary(['id_rezerwacji', 'id_uslugi']);
         });
 
-        // 4. Przeniesienie istniejących rezerwacji do tabeli przestawnej
         DB::statement('
             INSERT INTO rezerwacja_usluga (id_rezerwacji, id_uslugi, cena, czas_trwania)
             SELECT r.id_rezerwacji, r.id_uslugi, u.cena, u.czas_trwania
@@ -51,7 +47,6 @@ return new class extends Migration
             JOIN uslugi u ON u.id_uslugi = r.id_uslugi
         ');
 
-        // 5. Rezerwacje: usunięcie id_uslugi, dodanie stanowiska
         Schema::table('rezerwacje', function (Blueprint $table) {
             $table->dropConstrainedForeignId('id_uslugi');
         });
@@ -78,7 +73,6 @@ return new class extends Migration
                 ->constrained('uslugi', 'id_uslugi');
         });
 
-        // Przy cofaniu każda rezerwacja dostaje pierwszą ze swoich usług
         DB::statement('
             UPDATE rezerwacje r
             SET id_uslugi = (

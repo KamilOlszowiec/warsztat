@@ -13,7 +13,6 @@
         <div class="bg-red-900/30 border border-red-700 text-red-300 px-4 py-3 text-sm" style="border-radius: 2px;">{{ $message }}</div>
     @enderror
 
-    {{-- Nagłówek --}}
     <div class="flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-center gap-3.5">
             <div class="w-[52px] h-[52px] flex items-center justify-center {{ $user->czyAdministrator() ? 'bg-orange-600' : 'bg-zinc-600' }} text-zinc-50 text-lg font-bold" style="border-radius: 50%;">{{ $inicjaly }}</div>
@@ -37,14 +36,12 @@
 
     <div class="flex flex-wrap gap-5 items-start">
 
-        {{-- Formularz --}}
         <form id="form-uzytkownika" method="POST" action="{{ route('admin.users.update', $user) }}" class="flex-[2_1_460px] min-w-0 space-y-5">
             @csrf
             @method('PUT')
             @include('admin.users._form', ['user' => $user])
         </form>
 
-        {{-- Prawa kolumna --}}
         <div class="flex-[1_1_280px] min-w-0 space-y-5">
 
             @if ($statystyki)

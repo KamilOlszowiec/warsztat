@@ -36,7 +36,7 @@ class AuthController extends Controller
             'rola' => 'klient',
         ]);
 
-        event(new Registered($uzytkownik)); // to wysyła maila weryfikacyjnego
+        event(new Registered($uzytkownik)); // mail weryfikujący
 
         Auth::login($uzytkownik);
         return redirect()->route('verification.notice');
@@ -51,7 +51,7 @@ class AuthController extends Controller
             'password' => ['required'],
         ]);
 
-        // Ochrona przed zgadywaniem hasła: limit prób na adres e-mail i IP
+        // Ochrona przed zgadywaniem hasła
         $klucz = Str::lower($credentials['email']) . '|' . $request->ip();
 
         if (RateLimiter::tooManyAttempts($klucz, self::MAKS_PROB)) {

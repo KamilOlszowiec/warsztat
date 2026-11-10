@@ -1,6 +1,5 @@
 <?php
 
-// database/migrations/xxxx_add_email_verified_at_to_uzytkownicy_table.php
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

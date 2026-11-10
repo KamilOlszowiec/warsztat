@@ -6,14 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Indeksy pod najczęstsze zapytania aplikacji:
-     * - wolne terminy i plan dnia: rezerwacje mechanika w danym przedziale czasu,
-     * - listy i alerty: rezerwacje o danym statusie w kolejności terminów,
-     * - historia pojazdu: rezerwacje pojazdu w kolejności terminów,
-     * - listy użytkowników filtrowane po roli.
-     * Numer rejestracyjny dostaje unikalność w bazie (dotąd pilnowała jej tylko walidacja).
-     */
     public function up(): void
     {
         Schema::table('rezerwacje', function (Blueprint $table) {

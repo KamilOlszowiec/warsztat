@@ -80,9 +80,6 @@ class GodzinyPracyController extends Controller
         return redirect()->route('admin.schedule.index')->with('status', $komunikat);
     }
 
-    /**
-     * Przyszłe aktywne wizyty, które po zmianie wypadają w dzień zamknięty albo poza godzinami.
-     */
     private function wizytyPozaGodzinami(): int
     {
         $godziny = GodzinyPracy::all()->keyBy('dzien_tygodnia');

@@ -8,9 +8,6 @@ use Illuminate\Support\Facades\Notification;
 use Tests\Support\TworzyDaneWarsztatu;
 use Tests\TestCase;
 
-/**
- * Zakończenie wizyty z protokołem i zasady jego poprawiania.
- */
 class ProtokolTest extends TestCase
 {
     use RefreshDatabase, TworzyDaneWarsztatu;

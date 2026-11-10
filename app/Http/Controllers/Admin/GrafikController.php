@@ -1,6 +1,4 @@
 <?php
-// app/Http/Controllers/Admin/GrafikController.php
-
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -166,10 +164,6 @@ class GrafikController extends Controller
         return $this->powrot($poczatek, 'Grafik wypełniono zgodnie z godzinami pracy warsztatu.');
     }
 
-    /**
-     * Przekierowanie na widok tygodnia z komunikatem i ewentualnym ostrzeżeniem
-     * o rezerwacjach, które straciły obsadę.
-     */
     private function powrot(Carbon $poczatek, string $komunikat)
     {
         $bezObsady = $this->dostepnosc->rezerwacjeBezObsady(

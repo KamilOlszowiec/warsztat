@@ -14,7 +14,6 @@
         <div class="bg-red-900/30 border border-red-700 text-red-300 px-4 py-3 text-sm" style="border-radius: 2px;">{{ $message }}</div>
     @enderror
 
-    {{-- Nagłówek --}}
     <div class="flex items-center gap-3.5">
         <div class="w-[52px] h-[52px] flex items-center justify-center bg-zinc-700 text-zinc-50 text-lg font-bold" style="border-radius: 50%;">{{ $inicjaly }}</div>
         <div>
@@ -33,7 +32,6 @@
         </div>
     </div>
 
-    {{-- Liczby --}}
     <section class="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-3.5">
         <div class="bg-[#1F2128] border border-zinc-800 px-4 py-3.5" style="border-radius: 2px;">
             <p class="text-[11px] font-mono text-zinc-400">POJAZDY</p>
@@ -62,7 +60,6 @@
 
     <div class="flex flex-wrap gap-5 items-start">
 
-        {{-- Pojazdy z historią --}}
         <section class="flex-[2_1_460px] min-w-0 space-y-3" aria-label="Pojazdy klienta">
             @forelse ($user->pojazdy as $p)
                 @php
@@ -130,7 +127,6 @@
             @endforelse
         </section>
 
-        {{-- Kontakt i konto --}}
         <div class="flex-[1_1_280px] min-w-0 space-y-5">
             <section class="bg-[#1F2128] border border-zinc-800" style="border-radius: 2px;">
                 <h2 class="px-5 py-4 border-b border-zinc-800 text-[15px] font-semibold text-zinc-50">Kontakt</h2>

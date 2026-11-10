@@ -6,11 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Usunięcie kolumny id_pracownika z rezerwacji.
-     * Wykonawcę wizyty określa id_mechanika, a informacja o tym,
-     * kto zatwierdził rezerwację, nie była nigdzie wykorzystywana.
-     */
     public function up(): void
     {
         Schema::table('rezerwacje', function (Blueprint $table) {

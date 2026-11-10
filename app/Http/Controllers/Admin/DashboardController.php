@@ -1,6 +1,4 @@
 <?php
-// app/Http/Controllers/Admin/DashboardController.php
-
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\StatusRezerwacji;
@@ -187,9 +185,6 @@ class DashboardController extends Controller
         ];
     }
 
-    /**
-     * Godziny wizyt każdego mechanika względem godzin jego zmian w tym tygodniu.
-     */
     private function oblozenie(Carbon $od, Carbon $do): array
     {
         $mechanicy = Uzytkownik::where('rola', 'pracownik')->orderBy('nazwisko')->orderBy('imie')->get();
@@ -219,9 +214,6 @@ class DashboardController extends Controller
         })->all();
     }
 
-    /**
-     * Najczęściej rezerwowane usługi (rezerwacje złożone w ostatnich 30 dniach).
-     */
     private function topUslugi()
     {
         return DB::table('rezerwacja_usluga as ru')

@@ -1,4 +1,3 @@
-{{-- Otwieranie i zamykanie menu bocznego na telefonie --}}
 <script>
 (function () {
     const menu = document.getElementById('menu-boczne');

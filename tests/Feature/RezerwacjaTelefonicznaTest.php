@@ -9,9 +9,6 @@ use Illuminate\Support\Facades\Notification;
 use Tests\Support\TworzyDaneWarsztatu;
 use Tests\TestCase;
 
-/**
- * Wizyta przyjmowana przez pracownika (np. telefonicznie).
- */
 class RezerwacjaTelefonicznaTest extends TestCase
 {
     use RefreshDatabase, TworzyDaneWarsztatu;
@@ -90,13 +87,11 @@ class RezerwacjaTelefonicznaTest extends TestCase
         $pracownik = $this->mechanik();
         $klimatyzacja = $this->usluga($this->specjalizacja('Klimatyzacja'));
 
-        // Na liście usług pracownik widzi ją jako niedostępną
         $this->actingAs($pracownik)
             ->get(route('pracownik.reservations.nowa'))
             ->assertOk()
             ->assertSee('wymaga: Klimatyzacja');
 
-        // Zapis takiej wizyty jest odrzucany
         $this->actingAs($pracownik)
             ->post(route('pracownik.reservations.nowa.store'), $this->daneNowegoKlienta($klimatyzacja->id_uslugi, '10:00'))
             ->assertSessionHasErrors('uslugi');

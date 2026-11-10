@@ -6,11 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Adres e-mail staje się opcjonalny – klient zapisany telefonicznie
-     * może nie podać e-maila. Unikalność zostaje: w MySQL/MariaDB
-     * wiele wartości NULL nie narusza indeksu UNIQUE.
-     */
     public function up(): void
     {
         Schema::table('uzytkownicy', function (Blueprint $table) {

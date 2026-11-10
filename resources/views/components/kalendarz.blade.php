@@ -1,7 +1,3 @@
-{{--
-    Kalendarz do wyboru dnia wizyty. Obsługa: Rezerwacje.kalendarz() z resources/js/rezerwacje.js.
-    Użycie: <x-kalendarz id="kalendarz" />
---}}
 <div {{ $attributes->merge(['class' => 'bg-[#1F2128] border border-zinc-800 p-4']) }} style="border-radius: 2px;">
     <div class="flex items-center justify-between mb-3">
         <button type="button" data-kal="poprzedni" aria-label="Poprzedni miesiąc"

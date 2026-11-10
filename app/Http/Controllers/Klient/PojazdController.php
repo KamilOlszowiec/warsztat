@@ -10,7 +10,6 @@ class PojazdController extends Controller
 {
     public function index()
     {
-        // Pojazdy z pełną historią wizyt – jedno zapytanie na relację, nie na kafelek
         $pojazdy = auth()->user()->pojazdy()
             ->with(['rezerwacje' => function ($q) {
                 $q->with(['uslugi', 'mechanik', 'protokol'])->orderByDesc('termin_rozpoczecia');
@@ -83,7 +82,6 @@ class PojazdController extends Controller
     {
         $this->authorizeOwnership($vehicle);
 
-        // Pojazd z historią wizyt zostaje – usunięcie skasowałoby historię napraw warsztatu
         if ($vehicle->rezerwacje()->exists()) {
             return back()->withErrors([
                 'error' => "Pojazdu {$vehicle->marka} {$vehicle->model} nie można usunąć, bo ma historię wizyt w warsztacie.",

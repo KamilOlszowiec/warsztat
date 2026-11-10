@@ -22,7 +22,6 @@
     <input type="hidden" name="data" id="pole-data" value="{{ old('data') }}">
 
     <div>
-                {{-- KROK 1: Usługi --}}
         <section data-krok="1">
             <h2 class="text-lg font-semibold text-zinc-50 mb-1">Wybierz usługi</h2>
             <p class="text-sm text-zinc-500 mb-5">Możesz wybrać kilka usług – zostaną wykonane jedna po drugiej podczas jednej wizyty.</p>
@@ -59,12 +58,10 @@
             </div>
         </section>
 
-        {{-- KROK 2: Termin --}}
         <section data-krok="2" class="hidden">
             <h2 class="text-lg font-semibold text-zinc-50 mb-1">Wybierz termin</h2>
             <p class="text-sm text-zinc-500 mb-5">Dni zamknięte i dni wolne warsztatu są wyszarzone.</p>
 
-            {{-- Wybór mechanika (opcjonalny) --}}
             <div class="mb-5 max-w-sm">
                 <label for="pole-mechanik" class="block text-xs font-mono text-zinc-400 mb-1.5">MECHANIK</label>
                 <select id="pole-mechanik" name="id_mechanika"
@@ -84,7 +81,6 @@
             </div>
         </section>
 
-        {{-- KROK 3: Pojazd --}}
         <section data-krok="3" class="hidden">
             <h2 class="text-lg font-semibold text-zinc-50 mb-1">Wybierz pojazd</h2>
             <p class="text-sm text-zinc-500 mb-5">Którym samochodem przyjedziesz na wizytę?</p>
@@ -114,14 +110,12 @@
             @error('uwagi') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
         </section>
 
-        {{-- KROK 4: Potwierdzenie --}}
         <section data-krok="4" class="hidden">
             <h2 class="text-lg font-semibold text-zinc-50 mb-1">Potwierdź rezerwację</h2>
             <p class="text-sm text-zinc-500 mb-5">Sprawdź szczegóły. Rezerwacja trafi do warsztatu jako oczekująca – o zatwierdzeniu poinformujemy Cię e-mailem.</p>
             <div id="potwierdzenie" class="bg-[#1F2128] border border-zinc-800 divide-y divide-zinc-800" style="border-radius: 2px;"></div>
         </section>
 
-        {{-- Nawigacja --}}
         <div class="flex items-center justify-between mt-8 pt-5 border-t border-zinc-800">
             <button type="button" id="btn-wstecz" class="invisible text-sm font-medium text-zinc-400 hover:text-zinc-200">← Wstecz</button>
             <button type="button" id="btn-dalej" disabled
@@ -135,7 +129,6 @@
         </div>
     </div>
 
-    {{-- Podsumowanie --}}
     <aside class="bg-[#1F2128] border border-zinc-800 p-5 lg:sticky lg:top-6" style="border-radius: 2px;">
         <p class="text-xs font-mono text-orange-500 mb-3">PODSUMOWANIE</p>
         <p class="text-xs font-mono text-zinc-500 mb-2">USŁUGI (<span id="pods-liczba">0</span>)</p>
@@ -186,8 +179,7 @@ function paramsUslug() {
     return p;
 }
 
-// ---------- Elementy wspólne ----------
-
+// wspolne elementy 
 const mechanicy = listaMechanikow(document.getElementById('pole-mechanik'), {
     url: @json(route('klient.reservations.mechanicy')),
     parametry: () => (zaznaczone().length ? paramsUslug() : null),
@@ -231,8 +223,6 @@ const kreator = kroki(form, {
     zatwierdz: document.getElementById('btn-potwierdz'),
 });
 
-// ---------- Podsumowanie ----------
-
 function odswiezPodsumowanie() {
     const wybrane = zaznaczone();
     const lista = document.getElementById('pods-uslugi');
@@ -272,8 +262,6 @@ function odswiez() {
     kreator.odswiez();
 }
 
-// ---------- Potwierdzenie ----------
-
 function wiersz(etykieta, wartosc, wyroznij = false) {
     const div = document.createElement('div');
     div.className = 'flex justify-between gap-6 px-5 py-3 text-sm';
@@ -304,11 +292,9 @@ function renderujPotwierdzenie() {
     kontener.append(wiersz('Szacowana kwota', format.kwota(lacznaCena()), true));
 }
 
-// ---------- Zdarzenia i start ----------
-
 checkboxy.forEach(c => c.addEventListener('change', () => {
     mechanicy.pobierz();
-    // Zmiana usług zmienia czas wizyty – godziny trzeba pobrać ponownie
+    // Zmiana usług zmienia czas wizyty 
     if (poleData.value) godziny.pobierz(); else odswiez();
 }));
 radiaPojazdu.forEach(r => r.addEventListener('change', odswiez));
@@ -318,7 +304,7 @@ if (!wybranyPojazd() && radiaPojazdu.length) radiaPojazdu[0].checked = true;
 mechanicy.pobierz();
 if (poleData.value && zaznaczone().length) godziny.pobierz();
 
-// Po błędzie walidacji otwieramy krok, którego błąd dotyczy
+// Po błędzie walidacji otwieramy krok którego błąd dotyczy
 const bledy = @json($errors->keys());
 kreator.otworz(
     bledy.some(k => k.startsWith('uslugi')) ? 1

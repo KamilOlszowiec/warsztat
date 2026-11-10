@@ -28,7 +28,6 @@
     </div>
 @endif
 
-{{-- Nazwa --}}
 <div>
     <label for="pole-nazwa" class="block text-xs font-mono text-zinc-400 mb-1.5">NAZWA USŁUGI</label>
     <input id="pole-nazwa" type="text" name="nazwa" value="{{ old('nazwa', $s->nazwa ?? '') }}" maxlength="100" required
@@ -36,7 +35,6 @@
     @error('nazwa') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
 </div>
 
-{{-- Opis --}}
 <div>
     <label for="pole-opis" class="block text-xs font-mono text-zinc-400 mb-1.5">OPIS (OPCJONALNIE)</label>
     <textarea id="pole-opis" name="opis" rows="2" placeholder="Jedno zdanie, co obejmuje usługa – klient zobaczy je w kreatorze rezerwacji"
@@ -56,7 +54,6 @@
         @error('cena') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
     </div>
 
-    {{-- Czas trwania – licznik co 30 minut --}}
     <div>
         <p id="etykieta-czas" class="block text-xs font-mono text-zinc-400 mb-1.5">CZAS TRWANIA</p>
         <input type="hidden" name="czas_trwania" id="pole-czas" value="{{ $czas }}">
@@ -72,7 +69,6 @@
     </div>
 </div>
 
-{{-- Specjalizacja z podpowiedzią, kto wykona usługę --}}
 <div>
     <label for="pole-spec" class="block text-xs font-mono text-zinc-400 mb-1.5">WYMAGANA SPECJALIZACJA</label>
     <select id="pole-spec" name="id_specjalizacji" required class="{{ $pole }}" style="border-radius: 2px;">
@@ -85,7 +81,6 @@
     @error('id_specjalizacji') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
 </div>
 
-{{-- Widoczność – przełącznik --}}
 <label class="flex items-center justify-between gap-4 px-4 py-3 border border-zinc-800 bg-[#18191D] cursor-pointer" style="border-radius: 2px;">
     <span>
         <span class="block text-sm font-medium text-zinc-100">Usługa aktywna</span>
@@ -98,7 +93,6 @@
     </span>
 </label>
 
-{{-- Podgląd z kreatora rezerwacji --}}
 <div class="pt-1">
     <p class="text-xs font-mono text-zinc-400 mb-1.5">TAK ZOBACZY TO KLIENT</p>
     <div class="flex items-center justify-between gap-4 px-4 py-2.5 bg-[#15161A] border border-zinc-800" style="border-radius: 2px;">

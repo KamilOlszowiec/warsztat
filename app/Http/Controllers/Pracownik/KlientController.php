@@ -40,13 +40,11 @@ class KlientController extends Controller
             ->limit(self::LIMIT_WYNIKOW)
             ->get();
 
-        // Liczba wizyt każdego klienta z listy – jedno zapytanie dla wszystkich
         $liczbyWizyt = Rezerwacja::whereIn('id_klienta', $klienci->pluck('id_uzytkownika'))
             ->selectRaw('id_klienta, COUNT(*) as liczba')
             ->groupBy('id_klienta')
             ->pluck('liczba', 'id_klienta');
-
-        // Wybrany klient: z adresu, a jeśli go nie ma na liście – pierwszy wynik
+        
         $idWybranego = (int) $request->get('klient');
         if (!$klienci->contains('id_uzytkownika', $idWybranego)) {
             $idWybranego = $klienci->first()?->id_uzytkownika;

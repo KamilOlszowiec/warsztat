@@ -35,7 +35,6 @@
         @endif
 
         <section class="bg-[#1F2128] border border-zinc-800" style="border-radius: 2px;" aria-label="Godziny w dniach tygodnia">
-            {{-- Podziałka osi czasu --}}
             <div class="hidden md:grid grid-cols-[170px_220px_1fr] items-center px-5 py-2.5 border-b border-zinc-800">
                 <span></span><span></span>
                 <div class="relative h-3.5 text-[10px] font-mono text-zinc-500">
@@ -54,7 +53,6 @@
                 <div class="wiersz-dnia grid grid-cols-1 md:grid-cols-[170px_220px_1fr] items-center gap-3 md:gap-0 px-5 py-3 border-b border-zinc-800 last:border-b-0">
                     <input type="hidden" name="dni[{{ $i }}][id_dnia]" value="{{ $g->id_dnia }}">
 
-                    {{-- Przełącznik --}}
                     <label class="flex items-center gap-3 cursor-pointer">
                         <span class="relative shrink-0">
                             <input type="checkbox" name="dni[{{ $i }}][czy_czynne]" value="1" @checked($czynne) class="pole-czynne peer sr-only">
@@ -64,7 +62,6 @@
                         <span class="text-sm font-medium text-zinc-100">{{ $nazwyDni[$g->dzien_tygodnia] ?? $g->dzien_tygodnia }}</span>
                     </label>
 
-                    {{-- Godziny --}}
                     <div class="godziny flex items-center gap-2">
                         <label class="sr-only" for="od-{{ $i }}">Otwarcie</label>
                         <select id="od-{{ $i }}" name="dni[{{ $i }}][godzina_otwarcia]" class="pole-od {{ $pole }}" style="border-radius: 2px;">

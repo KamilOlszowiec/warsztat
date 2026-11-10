@@ -8,10 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-/**
- * Zakończenie wizyty z protokołem (przebieg, wykonane prace, zalecenia, koszt końcowy)
- * oraz późniejsza poprawa protokołu.
- */
+// zakonczenie wizyty z protokołem
 class ProtokolController extends Controller
 {
     public function edit(Rezerwacja $reservation)
@@ -23,7 +20,6 @@ class ProtokolController extends Controller
         return view('pracownik.reservations.protokol', [
             'rezerwacja'      => $reservation,
             'protokol'        => $reservation->protokol,
-            // Ostatnia wizyta – jej zalecenia; ostatni wpisany przebieg – podpowiedź przy polu
             'poprzednia'      => $reservation->poprzedniaWizytaPojazdu(),
             'poprzedniPomiar' => $reservation->poprzedniaWizytaPojazdu(zPrzebiegiem: true),
             'nowy'            => $reservation->status === 'zatwierdzona',
@@ -47,8 +43,6 @@ class ProtokolController extends Controller
             'przebieg' => 'przebieg', 'opis_prac' => 'opis prac', 'koszt_koncowy' => 'koszt końcowy',
         ]);
 
-        // Przebieg jest opcjonalny. Jeśli podano mniejszy niż przy poprzednim pomiarze,
-        // to zwykle literówka – wymagamy potwierdzenia
         $poprzedniPomiar = $reservation->poprzedniaWizytaPojazdu(zPrzebiegiem: true);
         if (isset($dane['przebieg']) && $poprzedniPomiar
             && (int) $dane['przebieg'] < $poprzedniPomiar->protokol->przebieg
@@ -60,13 +54,11 @@ class ProtokolController extends Controller
                 ->with('pokaz_potwierdzenie', true);
         }
 
-        // Puste pola = brak wartości (koszt zgodny z cennikiem, przebieg niepodany)
         $dane['przebieg'] = $request->filled('przebieg') ? $dane['przebieg'] : null;
         $dane['koszt_koncowy'] = $request->filled('koszt_koncowy') ? $dane['koszt_koncowy'] : null;
 
         $zakonczenie = $reservation->status === 'zatwierdzona';
 
-        // Protokół i zmiana statusu zapisują się razem albo wcale
         DB::transaction(function () use ($reservation, $dane, $zakonczenie) {
             $reservation->protokol()->updateOrCreate(['id_rezerwacji' => $reservation->id_rezerwacji], $dane);
 
@@ -94,10 +86,6 @@ class ProtokolController extends Controller
             ->with('status', 'Wizyta została zakończona, a protokół zapisany w historii pojazdu.');
     }
 
-    /**
-     * Zakończyć można zatwierdzoną wizytę, którą się zarządza.
-     * Poprawić protokół można zgodnie z zasadą z modelu (mechanik w dniu zakończenia, administrator zawsze).
-     */
     private function sprawdzDostep(Rezerwacja $reservation): void
     {
         $uzytkownik = auth()->user();

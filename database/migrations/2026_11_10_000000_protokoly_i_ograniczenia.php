@@ -7,16 +7,8 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * 1. Protokół z wizyty przeniesiony z kolumn rezerwacji do osobnej tabeli protokoly (relacja 1:1).
-     * 2. Usługa musi mieć wymaganą specjalizację (zgodnie z walidacją formularza).
-     * 3. Jeden wpis godzin pracy na dzień tygodnia i klucz główny nazwany jak w pozostałych tabelach.
-     * 4. Unikalny numer VIN.
-     * 5. Ograniczenia CHECK pilnujące poprawności danych na poziomie bazy.
-     */
     public function up(): void
     {
-        // ---------- 1. Tabela protokoly ----------
         Schema::create('protokoly', function (Blueprint $table) {
             $table->id('id_protokolu');
             $table->foreignId('id_rezerwacji')->unique()
@@ -29,7 +21,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Przeniesienie istniejących protokołów – data utworzenia protokołu to chwila zakończenia wizyty
         DB::statement("
             INSERT INTO protokoly (id_rezerwacji, przebieg, opis_prac, zalecenia, data_nastepnej_wizyty, koszt_koncowy, created_at, updated_at)
             SELECT id_rezerwacji, przebieg, opis_prac, zalecenia, data_nastepnej_wizyty, koszt_koncowy,
@@ -42,7 +33,6 @@ return new class extends Migration
             $table->dropColumn(['przebieg', 'opis_prac', 'zalecenia', 'data_nastepnej_wizyty', 'koszt_koncowy', 'data_zakonczenia']);
         });
 
-        // ---------- 2. Usługa zawsze ze specjalizacją ----------
         if (DB::table('uslugi')->whereNull('id_specjalizacji')->exists()) {
             throw new RuntimeException('W tabeli uslugi są usługi bez specjalizacji. Przypisz im specjalizację w panelu administratora i uruchom migrację ponownie.');
         }
@@ -50,18 +40,15 @@ return new class extends Migration
             $table->unsignedBigInteger('id_specjalizacji')->nullable(false)->change();
         });
 
-        // ---------- 3. Godziny pracy ----------
         DB::statement('ALTER TABLE godziny_pracy CHANGE id id_dnia BIGINT UNSIGNED NOT NULL AUTO_INCREMENT');
         Schema::table('godziny_pracy', function (Blueprint $table) {
             $table->unique('dzien_tygodnia', 'godziny_pracy_dzien_tygodnia_unique');
         });
 
-        // ---------- 4. Unikalny VIN (wiele pustych wartości jest dozwolonych) ----------
         Schema::table('pojazdy', function (Blueprint $table) {
             $table->unique('vin', 'pojazdy_vin_unique');
         });
 
-        // ---------- 5. Ograniczenia CHECK ----------
         DB::statement('ALTER TABLE grafik_pracownikow ADD CONSTRAINT grafik_zmiana_check CHECK (godzina_do > godzina_od)');
         DB::statement('ALTER TABLE rezerwacje ADD CONSTRAINT rezerwacje_termin_check CHECK (termin_zakonczenia > termin_rozpoczecia)');
         DB::statement('ALTER TABLE uslugi ADD CONSTRAINT uslugi_cena_check CHECK (cena >= 0)');

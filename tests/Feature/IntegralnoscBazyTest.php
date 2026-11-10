@@ -11,9 +11,6 @@ use Illuminate\Support\Facades\DB;
 use Tests\Support\TworzyDaneWarsztatu;
 use Tests\TestCase;
 
-/**
- * Ograniczenia pilnowane przez samą bazę danych – niezależnie od walidacji w aplikacji.
- */
 class IntegralnoscBazyTest extends TestCase
 {
     use RefreshDatabase, TworzyDaneWarsztatu;

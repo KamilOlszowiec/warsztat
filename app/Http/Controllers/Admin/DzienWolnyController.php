@@ -1,6 +1,4 @@
 <?php
-// app/Http/Controllers/Admin/DzienWolnyController.php
-
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\StatusRezerwacji;

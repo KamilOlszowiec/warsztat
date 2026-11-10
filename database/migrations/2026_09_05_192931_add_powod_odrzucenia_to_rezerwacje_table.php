@@ -9,7 +9,6 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    // database/migrations/xxxx_add_powod_odrzucenia_to_rezerwacje_table.php
     public function up(): void
     {
         Schema::table('rezerwacje', function (Blueprint $table) {

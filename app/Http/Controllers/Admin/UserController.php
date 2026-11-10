@@ -74,9 +74,7 @@ class UserController extends Controller
             ->with('status', "Konto {$user->imie} {$user->nazwisko} zostało utworzone. Przekaż hasło startowe i poproś o zmianę po pierwszym logowaniu.");
     }
 
-    /**
-     * Karta klienta (tylko do podglądu – dane zmienia klient w swoim panelu).
-     */
+    // Karta klienta (tylko do podglądu – dane zmienia klient w swoim panelu).
     public function show(Uzytkownik $user)
     {
         if (!$user->czyKlient()) {
@@ -168,9 +166,6 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('status', "Konto {$nazwa} zostało usunięte.");
     }
 
-    /**
-     * Mail z linkiem do ustawienia nowego hasła – admin nie zna ani nie ustawia haseł.
-     */
     public function wyslijLinkHasla(Uzytkownik $user)
     {
         $status = ResetHasla::sendResetLink(['email' => $user->email]);
@@ -185,9 +180,8 @@ class UserController extends Controller
 
         return back()->with('status', "Wysłano link do zmiany hasła na adres {$user->email}.");
     }
-     /**
-     * Awaryjne ustawienie hasła tymczasowego (np. gdy mail z linkiem nie dochodzi).
-     */
+
+    // Awaryjne ustawienie hasła tymczasowego 
     public function ustawHaslo(Request $request, Uzytkownik $user)
     {
         $data = $request->validate([
@@ -211,8 +205,6 @@ class UserController extends Controller
 
         return back()->with('status', "Wysłano ponownie link weryfikacyjny na adres {$user->email}.");
     }
-
-    // ---------- Pomocnicze ----------
 
     private function reguly(): array
     {

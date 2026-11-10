@@ -8,7 +8,6 @@
 
 <div class="max-w-6xl space-y-4">
 
-    {{-- Nagłówek --}}
     <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
             <p class="text-sm font-mono text-orange-500 mb-1">ZESPÓŁ</p>
@@ -34,7 +33,6 @@
         </div>
     </div>
 
-    {{-- Nawigacja tygodni --}}
     <div class="flex flex-wrap items-center gap-2">
         <a href="{{ route('admin.shifts.index', ['tydzien' => $poczatek->copy()->subWeek()->toDateString()]) }}" aria-label="Poprzedni tydzień"
            class="w-10 h-10 flex items-center justify-center bg-[#1F2128] border border-zinc-700 text-zinc-300 hover:text-white text-lg" style="border-radius: 2px;">‹</a>
@@ -63,7 +61,6 @@
         @method('PUT')
         <input type="hidden" name="tydzien" value="{{ $poczatek->toDateString() }}">
 
-        {{-- Tabela grafiku --}}
         <div class="relative bg-[#1F2128] border border-zinc-800 overflow-x-auto" style="border-radius: 2px;">
             <table class="w-full min-w-[900px] border-collapse text-sm">
                 <thead>
@@ -142,7 +139,6 @@
                         </tr>
                     @endforeach
 
-                    {{-- Obsada --}}
                     <tr class="bg-[#18191D]">
                         <td class="px-3.5 py-2.5 text-[11px] font-mono text-zinc-400">OBSADA</td>
                         @foreach ($dni as $dzien)
@@ -164,7 +160,6 @@
             </table>
         </div>
 
-        {{-- Panel edycji wybranej komórki --}}
         <section id="panel-edycji" class="bg-[#1F2128] border border-zinc-800 px-5 py-4" style="border-radius: 2px;" aria-live="polite">
             <p id="panel-pusty" class="text-sm text-zinc-400">Wybierz komórkę w grafiku, żeby ustawić zmianę mechanika.</p>
 
@@ -185,7 +180,6 @@
             </div>
         </section>
 
-        {{-- Zapis --}}
         <div class="flex flex-wrap items-center justify-between gap-3">
             <p id="licznik-zmian" class="text-[13px] text-zinc-400">Brak niezapisanych zmian.</p>
             <button type="submit" class="min-h-[44px] px-6 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold transition" style="border-radius: 2px;">
@@ -220,7 +214,7 @@
         const uwaga = k.querySelector('.uwaga');
         const maZmiane = p.od.value && p.do.value;
 
-        // Zmiana wychodząca poza godziny otwarcia (np. po skróceniu godzin pracy)
+        // Zmiana wychodząca poza godziny otwarcia
         const pozaGodzinami = maZmiane && (
             naMin(p.od.value) < naMin(k.dataset.otwarcie) || naMin(p.do.value) > naMin(k.dataset.zamkniecie)
         );

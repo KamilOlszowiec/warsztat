@@ -15,8 +15,6 @@ class RezerwacjaController extends Controller
 {
     private const KOMUNIKAT_NIEZGODNE = 'Żaden mechanik nie wykona wszystkich wybranych usług podczas jednej wizyty – umów je osobno.';
 
-    // Jak daleko w przód klient może rezerwować
-
     public function __construct(private DostepnoscRezerwacjiService $dostepnosc)
     {
     }
@@ -28,7 +26,6 @@ class RezerwacjaController extends Controller
         $relacje = ['pojazd', 'uslugi', 'mechanik'];
         $aktywne = StatusRezerwacji::aktywne();
 
-        // Nadchodzące: aktywne i jeszcze się nie zaczęły – od najbliższej
         $nadchodzace = Rezerwacja::where('id_klienta', auth()->id())
             ->whereIn('status', $aktywne)
             ->where('termin_rozpoczecia', '>', now())
@@ -36,7 +33,6 @@ class RezerwacjaController extends Controller
             ->orderBy('termin_rozpoczecia')
             ->get();
 
-        // Historia: wszystko pozostałe – od najnowszej
         $historia = Rezerwacja::where('id_klienta', auth()->id())
             ->where(function ($q) use ($aktywne) {
                 $q->whereNotIn('status', $aktywne)
@@ -71,9 +67,6 @@ class RezerwacjaController extends Controller
         ] + $this->dostepnosc->daneKalendarza());
     }
 
-    /**
-     * Endpoint JSON: mechanicy, których klient może wybrać dla zaznaczonych usług.
-     */
     public function mechanicy(Request $request)
     {
         $dane = $request->validate([
@@ -88,10 +81,6 @@ class RezerwacjaController extends Controller
         ]);
     }
 
-    /**
-     * Endpoint JSON: wolne godziny dla wybranych usług i dnia,
-     * opcjonalnie tylko dla wybranego mechanika.
-     */
     public function dostepneTerminy(Request $request)
     {
         $dane = $request->validate([
@@ -156,8 +145,7 @@ class RezerwacjaController extends Controller
 
         $start = Carbon::parse($dane['data'] . ' ' . $dane['godzina']);
 
-        // Serwis ponownie sprawdza termin w transakcji – nie ufamy godzinie z formularza,
-        // bo między wyświetleniem a wysłaniem ktoś inny mógł ją zająć.
+        // Serwis ponownie sprawdza termin w transakcji 
         $rezerwacja = $this->dostepnosc->utworzRezerwacje([
             'id_klienta' => auth()->id(),
             'id_pojazdu' => $pojazd->id_pojazdu,
@@ -193,9 +181,6 @@ class RezerwacjaController extends Controller
         return back()->with('status', 'Rezerwacja została anulowana.');
     }
 
-    /**
-     * Formularz zmiany terminu przez klienta.
-     */
     public function editTermin(Rezerwacja $reservation)
     {
         $this->sprawdzMozliwoscZmiany($reservation);
@@ -204,7 +189,6 @@ class RezerwacjaController extends Controller
 
         $mechanicy = $this->dostepnosc->listaMechanikow($reservation->uslugi);
 
-        // Domyślnie obecny mechanik wizyty, jeśli nadal może ją wykonać
         $domyslnyMechanik = collect($mechanicy)->contains('id', (int) $reservation->id_mechanika)
             ? (int) $reservation->id_mechanika
             : null;
@@ -216,10 +200,6 @@ class RezerwacjaController extends Controller
         ] + $this->dostepnosc->daneKalendarza());
     }
 
-    /**
-     * Endpoint JSON: wolne godziny dla przekładanej rezerwacji klienta.
-     * Rezerwacja nie koliduje sama ze sobą, a czas wizyty pochodzi z tabeli przestawnej.
-     */
     public function dostepneTerminyDlaRezerwacji(Request $request, Rezerwacja $reservation)
     {
         $this->sprawdzMozliwoscZmiany($reservation);
@@ -246,10 +226,6 @@ class RezerwacjaController extends Controller
         ]);
     }
 
-    /**
-     * Zapis nowego terminu wybranego przez klienta.
-     * Rezerwacja wraca do statusu „oczekująca” i wymaga ponownego zatwierdzenia przez warsztat.
-     */
     public function updateTermin(Request $request, Rezerwacja $reservation)
     {
         $this->sprawdzMozliwoscZmiany($reservation);
@@ -280,9 +256,7 @@ class RezerwacjaController extends Controller
             ->with('status', 'Termin został zmieniony. Rezerwacja czeka na ponowne potwierdzenie warsztatu.');
     }
 
-    /**
-     * Zmienić termin można tylko we własnej, aktywnej rezerwacji, która jeszcze się nie rozpoczęła.
-     */
+    // Zmienić termin można tylko we własnej rezerwacji która jeszcze się nie rozpoczęła
     private function sprawdzMozliwoscZmiany(Rezerwacja $reservation): void
     {
         if ($reservation->id_klienta !== auth()->id()) {

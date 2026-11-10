@@ -1,14 +1,4 @@
-/*
- * Wspólne elementy formularzy rezerwacji:
- * formatowanie dat, kalendarz, siatka wolnych godzin, lista mechaników i kroki kreatora.
- *
- * Używane przez: kreator rezerwacji klienta, zmianę terminu (klient i pracownik)
- * oraz kreator nowej wizyty przyjmowanej przez pracownika.
- * Moduł udostępnia funkcje jako window.Rezerwacje, z którego korzystają skrypty widoków.
- */
-
-// ---------- Formatowanie ----------
-
+// wspólne elementy formularzy rezerwacji
 const NAZWY_DNI = ['niedziela', 'poniedziałek', 'wtorek', 'środa', 'czwartek', 'piątek', 'sobota'];
 
 const pad = n => String(n).padStart(2, '0');
@@ -17,7 +7,7 @@ export const format = {
     // Date → '2026-11-17'
     naTekst: d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()),
 
-    // '2026-11-17' → Date (czas lokalny, bez przesunięć strefy)
+    // '2026-11-17' → Date 
     zTekstu(s) {
         const [r, m, d] = s.split('-').map(Number);
         return new Date(r, m - 1, d);
@@ -51,8 +41,6 @@ const poczatekMiesiaca = s => {
     const d = format.zTekstu(s);
     return new Date(d.getFullYear(), d.getMonth(), 1);
 };
-
-// ---------- Kalendarz ----------
 
 /**
  * Kalendarz miesięczny z wyszarzonymi dniami zamkniętymi, dniami wolnymi
@@ -129,8 +117,6 @@ export function kalendarz(element, pole, { dzisiaj, maksData, dniZamkniete, dniW
     return { renderuj };
 }
 
-// ---------- Siatka wolnych godzin ----------
-
 /**
  * Pobiera wolne godziny z serwera i wyświetla je jako kafelki do wyboru.
  * Znacznik: komponent <x-siatka-godzin />.
@@ -199,7 +185,7 @@ export function siatkaGodzin(element, { url, parametry, poZmianie, opis, dopisek
             return;
         }
 
-        // Przy ponownym pobraniu (np. zmiana mechanika) zachowujemy wybraną godzinę, jeśli nadal jest wolna
+        // Przy ponownym pobraniu zachowujemy wybraną godzinę, jeśli nadal jest wolna
         doZaznaczenia = wybrana() ?? doZaznaczenia;
         const numer = ++numerZapytania;
         pokazKomunikat('Szukam wolnych terminów…');
@@ -208,7 +194,6 @@ export function siatkaGodzin(element, { url, parametry, poZmianie, opis, dopisek
             const odp = await fetch(url + '?' + params.toString(), { headers: { Accept: 'application/json' } });
             const dane = await odp.json();
 
-            // Odpowiedź na starsze zapytanie – wybór w międzyczasie się zmienił
             if (numer !== numerZapytania) return;
 
             if (!odp.ok) {
@@ -231,7 +216,6 @@ export function siatkaGodzin(element, { url, parametry, poZmianie, opis, dopisek
     return { pobierz, wybrana, pokazKomunikat };
 }
 
-// ---------- Lista mechaników ----------
 
 /**
  * Uzupełnia pole wyboru mechanikami zdolnymi wykonać wybrane usługi.
@@ -282,8 +266,6 @@ export function listaMechanikow(pole, { url, parametry, poZmianieWyboru, poczatk
         opis: () => (pole.value ? pole.options[pole.selectedIndex].textContent : 'Dowolny'),
     };
 }
-
-// ---------- Kroki kreatora ----------
 
 /**
  * Obsługa kreatora wieloetapowego: pasek kroków (<x-kroki />), sekcje [data-krok],
@@ -361,7 +343,6 @@ export function kroki(formularz, { liczba, gotowy, poWejsciu, wstecz, dalej, zat
         odswiez,
         moznaWejsc,
         get krok() { return krok; },
-        // Po błędzie walidacji: najdalszy krok nie dalej niż wskazany, do którego można wejść
         otworz(cel) {
             krok = 1;
             for (let n = 1; n <= cel; n++) if (moznaWejsc(n)) krok = n;

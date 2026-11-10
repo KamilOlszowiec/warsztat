@@ -15,7 +15,6 @@
     <p class="text-sm font-mono text-orange-500 mb-1">KLIENCI</p>
     <h1 class="text-2xl font-bold text-zinc-50 mb-5">Klienci i pojazdy</h1>
 
-    {{-- Wyszukiwarka --}}
     <form method="GET" action="{{ route('pracownik.clients.index') }}"
           class="flex items-center gap-3 px-4 mb-5 bg-[#1F2128] border border-zinc-700 focus-within:border-orange-600 transition" style="border-radius: 2px;">
         <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="text-zinc-400 shrink-0">
@@ -38,7 +37,6 @@
 
     <div class="flex flex-wrap gap-5 items-start">
 
-        {{-- Lista wyników --}}
         <section aria-label="Wyniki" class="flex-[1_1_300px] min-w-0 max-w-[380px] bg-[#1F2128] border border-zinc-800" style="border-radius: 2px;">
             @forelse ($klienci as $k)
                 @php
@@ -80,7 +78,6 @@
             @endif
         </section>
 
-        {{-- Karta klienta --}}
         @if ($wybrany)
             @php
                 $wszystkieWizyty = $wybrany->pojazdy->sum(fn ($p) => $p->rezerwacje->count());

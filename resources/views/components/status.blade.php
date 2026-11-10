@@ -1,7 +1,3 @@
-{{--
-    Etykieta statusu rezerwacji, np. <x-status :status="$r->status" rozmiar="sredni" />
-    Rozmiary: maly (listy, historia), sredni (nagłówki szczegółów), duzy (tabele).
---}}
 @props(['status', 'rozmiar' => 'maly'])
 
 @php

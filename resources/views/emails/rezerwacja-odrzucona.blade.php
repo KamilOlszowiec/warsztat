@@ -15,7 +15,6 @@
         Przepraszamy – warsztat nie może zrealizować tej rezerwacji. Termin został zwolniony, a Ty możesz od razu wybrać inny.
     </p>
 
-    {{-- Powód odrzucenia (tylko gdy pracownik go podał) --}}
     @if ($r->powod_odrzucenia)
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
                style="margin-bottom: 20px; background: #FEF2F2; border: 1px solid #FECACA; border-radius: 2px;">
@@ -28,7 +27,6 @@
         </table>
     @endif
 
-    {{-- Której wizyty dotyczy --}}
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
            style="background: #FAFAFA; border: 1px solid #E4E4E7; border-radius: 2px;">
         <tr>

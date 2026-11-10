@@ -13,7 +13,7 @@
 </head>
 <body class="min-h-screen text-zinc-100 flex">
 
-    {{-- Panel warsztatu (od szerokości laptopa) --}}
+    {{-- Panel warsztatu --}}
     <aside class="hidden lg:flex w-[46%] max-w-[620px] shrink-0 flex-col justify-between gap-10 px-14 py-12 bg-[#1F2128] border-r border-zinc-800">
         <a href="{{ route('login') }}" class="flex items-center gap-3 w-fit">
             <span class="w-10 h-10 flex items-center justify-center bg-orange-600" style="border-radius: 2px;">

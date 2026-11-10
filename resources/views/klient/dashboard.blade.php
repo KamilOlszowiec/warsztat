@@ -5,7 +5,6 @@
 
 <div class="max-w-5xl space-y-6">
 
-    {{-- Nagłówek --}}
     <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
             <p class="text-sm font-mono text-orange-500 mb-1">PANEL GŁÓWNY</p>
@@ -18,7 +17,6 @@
         </a>
     </div>
 
-    {{-- Najbliższa wizyta / pierwszy krok --}}
     @if ($najblizsza)
         <section class="border border-orange-600 bg-orange-600/10 p-6 md:px-7 flex flex-wrap items-end justify-between gap-6" style="border-radius: 2px;">
             <div class="flex-1 min-w-0 basis-[520px] space-y-3.5">
@@ -92,7 +90,6 @@
         </section>
     @endif
 
-    {{-- Liczniki --}}
     <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="bg-[#1F2128] border border-zinc-800 p-5 flex flex-col gap-1.5" style="border-radius: 2px;">
             <p class="text-[11px] font-mono text-zinc-400">TWOJE POJAZDY</p>
@@ -119,10 +116,8 @@
         </div>
     </section>
 
-    {{-- Dolna sekcja --}}
     <div class="flex flex-wrap items-start gap-6">
 
-        {{-- Rezerwacje --}}
         <section class="flex-[2_1_480px] min-w-0 bg-[#1F2128] border border-zinc-800" style="border-radius: 2px;">
             <div class="flex items-baseline justify-between gap-3 px-5 py-4 border-b border-zinc-800">
                 <h2 class="font-semibold text-zinc-50">Rezerwacje</h2>
@@ -170,7 +165,6 @@
             @endif
         </section>
 
-        {{-- Garaż --}}
         <section class="flex-[1_1_280px] min-w-0 bg-[#1F2128] border border-zinc-800" style="border-radius: 2px;">
             <div class="flex items-baseline justify-between px-5 py-4 border-b border-zinc-800">
                 <h2 class="font-semibold text-zinc-50">Twój garaż</h2>

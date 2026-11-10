@@ -1,4 +1,3 @@
-{{-- Użycie: @include('auth._sila-hasla', ['pole' => 'id-pola-hasla', 'powtorzenie' => 'id-pola-powtorzenia']) --}}
 <div class="flex items-center gap-2.5" aria-live="polite">
     <span class="flex-1 grid grid-cols-4 gap-1">
         @for ($i = 0; $i < 4; $i++)

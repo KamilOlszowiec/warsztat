@@ -6,10 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Protokół z wizyty uzupełniany przez mechanika przy jej zakończeniu.
-     * Kolumny są puste dla wizyt, które jeszcze się nie zakończyły.
-     */
     public function up(): void
     {
         Schema::table('rezerwacje', function (Blueprint $table) {

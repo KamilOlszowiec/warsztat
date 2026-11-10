@@ -32,25 +32,21 @@ class Uzytkownik extends Authenticatable implements MustVerifyEmail, CanResetPas
         return $this->hasMany(Pojazd::class, 'id_uzytkownika', 'id_uzytkownika');
     }
 
-    // Specjalizacje pracownika (mechanika)
     public function specjalizacje()
     {
         return $this->belongsToMany(Specjalizacja::class, 'pracownik_specjalizacja', 'id_pracownika', 'id_specjalizacji');
     }
 
-    // Rezerwacje złożone przez klienta
     public function rezerwacjeKlienta()
     {
         return $this->hasMany(Rezerwacja::class, 'id_klienta', 'id_uzytkownika');
     }
 
-    // Wizyty, które wykonuje mechanik
     public function wizytyMechanika()
     {
         return $this->hasMany(Rezerwacja::class, 'id_mechanika', 'id_uzytkownika');
     }
 
-    // Zmiany pracownika w grafiku
     public function zmiany()
     {
         return $this->hasMany(GrafikPracownika::class, 'id_pracownika', 'id_uzytkownika');

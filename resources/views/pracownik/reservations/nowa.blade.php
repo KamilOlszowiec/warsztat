@@ -31,7 +31,6 @@
             </div>
         @endif
 
-        {{-- KROK 1: Usługi --}}
         <section data-krok="1">
             <h2 class="text-lg font-semibold text-zinc-50 mb-1">Wybierz usługi</h2>
             <p class="text-sm text-zinc-500 mb-5">Zaznacz wszystko, czego potrzebuje klient – usługi zostaną wykonane podczas jednej wizyty.</p>
@@ -70,7 +69,6 @@
                 @endforeach
             </div>
 
-            {{-- Usługi, których pracownik nie wykona – tylko do wglądu --}}
             @if ($inneUslugi->isNotEmpty())
                 <details class="mt-5 group">
                     <summary class="cursor-pointer select-none text-sm text-zinc-400 hover:text-zinc-200 list-none [&::-webkit-details-marker]:hidden">
@@ -95,7 +93,6 @@
             @endif
         </section>
 
-        {{-- KROK 2: Termin --}}
         <section data-krok="2" class="hidden">
             <h2 class="text-lg font-semibold text-zinc-50 mb-1">Wybierz termin</h2>
             <p class="text-sm text-zinc-500 mb-5">
@@ -168,7 +165,6 @@
             </div>
         </section>
 
-        {{-- KROK 4: Pojazd --}}
         <section data-krok="4" class="hidden">
             <h2 class="text-lg font-semibold text-zinc-50 mb-1">Pojazd</h2>
             <p id="pojazd-opis" class="text-sm text-zinc-500 mb-5">Wybierz pojazd klienta albo dodaj nowy.</p>
@@ -199,7 +195,6 @@
             </div>
         </section>
 
-        {{-- KROK 5: Zapis --}}
         <section data-krok="5" class="hidden">
             <h2 class="text-lg font-semibold text-zinc-50 mb-1">Sprawdź i zapisz</h2>
             <p class="text-sm text-zinc-500 mb-5">Wizyta zostanie zapisana jako zatwierdzona.</p>
@@ -210,7 +205,6 @@
                 class="{{ $pole }}" style="border-radius: 2px;">{{ old('uwagi') }}</textarea>
         </section>
 
-        {{-- Nawigacja --}}
         <div class="flex items-center justify-between mt-8 pt-5 border-t border-zinc-800">
             <button type="button" id="btn-wstecz" class="invisible text-sm font-medium text-zinc-400 hover:text-zinc-200">← Wstecz</button>
             <button type="button" id="btn-dalej" disabled
@@ -224,7 +218,6 @@
         </div>
     </div>
 
-    {{-- Podsumowanie --}}
     <aside class="bg-[#1F2128] border border-zinc-800 p-5 lg:sticky lg:top-6" style="border-radius: 2px;">
         <p class="text-xs font-mono text-orange-500 mb-3">PODSUMOWANIE</p>
         <p class="text-xs font-mono text-zinc-500 mb-2">USŁUGI (<span id="pods-liczba">0</span>)</p>
@@ -295,8 +288,7 @@ function paramsUslug() {
     return p;
 }
 
-// ---------- Elementy wspólne ----------
-
+// wspólne elementy
 const mechanicy = poleMechanik ? listaMechanikow(poleMechanik, {
     url: @json(route('pracownik.reservations.nowa.mechanicy')),
     parametry: () => (zaznaczone().length ? paramsUslug() : null),
@@ -349,8 +341,6 @@ const kreator = kroki(form, {
     zatwierdz: document.getElementById('btn-zapisz'),
     tekstWysylania: 'Zapisywanie…',
 });
-
-// ---------- Opisy do podsumowania ----------
 
 const opisMechanika = () => (mechanicy ? mechanicy.opis() : 'Ty');
 
@@ -409,8 +399,6 @@ function odswiez() {
     odswiezPodsumowanie();
     kreator.odswiez();
 }
-
-// ---------- Klient ----------
 
 function przelaczTrybKlienta() {
     const tryb = trybKlienta();
@@ -480,8 +468,6 @@ function szukajKlientow() {
     }, 300);
 }
 
-// ---------- Pojazd ----------
-
 function renderujPojazdy() {
     pojazdyKlienta.innerHTML = '';
     const pojazdy = trybKlienta() === 'istniejacy' && wybranyKlient ? wybranyKlient.pojazdy : [];
@@ -531,8 +517,6 @@ function pokazNowyPojazd() {
     odswiez();
 }
 
-// ---------- Potwierdzenie ----------
-
 function wiersz(etykieta, wartosc, wyroznij = false) {
     const div = document.createElement('div');
     div.className = 'flex justify-between gap-6 px-5 py-3 text-sm';
@@ -567,8 +551,6 @@ function renderujPotwierdzenie() {
     );
 }
 
-// ---------- Zdarzenia i start ----------
-
 checkboxy.forEach(c => c.addEventListener('change', () => {
     mechanicy?.pobierz();
     if (poleData.value) godziny.pobierz(); else odswiez();
@@ -586,7 +568,6 @@ if (wybranyKlient) {
 if (poleData.value && zaznaczone().length) godziny.pobierz();
 if (zaznaczone().length) mechanicy?.pobierz();
 
-// Po błędzie walidacji otwieramy krok, którego dotyczy błąd (o ile poprzednie są kompletne)
 const bledy = @json($errors->keys());
 const krokBledu = k => k.startsWith('uslugi') ? 1
     : ['data', 'godzina', 'id_mechanika'].includes(k) ? 2

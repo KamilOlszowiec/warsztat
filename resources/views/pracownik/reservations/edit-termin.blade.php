@@ -63,7 +63,6 @@ const godziny = siatkaGodzin(document.getElementById('godziny'), {
     zaznacz: @json(old('godzina')),
     opis: () => (poleData.value ? format.data(poleData.value) + ' · czas wizyty: ' + format.czas(@json($rezerwacja->laczny_czas)) : ''),
     parametry: () => (poleData.value ? new URLSearchParams({ data: poleData.value }) : 'Wybierz dzień w kalendarzu.'),
-    // Obecny termin wizyty oznaczony kropką
     dopisek: g => (poleData.value === obecnaData && g === obecnaGodzina ? ' •' : ''),
     poZmianie: () => { przycisk.disabled = !godziny.wybrana(); },
 });

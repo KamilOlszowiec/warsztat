@@ -9,9 +9,6 @@ class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    /**
-     * Godziny pracy warsztatu oraz dane demonstracyjne (konta wszystkich ról, usługi, grafik, wizyty).
-     */
     public function run(): void
     {
         $this->call([

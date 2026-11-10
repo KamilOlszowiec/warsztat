@@ -6,10 +6,6 @@ use App\Models\Rezerwacja;
 
 class RezerwacjaController extends Controller
 {
-    /**
-     * Trwałe usunięcie rezerwacji – tylko dla administratora.
-     * Lista rezerwacji jest wspólna z pracownikiem (pracownik.reservations.index).
-     */
     public function destroy(Rezerwacja $reservation)
     {
         $reservation->delete();

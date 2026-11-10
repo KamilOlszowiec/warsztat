@@ -9,7 +9,6 @@
     --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Zgodność z Tailwind CSS 3, z którego aplikacja korzystała wcześniej przez CDN */
 @layer base {
 
     *,

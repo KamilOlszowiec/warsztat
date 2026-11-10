@@ -1,8 +1,6 @@
 <?php
 
-/*
- * Ustawienia działania warsztatu wykorzystywane w wielu miejscach aplikacji.
- */
+// ustawienia działania warsztatu, można do enuma dać
 return [
 
     // Na ile dni naprzód można rezerwować wizyty

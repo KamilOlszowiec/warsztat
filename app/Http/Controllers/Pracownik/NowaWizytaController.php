@@ -17,11 +17,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use RuntimeException;
 
-/**
- * Rezerwacja przyjmowana przez pracownika lub administratora,
- * np. podczas rozmowy telefonicznej z klientem.
- * Kolejność: usługi → termin → klient → pojazd → zapis.
- */
+// rezerwacja przyjmowana przez telefon
 class NowaWizytaController extends Controller
 {
     public function __construct(private DostepnoscRezerwacjiService $dostepnosc)
@@ -30,7 +26,7 @@ class NowaWizytaController extends Controller
 
     public function create()
     {
-        // Po błędzie walidacji przywracamy wybranego wcześniej klienta razem z jego pojazdami
+        // Po błędzie walidacji przywracamy wybranego wcześniej klienta 
         $wybranyKlient = null;
         if (old('klient_tryb') === 'istniejacy' && old('id_klienta')) {
             $k = Uzytkownik::where('rola', 'klient')->with('pojazdy')->find(old('id_klienta'));
@@ -42,8 +38,7 @@ class NowaWizytaController extends Controller
         $uslugi = Usluga::aktywne()->with('specjalizacja')->orderBy('nazwa')->get();
         $czyAdmin = auth()->user()->czyAdministrator();
 
-        // Pracownik zapisuje wizytę na siebie, więc może wybrać tylko usługi ze swoimi specjalizacjami.
-        // Pozostałe widzi osobno, bez możliwości zaznaczenia. Administrator widzi wszystkie.
+        // Pracownik zapisuje wizytę na siebie więc może wybrać tylko usługi ze swoimi specjalizacjami
         $mojeSpecjalizacje = $czyAdmin ? null : $this->mojeSpecjalizacje();
         [$mojeUslugi, $inneUslugi] = $czyAdmin
             ? [$uslugi, collect()]
@@ -57,9 +52,6 @@ class NowaWizytaController extends Controller
         ] + $this->dostepnosc->daneKalendarza());
     }
 
-    /**
-     * Endpoint JSON: mechanicy zdolni wykonać wybrane usługi (pole wyboru administratora).
-     */
     public function mechanicy(Request $request)
     {
         $uslugi = $this->uslugiZZapytania($request);
@@ -69,9 +61,6 @@ class NowaWizytaController extends Controller
         ]);
     }
 
-    /**
-     * Endpoint JSON: wolne godziny. Pracownik widzi tylko swoje terminy.
-     */
     public function terminy(Request $request)
     {
         $uslugi = $this->uslugiZZapytania($request);
@@ -98,9 +87,7 @@ class NowaWizytaController extends Controller
         ]);
     }
 
-    /**
-     * Endpoint JSON: wyszukiwanie klientów po nazwisku, telefonie, e-mailu lub numerze rejestracyjnym.
-     */
+    // wyszukiwanie klientów
     public function klienci(Request $request)
     {
         $fraza = trim((string) $request->get('q'));
@@ -176,7 +163,7 @@ class NowaWizytaController extends Controller
 
         $uslugi = Usluga::aktywne()->with('specjalizacja')->whereIn('id_uslugi', $dane['uslugi'])->get();
 
-        // Pracownik nie może zapisać na siebie usługi, do której nie ma specjalizacji
+        // Pracownik nie może zapisać na siebie usługi do której nie ma specjalizacji
         if (!auth()->user()->czyAdministrator()) {
             $mojeSpecjalizacje = $this->mojeSpecjalizacje();
             $niedozwolone = $uslugi->reject(fn ($u) => in_array($u->id_specjalizacji, $mojeSpecjalizacje, true));
@@ -191,8 +178,7 @@ class NowaWizytaController extends Controller
         $mechanik = $this->mechanikDlaTerminu($dane['id_mechanika'] ?? null);
 
         try {
-            // Klient, pojazd i rezerwacja zapisują się razem albo wcale –
-            // jeśli termin się zajął, nie zostaje puste konto ani pojazd.
+            // Klient, pojazd i rezerwacja zapisują się razem albo wcale 
             [$klient, $rezerwacja, $nowyKlient] = DB::transaction(function () use ($dane, $uslugi, $start, $mechanik) {
                 $nowyKlient = $dane['klient_tryb'] === 'nowy';
 
@@ -202,7 +188,7 @@ class NowaWizytaController extends Controller
                         'nazwisko' => $dane['nazwisko'],
                         'telefon'  => $dane['telefon'],
                         'email'    => $dane['email'] ?? null,
-                        // Losowe hasło – klient ustawi własne linkiem z maila
+                        // Losowe hasło - klient ustawi własne linkiem z maila
                         'password' => Hash::make(Str::random(40)),
                         'rola'     => 'klient',
                     ])
@@ -227,7 +213,7 @@ class NowaWizytaController extends Controller
                     'id_klienta' => $klient->id_uzytkownika,
                     'id_pojazdu' => $pojazd->id_pojazdu,
                     'uwagi'      => $dane['uwagi'] ?? null,
-                    // Termin uzgodniony z klientem – nie wymaga zatwierdzania
+                    // Termin uzgodniony z klientem - nie wymaga zatwierdzania
                     'status'     => 'zatwierdzona',
                 ], $uslugi, $start, $mechanik);
 
@@ -263,10 +249,6 @@ class NowaWizytaController extends Controller
             ->with('status', $komunikat);
     }
 
-    /**
-     * Potwierdzenie wizyty, a dla nowego klienta z e-mailem także link do ustawienia hasła.
-     * Błąd poczty nie cofa zapisanej wizyty.
-     */
     private function powiadomKlienta(Uzytkownik $klient, $rezerwacja, bool $nowyKlient): void
     {
         if (!$klient->email) {
@@ -285,9 +267,6 @@ class NowaWizytaController extends Controller
         }
     }
 
-    /**
-     * Pracownik zapisuje wizytę zawsze na siebie, administrator – na wskazanego lub dowolnego mechanika.
-     */
     private function mechanikDlaTerminu(?int $wybrany): ?int
     {
         return auth()->user()->czyAdministrator() ? $wybrany : (int) auth()->id();
@@ -303,9 +282,6 @@ class NowaWizytaController extends Controller
         return Usluga::aktywne()->whereIn('id_uslugi', $dane['uslugi'])->get();
     }
 
-    /**
-     * Identyfikatory specjalizacji zalogowanego pracownika.
-     */
     private function mojeSpecjalizacje(): array
     {
         return auth()->user()->specjalizacje()

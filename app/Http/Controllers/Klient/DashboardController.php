@@ -1,6 +1,4 @@
 <?php
-// app/Http/Controllers/Klient/DashboardController.php
-
 namespace App\Http\Controllers\Klient;
 
 use App\Enums\StatusRezerwacji;
@@ -15,7 +13,6 @@ class DashboardController extends Controller
         $user = auth()->user();
         $relacje = ['uslugi', 'pojazd', 'mechanik'];
 
-        // Nadchodzące wizyty (od najbliższej)
         $nadchodzace = Rezerwacja::where('id_klienta', $user->id_uzytkownika)
             ->whereIn('status', StatusRezerwacji::aktywne())
             ->where('termin_rozpoczecia', '>', now())
@@ -25,7 +22,7 @@ class DashboardController extends Controller
 
         $najblizsza = $nadchodzace->first();
 
-        // Ile dni do najbliższej wizyty: "dziś", "jutro", "za X dni"
+        // Ile dni do najbliższej wizyty
         $kiedy = null;
         if ($najblizsza) {
             $dni = (int) today()->diffInDays($najblizsza->termin_rozpoczecia->copy()->startOfDay());
@@ -36,7 +33,7 @@ class DashboardController extends Controller
             };
         }
 
-        // Ostatnie wizyty: przeszłe albo już nieaktywne (zakończone, odrzucone, anulowane)
+        // Ostatnie wizyty
         $ostatnie = Rezerwacja::where('id_klienta', $user->id_uzytkownika)
             ->where(function ($q) {
                 $q->where('termin_rozpoczecia', '<=', now())
@@ -47,7 +44,6 @@ class DashboardController extends Controller
             ->limit(4)
             ->get();
 
-        // Lista: pozostałe nadchodzące (bez wizyty z banera), dopełnione ostatnimi – razem max 4
         $lista = $nadchodzace->slice(1)->concat($ostatnie)->take(4)->values();
 
         $zakonczone = Rezerwacja::where('id_klienta', $user->id_uzytkownika)

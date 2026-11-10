@@ -30,7 +30,7 @@ class RezerwacjaController extends Controller
         $uzytkownik = auth()->user();
         $czyAdmin = $uzytkownik->czyAdministrator();
 
-        // Pracownik domyślnie widzi swoje wizyty, administrator – oczekujące na zatwierdzenie
+        // Pracownik domyślnie widzi swoje wizyty
         $status = $request->get('status', $czyAdmin ? 'oczekująca' : 'moje');
         if (!in_array($status, self::FILTRY, true) || ($status === 'moje' && $czyAdmin)) {
             $status = $czyAdmin ? 'oczekująca' : 'moje';
@@ -59,11 +59,7 @@ class RezerwacjaController extends Controller
         return view('pracownik.reservations.index', compact('rezerwacje', 'status', 'czyAdmin', 'liczbaZaleglych'));
     }
 
-    /**
-     * Wizyty, które już się skończyły, a nikt ich nie obsłużył:
-     * nadal oczekują na zatwierdzenie albo nie zostały oznaczone jako zakończone.
-     * Pracownik widzi tylko swoje, administrator wszystkie.
-     */
+    // wizyty zaległe których nikt nie obsłużył
     private function zalegle($query, Uzytkownik $uzytkownik)
     {
         return $query->whereIn('status', StatusRezerwacji::aktywne())
@@ -72,9 +68,6 @@ class RezerwacjaController extends Controller
                 fn ($q) => $q->where('id_mechanika', $uzytkownik->id_uzytkownika));
     }
 
-    /**
-     * Pracownik może wykonywać akcje tylko na wizytach, w których jest mechanikiem.
-     */
     private function wymagajUprawnien(Rezerwacja $rezerwacja): void
     {
         if (!$rezerwacja->mozeZarzadzac(auth()->user())) {
@@ -82,17 +75,11 @@ class RezerwacjaController extends Controller
         }
     }
 
-    /**
-     * Pracownik przekłada wizytę tylko na swoje wolne terminy,
-     * administrator – na terminy dowolnego mechanika.
-     */
     private function mechanikPrzyZmianieTerminu(): ?int
     {
         return auth()->user()->czyAdministrator() ? null : (int) auth()->id();
     }
-    /**
-     * Plan dnia: kolumny mechaników, wizyty jako bloki na osi czasu.
-     */
+
     public function plan(Request $request)
     {
         try {
@@ -167,7 +154,7 @@ class RezerwacjaController extends Controller
             ];
         }
 
-        // Wizyty bez mechanika (np. po usunięciu konta) – osobna kolumna, żeby nie zginęły
+        // Wizyty bez mechanika 
         $idMechanikow = $mechanicy->pluck('id_uzytkownika');
         $bezMechanika = $rezerwacje->filter(fn ($r) => !$r->id_mechanika || !$idMechanikow->contains($r->id_mechanika));
         if ($bezMechanika->isNotEmpty()) {
@@ -256,9 +243,6 @@ class RezerwacjaController extends Controller
         return view('pracownik.reservations.edit-termin', ['rezerwacja' => $reservation] + $this->dostepnosc->daneKalendarza());
     }
 
-    /**
-     * Endpoint JSON: wolne godziny dla przesuwanej rezerwacji w danym dniu.
-     */
     public function dostepneTerminy(Request $request, Rezerwacja $reservation)
     {
         $this->wymagajUprawnien($reservation);

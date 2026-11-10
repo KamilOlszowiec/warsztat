@@ -22,7 +22,6 @@
         <div class="mb-4 bg-red-900/30 border border-red-700 text-red-300 px-4 py-3 text-sm" style="border-radius: 2px;">{{ $message }}</div>
     @enderror
 
-    {{-- Nawigacja po dniach i legenda --}}
     <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div class="flex flex-wrap items-center gap-2">
             <a href="{{ route('pracownik.reservations.plan', ['data' => $dzien->copy()->subDay()->toDateString()]) }}" aria-label="Poprzedni dzień"
@@ -60,13 +59,11 @@
 
     <div class="flex flex-wrap gap-5 items-start">
 
-        {{-- Plan --}}
         <section aria-label="Plan dnia mechaników" class="flex-[1_1_560px] min-w-0 bg-[#1F2128] border border-zinc-800 overflow-x-auto" style="border-radius: 2px;">
             @if ($liczbaKolumn === 0)
                 <p class="p-8 text-center text-sm text-zinc-400">Brak pracowników w systemie.</p>
             @else
                 <div style="min-width: {{ 56 + $liczbaKolumn * 150 }}px;">
-                    {{-- Nagłówki kolumn --}}
                     <div class="grid border-b border-zinc-800" style="{{ $siatka }}">
                         <div></div>
                         @foreach ($kolumny as $k)
@@ -80,7 +77,6 @@
                         @endforeach
                     </div>
 
-                    {{-- Oś czasu --}}
                     <div class="grid py-3" style="{{ $siatka }}">
                         <div class="relative" style="height: {{ $wysokosc }}px;">
                             @foreach ($etykietyGodzin as $g)
@@ -131,7 +127,6 @@
             @endif
         </section>
 
-        {{-- Panel wybranej wizyty --}}
         <aside aria-label="Szczegóły wizyty" class="w-full lg:w-[300px] shrink-0 bg-[#1F2128] border border-zinc-800" style="border-radius: 2px;">
             @if ($wybrana)
                 @php
@@ -214,8 +209,7 @@
                         @endif
                     @endif
                 </div>
-
-                {{-- Okienko odrzucenia --}}
+                
                 @if ($r->status === 'oczekująca' && $r->mozeZarzadzac(auth()->user()))
                     <div id="modal-odrzucenia" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
                         <div class="bg-[#1F2128] border border-zinc-800 p-6 max-w-sm w-full" style="border-radius: 2px;">

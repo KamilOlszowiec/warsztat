@@ -11,15 +11,9 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
-        // Widoki w testach nie potrzebują zbudowanych stylów (public/build/manifest.json)
         $this->withoutVite();
     }
 
-    /**
-     * Zabezpieczenie: testy czyszczą bazę, więc mogą działać wyłącznie na bazie testowej.
-     * Jeśli konfiguracja wskazuje inną bazę (np. przez pamięć podręczną konfiguracji),
-     * testy zostają przerwane, zanim cokolwiek zostanie usunięte.
-     */
     protected function setUpTraits()
     {
         $baza = config('database.connections.' . config('database.default') . '.database');

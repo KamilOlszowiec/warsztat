@@ -15,7 +15,6 @@
     $nazwyRol = ['klient' => 'Klient', 'pracownik' => 'Mechanik', 'administrator' => 'Administrator'];
     $tylkoPodglad = $user->czyPracownik();
 
-    // Statystyki do karty – zależne od roli
     if ($user->czyKlient()) {
         $liczbaPojazdow = $user->pojazdy()->count();
         $liczbaWizyt = \App\Models\Rezerwacja::where('id_klienta', $user->id_uzytkownika)
@@ -48,7 +47,6 @@
 
 <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start max-w-4xl">
 
-    {{-- Karta użytkownika --}}
     <aside class="bg-[#1F2128] border border-zinc-800" style="border-radius: 2px;">
         <div class="p-6 text-center border-b border-zinc-800">
             <div class="w-20 h-20 mx-auto mb-3 flex items-center justify-center bg-orange-600 text-white text-2xl font-bold" style="border-radius: 50%;">
@@ -130,7 +128,6 @@
         @endif
     </aside>
 
-    {{-- Zakładki --}}
     <div>
         @error('error')
             <div class="mb-4 bg-red-900/30 border border-red-700 text-red-300 px-4 py-3 text-sm" style="border-radius: 2px;">
@@ -183,7 +180,6 @@
                 </dl>
             </div>
         @else
-            {{-- Dane osobowe – formularz --}}
             <form data-panel="dane" method="POST" action="{{ route('profile.update') }}#dane"
                   class="bg-[#1F2128] border border-zinc-800 p-6 space-y-4" style="border-radius: 2px;">
                 @csrf
@@ -225,7 +221,6 @@
             </form>
         @endif
 
-        {{-- Hasło --}}
         <form data-panel="haslo" method="POST" action="{{ route('profile.password') }}#haslo"
               class="hidden bg-[#1F2128] border border-zinc-800 p-6 space-y-4" style="border-radius: 2px;">
             @csrf
@@ -279,7 +274,6 @@
 
     zakladki.forEach(z => z.addEventListener('click', () => pokaz(z.dataset.zakladka)));
 
-    // Kolejność: zakładka z błędem walidacji, potem końcówka adresu (#haslo), domyślnie dane
     let start = 'dane';
     if (bledy.some(k => ['current_password', 'password'].includes(k))) {
         start = 'haslo';

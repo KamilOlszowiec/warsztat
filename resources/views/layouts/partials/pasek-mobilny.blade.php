@@ -1,4 +1,3 @@
-{{-- Górny pasek na telefonie (logo i przycisk menu) oraz przyciemnienie tła pod otwartym menu --}}
 <header class="lg:hidden sticky top-0 z-30 flex items-center justify-between h-14 px-4 bg-[#1F2128] border-b border-zinc-800">
     <div class="flex items-center gap-2.5">
         <div class="w-8 h-8 flex items-center justify-center bg-orange-600" style="border-radius: 2px;">

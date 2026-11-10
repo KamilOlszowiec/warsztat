@@ -30,7 +30,7 @@ class DemoDataSeeder extends Seeder
             'rola' => 'administrator', 'email_verified_at' => now(),
         ]);
 
-        // Pracownicy (mechanicy)
+        // Pracownicy 
         $pracownik1 = Uzytkownik::create([
             'imie' => 'Piotr', 'nazwisko' => 'Nowak',
             'email' => 'piotr@warsztat.pl', 'password' => Hash::make('haslo1234'),
@@ -91,7 +91,7 @@ class DemoDataSeeder extends Seeder
             'cena' => 220.00, 'czas_trwania' => 90, 'id_specjalizacji' => $elektryka->id_specjalizacji, 'czy_aktywna' => true,
         ]);
 
-        // Dzień wolny warsztatu: najbliższe 11 listopada
+        // Dzień wolny warsztatu
         $swieto = Carbon::create(now()->year, 11, 11);
         if ($swieto->isPast()) {
             $swieto->addYear();
@@ -162,10 +162,6 @@ class DemoDataSeeder extends Seeder
         ], [$wymianaOleju]);
     }
 
-    /**
-     * Zmiany pracowników na $dni dni od dziś, zgodnie z godzinami pracy warsztatu.
-     * Pomija dni zamknięte, dni wolne warsztatu i urlopy ($urlopy: id_pracownika => [daty]).
-     */
     private function grafik(array $pracownicy, int $dni, array $dniWolne, array $urlopy): void
     {
         $godzinyPracy = GodzinyPracy::all()->keyBy('dzien_tygodnia');
@@ -200,9 +196,6 @@ class DemoDataSeeder extends Seeder
         }
     }
 
-    /**
-     * Tworzy rezerwację z listą usług; koniec wizyty = start + suma czasów usług.
-     */
     private function rezerwacja(array $dane, array $uslugi): Rezerwacja
     {
         $czas = array_sum(array_map(fn ($u) => $u->czas_trwania, $uslugi));
@@ -220,9 +213,6 @@ class DemoDataSeeder extends Seeder
         return $rezerwacja;
     }
 
-    /**
-     * Data przesunięta o $dni od dziś (ujemne = przeszłość), z pominięciem weekendu.
-     */
     private function dzienRoboczy(int $dni): Carbon
     {
         $data = Carbon::today()->addDays($dni);

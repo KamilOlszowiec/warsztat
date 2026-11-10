@@ -15,7 +15,6 @@
         Termin Twojej wizyty został zmieniony przez warsztat. Poniżej aktualne szczegóły rezerwacji.
     </p>
 
-    {{-- Podsumowanie --}}
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
            style="background: #FAFAFA; border: 1px solid #E4E4E7; border-radius: 2px;">
         <tr>

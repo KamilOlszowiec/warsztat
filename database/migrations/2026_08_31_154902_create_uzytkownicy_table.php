@@ -9,7 +9,6 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    // database/migrations/xxxx_create_uzytkownicy_table.php
     public function up(): void
     {
         Schema::create('uzytkownicy', function (Blueprint $table) {
@@ -17,7 +16,7 @@ return new class extends Migration
             $table->string('imie', 50);
             $table->string('nazwisko', 50);
             $table->string('email', 100)->unique();
-            $table->string('password'); // wymóg Auth facade, w ERD to "haslo"
+            $table->string('password'); 
             $table->string('telefon', 15)->nullable();
             $table->enum('rola', ['klient', 'pracownik', 'administrator'])->default('klient');
             $table->rememberToken();

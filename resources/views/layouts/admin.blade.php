@@ -56,8 +56,6 @@
                   bg-[#1F2128] border-r border-zinc-800 flex flex-col shrink-0 min-h-screen">
         @include('layouts.partials.zamknij-menu')
 
-
-        {{-- Logo --}}
         <div class="flex items-center gap-3 px-5 py-5">
             <div class="w-9 h-9 shrink-0 flex items-center justify-center bg-orange-600" style="border-radius: 2px;">
                 <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -70,7 +68,6 @@
             </div>
         </div>
 
-        {{-- Menu --}}
         <nav class="flex-1 px-3 pb-4 border-t border-zinc-800" aria-label="Menu administratora">
             @foreach ($sekcje as $nazwaSekcji => $pozycje)
                 <p class="px-3 {{ $loop->first ? 'mt-4' : 'mt-5' }} mb-1.5 text-[10px] font-mono tracking-widest text-zinc-500">{{ $nazwaSekcji }}</p>
@@ -88,7 +85,6 @@
             @endforeach
         </nav>
 
-        {{-- Użytkownik --}}
         <div class="flex items-center gap-3 px-4 py-3.5 border-t border-zinc-800">
             <a href="{{ route('profile.edit') }}" class="w-9 h-9 shrink-0 flex items-center justify-center bg-zinc-700 hover:bg-zinc-600 text-zinc-50 text-[13px] font-bold transition"
                style="border-radius: 50%;" title="Mój profil">

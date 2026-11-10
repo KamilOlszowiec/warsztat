@@ -23,7 +23,6 @@
         </div>
     @enderror
 
-    {{-- Nagłówek --}}
     <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
         <div class="min-w-0">
             <p class="text-sm font-mono text-orange-500 mb-1">REZERWACJA #{{ $r->id_rezerwacji }}</p>
@@ -64,7 +63,6 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 items-start">
 
-        {{-- Usługi --}}
         <div class="space-y-6">
         <section class="bg-[#1F2128] border border-zinc-800" style="border-radius: 2px;">
             <div class="px-5 py-4 border-b border-zinc-800">
@@ -98,7 +96,6 @@
         </section>
 
         @if ($r->maProtokol())
-            {{-- Protokół z wizyty --}}
             <section class="bg-[#1F2128] border border-zinc-800 divide-y divide-zinc-800" style="border-radius: 2px;">
                 <div class="px-5 py-4">
                     <p class="text-sm font-mono text-orange-500">PROTOKÓŁ Z WIZYTY</p>
@@ -132,7 +129,6 @@
         @endif
         </div>
 
-        {{-- Szczegóły --}}
         <aside class="bg-[#1F2128] border border-zinc-800 divide-y divide-zinc-800" style="border-radius: 2px;">
             <div class="px-5 py-4">
                 <p class="text-[11px] font-mono text-zinc-400 mb-1">TERMIN</p>

@@ -10,7 +10,6 @@
 
 <div class="max-w-5xl space-y-6">
 
-    {{-- Nagłówek --}}
     <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
             <p class="text-sm font-mono text-orange-500 mb-1">PANEL GŁÓWNY</p>
@@ -23,7 +22,6 @@
         </a>
     </div>
 
-    {{-- Wymaga uwagi --}}
     <section class="bg-[#1F2128] border border-zinc-800" style="border-radius: 2px;" aria-label="Wymaga uwagi">
         <div class="flex items-baseline justify-between px-5 py-4 border-b border-zinc-800">
             <h2 class="font-semibold text-zinc-50">Wymaga uwagi</h2>
@@ -53,7 +51,6 @@
         @endforelse
     </section>
 
-    {{-- Liczby --}}
     <section class="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4" aria-label="Liczby">
         <div class="bg-[#1F2128] border border-zinc-800 px-5 py-4" style="border-radius: 2px;">
             <p class="text-[11px] font-mono text-zinc-400">DZIŚ</p>
@@ -81,7 +78,6 @@
 
     <div class="flex flex-wrap gap-6 items-start">
 
-        {{-- Obłożenie mechaników --}}
         <section class="flex-[1_1_400px] min-w-0 bg-[#1F2128] border border-zinc-800" style="border-radius: 2px;" aria-label="Obłożenie mechaników">
             <div class="flex items-baseline justify-between px-5 py-4 border-b border-zinc-800">
                 <h2 class="font-semibold text-zinc-50">Obłożenie w tym tygodniu</h2>
@@ -114,7 +110,6 @@
             </div>
         </section>
 
-        {{-- Najczęstsze usługi --}}
         <section class="flex-[1_1_340px] min-w-0 bg-[#1F2128] border border-zinc-800" style="border-radius: 2px;" aria-label="Najczęstsze usługi">
             <div class="flex items-baseline justify-between px-5 py-4 border-b border-zinc-800">
                 <h2 class="font-semibold text-zinc-50">Najczęstsze usługi</h2>

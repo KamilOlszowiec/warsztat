@@ -1,4 +1,3 @@
-{{-- resources/views/klient/vehicles/show.blade.php --}}
 @extends('layouts.klient')
 @section('title', $pojazd->marka . ' ' . $pojazd->model)
 
